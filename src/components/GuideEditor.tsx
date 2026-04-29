@@ -26,6 +26,7 @@ import MapOverlay, { type MapMarker } from './MapOverlay'
 import AnnotationCreateModal, { type CreateMeta } from './AnnotationCreateModal'
 import NodeMapView from './NodeMapView'
 import { buildSetposCommand } from '../annotation/mapData'
+import { buildNodeGroups, nodeLabel, type NodeGroup } from '../annotation/groupUtils'
 
 const MAX_NODES = 300
 
@@ -36,12 +37,6 @@ const btnSecondary =
   'px-3 py-1.5 bg-zinc-800 border border-zinc-600 hover:bg-zinc-700 rounded text-zinc-300 cursor-pointer text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
 const btnDanger =
   'px-3 py-1.5 bg-red-950 hover:bg-red-900 border border-red-800 rounded text-red-300 cursor-pointer text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-
-// ─── types ────────────────────────────────────────────────────────────────────
-interface NodeGroup {
-  indices: number[]
-  label: string
-}
 
 interface GuideEditorProps {
   guideName: string
@@ -62,13 +57,6 @@ interface GuideEditorProps {
 }
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
-function nodeLabel(node: AnnotationNode): string {
-  const title = node.Title?.Text ?? node.Desc?.Text
-  if (title) return title.slice(0, 40) + (title.length > 40 ? '…' : '')
-  if (node.Type === 'grenade' && node.GrenadeType) return `Grenade (${node.GrenadeType})`
-  return `${node.Type}${node.SubType ? ` (${node.SubType})` : ''}`
-}
-
 function createEmptyNode(type: NodeType, overrides?: Partial<AnnotationNode>): AnnotationNode {
   return {
     Type: type,
@@ -89,39 +77,6 @@ function createGrenadeSet(grenadeType: GrenadeType): AnnotationNode[] {
     createEmptyNode('grenade', { SubType: 'aim_target', MasterNodeId: mainId, Id: generateId() }),
     createEmptyNode('grenade', { SubType: 'destination', MasterNodeId: mainId, Id: generateId() }),
   ]
-}
-
-function buildNodeGroups(nodes: AnnotationNode[]) {
-  const used = new Set<number>()
-  const grenadeGroups: NodeGroup[] = []
-  const lineGroups: NodeGroup[] = []
-
-  for (let i = 0; i < nodes.length; i++) {
-    if (used.has(i)) continue
-    const node = nodes[i]
-    if (node.Type === 'grenade' && (node.SubType === 'main' || !node.SubType) && node.Id) {
-      const indices = [i, ...nodes.map((n, j) => (n.MasterNodeId === node.Id ? j : -1)).filter((j) => j >= 0)]
-      indices.forEach((j) => used.add(j))
-      grenadeGroups.push({ indices, label: nodeLabel(node) || `Grenade (${node.GrenadeType ?? 'smoke'})` })
-    } else if (node.Type === 'line' && (node.SubType === 'main' || !node.SubType) && node.Id) {
-      const indices = [i, ...nodes.map((n, j) => (n.MasterNodeId === node.Id ? j : -1)).filter((j) => j >= 0)]
-      indices.forEach((j) => used.add(j))
-      lineGroups.push({ indices, label: nodeLabel(node) || 'Line' })
-    }
-  }
-
-  const positionIndices: number[] = []
-  const textIndices: number[] = []
-  const spotIndices: number[] = []
-  for (let i = 0; i < nodes.length; i++) {
-    if (used.has(i)) continue
-    const { Type } = nodes[i]
-    if (Type === 'position') positionIndices.push(i)
-    else if (Type === 'text') textIndices.push(i)
-    else if (Type === 'spot') spotIndices.push(i)
-  }
-
-  return { grenadeGroups, lineGroups, positionIndices, textIndices, spotIndices }
 }
 
 // ─── component ────────────────────────────────────────────────────────────────
