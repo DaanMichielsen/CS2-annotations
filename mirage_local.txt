@@ -1,0 +1,66 @@
+<!-- kv3 encoding:text:version{e21c7f3c-8a33-41c5-9977-a76d3a32aa0d} format:generic:version{7412167c-06e9-4698-aff2-e63eb59037e7} -->
+{
+	MapName = "de_mirage"
+	WorkshopSubmissionID = ""
+	ScreenText = {}
+	MapAnnotationNode0 = {
+		Enabled = true
+		Type = "grenade"
+		Id = "7056d3ad-6a86-4f1e-a9ca-94acd41eb940"
+		SubType = "main"
+		Position = [1422.585938, -336.303467, -167.96875]
+		Angles = [0, 149.934875, 0]
+		VisiblePfx = true
+		Color = [255, 255, 255]
+		TextPositionOffset = [0, 0, 60]
+		TextFacePlayer = true
+		TextHorizontalAlign = "center"
+		RevealOnSuccess = false
+		Title = {
+			Text = "test"
+			FontSize = 125
+			FadeInDist = 600
+			FadeOutDist = 40
+			ShowBackground = true
+		}
+		Desc = {
+			Text = "standing instructions 2"
+			FontSize = 75
+			FadeInDist = 300
+			FadeOutDist = 40
+			ShowBackground = true
+		}
+		StreakLimitGuidesOn = 2
+		StreakLimitGuidesOff = 2
+		JumpThrow = false
+		GrenadeType = "smoke"
+	}
+	MapAnnotationNode1 = {
+		Enabled = true
+		Type = "grenade"
+		Id = "7f30db6d-9f90-41fd-a4ce-d732f60026aa"
+		SubType = "aim_target"
+		Position = [1339.09729, -285.320557, -83.223083]
+		Angles = [-11.973346, 148.589401, 0]
+		VisiblePfx = true
+		TextPositionOffset = [0, 0, 30]
+		TextFacePlayer = false
+		TextHorizontalAlign = "center"
+		RevealOnSuccess = false
+		Title = {
+			Text = "test"
+			FontSize = 125
+			FadeInDist = 50
+			FadeOutDist = -1
+			ShowBackground = true
+		}
+		Desc = {
+			Text = "aim instructions"
+			FontSize = 75
+			FadeInDist = 50
+			FadeOutDist = -1
+			ShowBackground = true
+		}
+		MasterNodeId = "7056d3ad-6a86-4f1e-a9ca-94acd41eb940"
+	}
+}
