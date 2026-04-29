@@ -443,6 +443,93 @@ ipcMain.handle(
   }
 )
 
+ipcMain.handle(
+  'appendNodesToGuide',
+  async (
+    _event,
+    payload: { targetFilePath: string; nodes: AnnotationNode[] }
+  ): Promise<{ error?: string; finalNodeCount?: number }> => {
+    try {
+      const { targetFilePath, nodes: newNodes } = payload
+      if (!fs.existsSync(targetFilePath))
+        return { error: `File not found: ${targetFilePath}` }
+
+      const bakPath = targetFilePath + '.bak'
+      fs.copyFileSync(targetFilePath, bakPath)
+
+      let raw = fs.readFileSync(targetFilePath, 'utf-8')
+      if (raw.charCodeAt(0) === 0xfeff) raw = raw.slice(1)
+      const root = parseKv3Text(raw) as Kv3Object
+      const nodesKey = extractNodesKey(root)
+      const existingNodes = kv3ToNodes(root, nodesKey)
+
+      const merged = [...existingNodes, ...newNodes]
+      setNodesInRoot(root, merged, nodesKey)
+      const out = serializeKv3Text(root)
+      writeAnnotationFile(targetFilePath, out)
+
+      try {
+        const written = fs.readFileSync(targetFilePath, 'utf-8').replace(/^﻿/, '')
+        parseKv3Text(written)
+      } catch {
+        fs.copyFileSync(bakPath, targetFilePath)
+        return {
+          error:
+            'Copy failed: file could not be validated after write. The original file has been restored.',
+        }
+      }
+
+      return { finalNodeCount: merged.length }
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : String(err) }
+    }
+  }
+)
+
+ipcMain.handle(
+  'createGuideWithNodes',
+  async (
+    _event,
+    payload: { filename: string; mapName: string; nodes: AnnotationNode[] }
+  ): Promise<{ error?: string; loadName?: string; filePath?: string }> => {
+    try {
+      const rootPath = getAnnotationsRootPath()
+      const safeName = toLocalGuideName(payload.filename)
+      if (!safeName)
+        return {
+          error: 'Invalid guide name. Use letters, numbers, underscores or hyphens.',
+        }
+      const dirPath = path.join(rootPath, safeName)
+      const filePath = path.join(dirPath, `${safeName}.txt`)
+      if (fs.existsSync(filePath))
+        return { error: `Guide "${safeName}" already exists.` }
+
+      fs.mkdirSync(dirPath, { recursive: true })
+      const root: Kv3Object = { MapName: payload.mapName, ScreenText: {}, Nodes: [] }
+      setNodesInRoot(root, payload.nodes, 'Nodes')
+      const out = serializeKv3Text(root)
+      writeAnnotationFile(filePath, out)
+
+      try {
+        const written = fs.readFileSync(filePath, 'utf-8').replace(/^﻿/, '')
+        parseKv3Text(written)
+      } catch {
+        try {
+          fs.unlinkSync(filePath)
+          fs.rmdirSync(dirPath)
+        } catch {}
+        return {
+          error: 'Create failed: file could not be validated after write.',
+        }
+      }
+
+      return { loadName: safeName, filePath }
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : String(err) }
+    }
+  }
+)
+
 // ── File watcher ────────────────────────────────────────────────────────────
 ipcMain.on('watchGuideFile', (_event, filePath: string) => {
   if (currentFileWatcher) { currentFileWatcher.close(); currentFileWatcher = null }
