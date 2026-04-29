@@ -107,6 +107,9 @@ export default function GuideEditor({
   const [runCommandStatus, setRunCommandStatus] = useState<'idle' | 'running'>('idle')
   const [lastCfgPath, setLastCfgPath] = useState<string | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [selectedKeys, setSelectedKeys] = useState<Set<number>>(new Set())
+  const [deleteConfirmPending, setDeleteConfirmPending] = useState(false)
+  const [showCopyModal, setShowCopyModal] = useState(false)
 
   // ── pending create metadata (applied when CS2 writes the file) ────────────
   interface PendingNodeMeta extends CreateMeta { existingIds: Set<string> }
@@ -339,6 +342,16 @@ export default function GuideEditor({
     setIsMessageError(isError)
   }
 
+  function handleSelectAllVisible() {
+    const keys = new Set<number>()
+    visibleItems.grenadeGroups.forEach((g) => keys.add(g.indices[0]))
+    visibleItems.lineGroups.forEach((g) => keys.add(g.indices[0]))
+    visibleItems.positionIndices.forEach((i) => keys.add(i))
+    visibleItems.textIndices.forEach((i) => keys.add(i))
+    visibleItems.spotIndices.forEach((i) => keys.add(i))
+    setSelectedKeys(keys)
+  }
+
   // ── actions ──────────────────────────────────────────────────────────────
   const handleSave = async () => {
     setSaveStatus('saving')
@@ -490,13 +503,23 @@ export default function GuideEditor({
   const renderNodeRow = (i: number) => {
     const n = nodes[i]
     const label = nodeLabel(n)
+    const isEnabled = n.Enabled !== false
+    const isSelected = selectedKeys.has(i)
     return (
       <div key={i} className="flex items-center gap-1">
         <input
           type="checkbox"
           className="shrink-0 w-3.5 h-3.5 cursor-pointer accent-zinc-500"
-          checked={n.Enabled !== false}
-          onChange={(e) => { e.stopPropagation(); handleUpdateNode(i, { Enabled: e.target.checked, VisiblePfx: e.target.checked }) }}
+          checked={isSelected}
+          onChange={(e) => {
+            e.stopPropagation()
+            setSelectedKeys((prev) => {
+              const next = new Set(prev)
+              if (e.target.checked) next.add(i)
+              else next.delete(i)
+              return next
+            })
+          }}
           onClick={(e) => e.stopPropagation()}
         />
         <button
@@ -505,10 +528,21 @@ export default function GuideEditor({
           onClick={() => setSelectedIndex(i)}
           className={`flex-1 min-w-0 px-2 py-1.5 text-left text-sm rounded border-none cursor-pointer transition-colors flex items-center gap-1.5
             ${selectedIndex === i ? 'bg-zinc-700 text-zinc-100 ring-1 ring-zinc-500' : 'bg-transparent text-zinc-300 hover:bg-zinc-700/60'}
-            ${n.Enabled === false ? 'opacity-50 italic' : ''}`}
+            ${!isEnabled ? 'opacity-50 italic' : ''}`}
         >
           {n.Color && <span className="shrink-0 w-2 h-2 rounded-full" style={{ backgroundColor: rgbToHex(n.Color) }} />}
           <span className="truncate">{label}</span>
+        </button>
+        <button
+          type="button"
+          title={isEnabled ? 'Hide in CS2' : 'Show in CS2'}
+          className="shrink-0 p-1 text-zinc-500 hover:text-zinc-300 border-none bg-transparent cursor-pointer transition-colors"
+          onClick={(e) => {
+            e.stopPropagation()
+            handleUpdateNode(i, { Enabled: !isEnabled, VisiblePfx: !isEnabled })
+          }}
+        >
+          {isEnabled ? <EyeOpenIcon /> : <EyeClosedIcon />}
         </button>
       </div>
     )
@@ -517,6 +551,7 @@ export default function GuideEditor({
   const renderGroupRow = (group: NodeGroup, typeLabel: string) => {
     const allEnabled = group.indices.every((i) => nodes[i].Enabled !== false)
     const active = selectedIndex !== null && group.indices.includes(selectedIndex)
+    const isSelected = selectedKeys.has(group.indices[0])
     const mainNode = nodes[group.indices[0]]
     const isGrenade = typeLabel === 'Grenade'
     const throwShort = isGrenade ? THROW_TYPE_SHORT[inferThrowType(mainNode)] : null
@@ -534,8 +569,16 @@ export default function GuideEditor({
         <input
           type="checkbox"
           className="shrink-0 w-3.5 h-3.5 cursor-pointer accent-zinc-500"
-          checked={allEnabled}
-          onChange={(e) => { e.stopPropagation(); handleSetGroupEnabled(group.indices, e.target.checked) }}
+          checked={isSelected}
+          onChange={(e) => {
+            e.stopPropagation()
+            setSelectedKeys((prev) => {
+              const next = new Set(prev)
+              if (e.target.checked) next.add(group.indices[0])
+              else next.delete(group.indices[0])
+              return next
+            })
+          }}
           onClick={(e) => e.stopPropagation()}
         />
         <button
@@ -565,6 +608,14 @@ export default function GuideEditor({
             )}
           </div>
           <span className="block truncate">{group.label}</span>
+        </button>
+        <button
+          type="button"
+          title={allEnabled ? 'Hide in CS2' : 'Show in CS2'}
+          className="shrink-0 p-1 text-zinc-500 hover:text-zinc-300 border-none bg-transparent cursor-pointer transition-colors"
+          onClick={(e) => { e.stopPropagation(); handleSetGroupEnabled(group.indices, !allEnabled) }}
+        >
+          {allEnabled ? <EyeOpenIcon /> : <EyeClosedIcon />}
         </button>
       </div>
     )
@@ -1485,5 +1536,25 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <label className="w-36 shrink-0 text-xs text-zinc-400 pt-1.5 leading-tight">{label}</label>
       <div className="flex-1 min-w-0">{children}</div>
     </div>
+  )
+}
+
+function EyeOpenIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <path d="M1.5 7c0 0 2.5-4.5 5.5-4.5S12.5 7 12.5 7s-2.5 4.5-5.5 4.5S1.5 7 1.5 7z"
+        stroke="currentColor" strokeWidth="1.2" />
+      <circle cx="7" cy="7" r="1.8" fill="currentColor" />
+    </svg>
+  )
+}
+
+function EyeClosedIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <path d="M1.5 7c0 0 2.5-4.5 5.5-4.5S12.5 7 12.5 7s-2.5 4.5-5.5 4.5S1.5 7 1.5 7z"
+        stroke="currentColor" strokeWidth="1.2" opacity="0.35" />
+      <line x1="2.5" y1="2.5" x2="11.5" y2="11.5" stroke="currentColor" strokeWidth="1.2" />
+    </svg>
   )
 }
