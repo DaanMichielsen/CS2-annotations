@@ -21,9 +21,9 @@ function posNode(id: string, pos: [number, number, number], angles: [number, num
 
 describe('classifyDuplicates – grenade', () => {
   it('flags a grenade as duplicate when all three positions match existing', () => {
-    const nodes = grenade('g1', [100, 200, 0], [0, 0, 64], [300, 400, 0])
-    const incoming = [{ type: 'grenade' as const, nodes }]
-    const { toAdd, skipped } = classifyDuplicates(incoming, nodes)
+    const existing = grenade('g1', [100, 200, 0], [0, 0, 64], [300, 400, 0])
+    const incoming = [{ type: 'grenade' as const, nodes: grenade('g2', [100, 200, 0], [0, 0, 64], [300, 400, 0]) }]
+    const { toAdd, skipped } = classifyDuplicates(incoming, existing)
     expect(toAdd).toHaveLength(0)
     expect(skipped).toHaveLength(1)
   })

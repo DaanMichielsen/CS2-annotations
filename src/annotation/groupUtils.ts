@@ -74,8 +74,8 @@ export function buildSelectedGroups(
 }
 
 function posEq(
-  a?: [number, number, number] | null,
-  b?: [number, number, number] | null
+  a?: [number, number, number],
+  b?: [number, number, number]
 ): boolean {
   if (!a && !b) return true
   if (!a || !b) return false
