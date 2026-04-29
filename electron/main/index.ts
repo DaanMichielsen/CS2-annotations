@@ -469,7 +469,8 @@ ipcMain.handle(
       writeAnnotationFile(targetFilePath, out)
 
       try {
-        const written = fs.readFileSync(targetFilePath, 'utf-8').replace(/^﻿/, '')
+        let written = fs.readFileSync(targetFilePath, 'utf-8')
+        if (written.charCodeAt(0) === 0xfeff) written = written.slice(1)
         parseKv3Text(written)
       } catch {
         fs.copyFileSync(bakPath, targetFilePath)
@@ -479,6 +480,7 @@ ipcMain.handle(
         }
       }
 
+      fs.unlinkSync(bakPath)
       return { finalNodeCount: merged.length }
     } catch (err) {
       return { error: err instanceof Error ? err.message : String(err) }
@@ -504,6 +506,7 @@ ipcMain.handle(
       if (fs.existsSync(filePath))
         return { error: `Guide "${safeName}" already exists.` }
 
+      const dirCreatedByUs = !fs.existsSync(dirPath)
       fs.mkdirSync(dirPath, { recursive: true })
       const root: Kv3Object = { MapName: payload.mapName, ScreenText: {}, Nodes: [] }
       setNodesInRoot(root, payload.nodes, 'Nodes')
@@ -511,12 +514,13 @@ ipcMain.handle(
       writeAnnotationFile(filePath, out)
 
       try {
-        const written = fs.readFileSync(filePath, 'utf-8').replace(/^﻿/, '')
+        let written = fs.readFileSync(filePath, 'utf-8')
+        if (written.charCodeAt(0) === 0xfeff) written = written.slice(1)
         parseKv3Text(written)
       } catch {
         try {
           fs.unlinkSync(filePath)
-          fs.rmdirSync(dirPath)
+          if (dirCreatedByUs) fs.rmdirSync(dirPath)
         } catch {}
         return {
           error: 'Create failed: file could not be validated after write.',
