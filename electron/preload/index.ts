@@ -25,6 +25,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     localName: string
   }) => ipcRenderer.invoke('saveAsLocalGuide', payload),
   deleteGuide: (filePath: string) => ipcRenderer.invoke('deleteGuide', filePath),
+  appendNodesToGuide: (payload: { targetFilePath: string; nodes: unknown[] }) =>
+    ipcRenderer.invoke('appendNodesToGuide', payload),
+  createGuideWithNodes: (payload: { filename: string; mapName: string; nodes: unknown[] }) =>
+    ipcRenderer.invoke('createGuideWithNodes', payload),
   sendCS2ConsoleCommand: (command: string) => ipcRenderer.invoke('sendCS2ConsoleCommand', command),
   writeCS2Cfg: (command: string) => ipcRenderer.invoke('writeCS2Cfg', command),
   showItemInFolder: (filePath: string) => ipcRenderer.invoke('showItemInFolder', filePath),

@@ -37,6 +37,15 @@ interface ElectronAPI {
     localName: string
   }) => Promise<{ error?: string; path?: string; loadName?: string }>
   deleteGuide: (filePath: string) => Promise<{ error?: string }>
+  appendNodesToGuide: (payload: {
+    targetFilePath: string
+    nodes: AnnotationNode[]
+  }) => Promise<{ error?: string; finalNodeCount?: number }>
+  createGuideWithNodes: (payload: {
+    filename: string
+    mapName: string
+    nodes: AnnotationNode[]
+  }) => Promise<{ error?: string; loadName?: string; filePath?: string }>
   sendCS2ConsoleCommand: (command: string) => Promise<{ error?: string }>
   writeCS2Cfg: (command: string) => Promise<{ error?: string; cfgPath?: string; content?: string }>
   showItemInFolder: (filePath: string) => Promise<void>
