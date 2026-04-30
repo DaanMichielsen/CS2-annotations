@@ -352,6 +352,21 @@ export default function GuideEditor({
     setSelectedKeys(keys)
   }
 
+  function handleDeleteSelected() {
+    const indicesToRemove = new Set<number>()
+    for (const key of selectedKeys) {
+      const grenadeGroup = groups.grenadeGroups.find((g) => g.indices[0] === key)
+      if (grenadeGroup) { grenadeGroup.indices.forEach((i) => indicesToRemove.add(i)); continue }
+      const lineGroup = groups.lineGroups.find((g) => g.indices[0] === key)
+      if (lineGroup) { lineGroup.indices.forEach((i) => indicesToRemove.add(i)); continue }
+      indicesToRemove.add(key)
+    }
+    setNodes((prev) => prev.filter((_, i) => !indicesToRemove.has(i)))
+    if (selectedIndex !== null && indicesToRemove.has(selectedIndex)) setSelectedIndex(null)
+    setSelectedKeys(new Set())
+    setDeleteConfirmPending(false)
+  }
+
   // ── actions ──────────────────────────────────────────────────────────────
   const handleSave = async () => {
     setSaveStatus('saving')
@@ -928,6 +943,66 @@ export default function GuideEditor({
             )}
           </div>
 
+          {/* ── Bulk action bar (fixed height slot) ── */}
+          <div className="shrink-0 h-8 flex items-center gap-2 px-2 border-b border-zinc-700/60 bg-zinc-800/40 overflow-hidden text-xs">
+            {selectedKeys.size > 0 && (
+              deleteConfirmPending ? (
+                <>
+                  <span className="text-red-400 shrink-0">
+                    Delete {selectedKeys.size} annotation{selectedKeys.size !== 1 ? 's' : ''}?
+                  </span>
+                  <button
+                    type="button"
+                    className="px-2 py-0.5 bg-red-900/60 border border-red-700/70 hover:bg-red-800/60 rounded text-red-300 cursor-pointer shrink-0"
+                    onClick={handleDeleteSelected}
+                  >
+                    Confirm
+                  </button>
+                  <button
+                    type="button"
+                    className="px-2 py-0.5 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 rounded text-zinc-400 cursor-pointer shrink-0"
+                    onClick={() => setDeleteConfirmPending(false)}
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="text-zinc-400 shrink-0">{selectedKeys.size} selected</span>
+                  <button
+                    type="button"
+                    className="text-zinc-500 hover:text-zinc-300 cursor-pointer bg-transparent border-none shrink-0"
+                    onClick={handleSelectAllVisible}
+                  >
+                    Select all
+                  </button>
+                  <button
+                    type="button"
+                    className="text-zinc-500 hover:text-zinc-300 cursor-pointer bg-transparent border-none shrink-0"
+                    onClick={() => setSelectedKeys(new Set())}
+                  >
+                    Deselect all
+                  </button>
+                  <div className="flex-1" />
+                  <button
+                    type="button"
+                    className="px-2 py-0.5 bg-zinc-700 hover:bg-zinc-600 border border-zinc-600 rounded text-zinc-200 cursor-pointer shrink-0"
+                    onClick={() => setShowCopyModal(true)}
+                  >
+                    Copy to file…
+                  </button>
+                  <button
+                    type="button"
+                    className="px-2 py-0.5 bg-red-950 hover:bg-red-900 border border-red-800 rounded text-red-300 cursor-pointer shrink-0"
+                    onClick={() => setDeleteConfirmPending(true)}
+                  >
+                    Delete selected
+                  </button>
+                </>
+              )
+            )}
+          </div>
+
           {viewMode === 'list' ? (
             /* Scrollable list */
             <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-1.5">
@@ -993,6 +1068,7 @@ export default function GuideEditor({
                   index={selectedIndex!}
                   onChange={(u) => handleUpdateNode(selectedIndex!, u)}
                   onDelete={() => handleDeleteNode(selectedIndex!)}
+                  onNotify={setMsg}
                   onUpdateNodeAt={handleUpdateNode}
                   aimTargetNode={(() => {
                     const node = selectedNode
@@ -1078,6 +1154,7 @@ function NodeEditForm({
   node,
   onChange,
   onDelete,
+  onNotify,
   onUpdateNodeAt,
   aimTargetNode,
   aimTargetIndex,
@@ -1086,6 +1163,7 @@ function NodeEditForm({
   index: number
   onChange: (u: Partial<AnnotationNode>) => void
   onDelete: () => void
+  onNotify?: (msg: string, isError?: boolean) => void
   onUpdateNodeAt?: (index: number, u: Partial<AnnotationNode>) => void
   aimTargetNode?: AnnotationNode | null
   aimTargetIndex?: number | null
@@ -1098,10 +1176,21 @@ function NodeEditForm({
   const anglesStr = node.Angles?.join(', ') ?? ''
   const textOffsetStr = node.TextPositionOffset?.join(', ') ?? ''
 
-  const handleCopySetpos = () => {
+  const handleCopySetpos = async () => {
     if (!node.Position) return
     const cmd = buildSetposCommand(node.Position, node.Angles)
-    void navigator.clipboard.writeText(cmd)
+    try {
+      const copyViaIpc = window.electronAPI?.copyToClipboard
+      if (typeof copyViaIpc === 'function') {
+        const result = await copyViaIpc(cmd)
+        if (result?.error) throw new Error(result.error)
+      } else {
+        await navigator.clipboard.writeText(cmd)
+      }
+      onNotify?.(`Copied: ${cmd}`)
+    } catch (err) {
+      onNotify?.(`Copy failed: ${err instanceof Error ? err.message : String(err)}`, true)
+    }
   }
 
   const currentHex = node.Color ? rgbToHex(node.Color) : '#ffffff'
