@@ -24,9 +24,10 @@ import {
 } from '../annotation/inferUtils'
 import MapOverlay, { type MapMarker } from './MapOverlay'
 import AnnotationCreateModal, { type CreateMeta } from './AnnotationCreateModal'
+import CopyToFileModal from './CopyToFileModal'
 import NodeMapView from './NodeMapView'
 import { buildSetposCommand } from '../annotation/mapData'
-import { buildNodeGroups, nodeLabel, type NodeGroup } from '../annotation/groupUtils'
+import { buildNodeGroups, nodeLabel, buildSelectedGroups, type NodeGroup, type SelectedGroup } from '../annotation/groupUtils'
 
 const MAX_NODES = 300
 
@@ -138,6 +139,10 @@ export default function GuideEditor({
 
   const selectedNode = selectedIndex !== null ? nodes[selectedIndex] : null
   const groups = useMemo(() => buildNodeGroups(nodes), [nodes])
+  const selectedGroups = useMemo<SelectedGroup[]>(
+    () => buildSelectedGroups(selectedKeys, nodes, groups),
+    [selectedKeys, nodes, groups]
+  )
   const nodeCountWarning = nodes.length >= MAX_NODES - 50
 
   const visibleItems = useMemo(() => {
@@ -442,6 +447,12 @@ export default function GuideEditor({
     clearPendingMeta()
     await handleRunInCS2(`annotation_load ${guideName}`)
     setMsg('Annotation creation aborted.')
+  }
+
+  function handleCopySuccess(message: string) {
+    setShowCopyModal(false)
+    setSelectedKeys(new Set())
+    setMsg(message)
   }
 
   const handleSaveAsLocalGuide = async () => {
@@ -1123,6 +1134,15 @@ export default function GuideEditor({
           onSendCreate={handleSendCreate}
           onSaveCreate={handleSaveAnnotation}
           onAbortCreate={handleAbortAnnotation}
+        />
+      )}
+      {showCopyModal && (
+        <CopyToFileModal
+          currentFilePath={filePath}
+          currentMapName={mapName}
+          selectedGroups={selectedGroups}
+          onClose={() => setShowCopyModal(false)}
+          onSuccess={handleCopySuccess}
         />
       )}
     </div>
