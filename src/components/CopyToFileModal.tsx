@@ -58,11 +58,14 @@ export default function CopyToFileModal({
 
   useEffect(() => {
     if (!selectedFilePath) { setTargetNodes(null); return }
+    let cancelled = false
+    const fp = selectedFilePath
     async function load() {
-      const result = await window.electronAPI.loadGuide(selectedFilePath!)
-      if (!('error' in result)) setTargetNodes(result.nodes)
+      const result = await window.electronAPI.loadGuide(fp)
+      if (!cancelled && !('error' in result)) setTargetNodes(result.nodes)
     }
     void load()
+    return () => { cancelled = true }
   }, [selectedFilePath])
 
   const { toAdd, skipped } =
