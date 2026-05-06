@@ -1,4 +1,19 @@
-.worktrees/
-node_modules
+# dependencies
+node_modules/
+
+# build output
 apps/desktop/out/
 apps/desktop/dist/
+
+# turbo cache
+.turbo/
+
+# worktrees
+.worktrees/
+
+# logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
