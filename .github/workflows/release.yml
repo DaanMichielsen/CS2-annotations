@@ -14,13 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Enable Windows long paths
-        shell: powershell
-        run: |
-          New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" `
-            -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
-          git config --system core.longpaths true
-
       - uses: pnpm/action-setup@v4
 
       - uses: actions/setup-node@v4
@@ -29,7 +22,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
       - name: Build shared package
         run: pnpm --filter @cs2ann/shared build --if-present
