@@ -1,4 +1,5 @@
-import { app, BrowserWindow, ipcMain, shell, clipboard } from 'electron'
+import { app, BrowserWindow, ipcMain, shell, clipboard, dialog } from 'electron'
+import { autoUpdater } from 'electron-updater'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function debounce(fn: (...args: any[]) => void, ms: number) {
   let t: ReturnType<typeof setTimeout> | null = null
@@ -139,6 +140,20 @@ app.whenReady().then(() => {
       }
     } catch { /* ignore */ }
   }
+
+  autoUpdater.checkForUpdatesAndNotify()
+
+  autoUpdater.on('update-downloaded', () => {
+    dialog.showMessageBox({
+      type: 'info',
+      title: 'Update ready',
+      message: 'A new version has been downloaded. Restart the app to apply the update.',
+      buttons: ['Restart now', 'Later']
+    }).then(({ response }) => {
+      if (response === 0) autoUpdater.quitAndInstall()
+    })
+  })
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
