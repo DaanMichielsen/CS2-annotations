@@ -102,8 +102,27 @@ export default function Guides() {
 
   if (openGuide) {
     const isWorkshop = openGuide.source === 'workshop'
+    const mapName = openGuide.root['MapName'] as string | undefined
     return (
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        {mapName && (
+          <div className="shrink-0 flex justify-end px-2 py-1 border-b border-zinc-700 bg-zinc-900">
+            <button
+              type="button"
+              className="px-3 py-1 text-xs bg-yellow-700 hover:bg-yellow-600 text-white rounded"
+              title="Runs 'map <mapname>' in CS2, forcing it to rescan the annotations folder for new guide files"
+              onClick={async () => {
+                const confirmed = window.confirm(
+                  `This will run "map ${mapName}" in CS2, restarting the current round. Continue?`
+                )
+                if (!confirmed) return
+                await window.electronAPI.writeCS2Cfg(`map ${mapName}`)
+              }}
+            >
+              Reload map in CS2
+            </button>
+          </div>
+        )}
         <GuideEditor
           guideName={openGuide.name}
           filePath={openGuide.filePath}
