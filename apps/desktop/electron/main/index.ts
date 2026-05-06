@@ -1,4 +1,5 @@
-import { app, BrowserWindow, ipcMain, shell, clipboard } from 'electron'
+import { app, BrowserWindow, ipcMain, shell, clipboard, dialog } from 'electron'
+import { autoUpdater } from 'electron-updater'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function debounce(fn: (...args: any[]) => void, ms: number) {
   let t: ReturnType<typeof setTimeout> | null = null
@@ -10,10 +11,8 @@ import path from 'path'
 import fs from 'fs'
 import { execFile } from 'child_process'
 import Store from 'electron-store'
-import { parseKv3Text, serializeKv3Text } from '../../src/kv3'
-import { kv3ToNodes, extractNodesKey, setNodesInRoot } from '../../src/annotation/kv3Mapping'
-import type { Kv3Object } from '../../src/kv3/types'
-import type { AnnotationNode } from '../../src/annotation/types'
+import { parseKv3Text, serializeKv3Text, kv3ToNodes, extractNodesKey, setNodesInRoot } from '@cs2ann/shared'
+import type { Kv3Object, AnnotationNode } from '@cs2ann/shared'
 
 const store = new Store<{
   annotationsRoot: string
@@ -141,6 +140,20 @@ app.whenReady().then(() => {
       }
     } catch { /* ignore */ }
   }
+
+  autoUpdater.checkForUpdatesAndNotify()
+
+  autoUpdater.on('update-downloaded', () => {
+    dialog.showMessageBox({
+      type: 'info',
+      title: 'Update ready',
+      message: 'A new version has been downloaded. Restart the app to apply the update.',
+      buttons: ['Restart now', 'Later']
+    }).then(({ response }) => {
+      if (response === 0) autoUpdater.quitAndInstall()
+    })
+  })
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })

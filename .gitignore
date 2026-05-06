@@ -4,6 +4,8 @@ node_modules/
 # build output
 out/
 dist/
+apps/desktop/out/
+apps/desktop/dist/
 
 # claude code local settings
 .claude/
@@ -20,6 +22,4 @@ dist/
 # OS
 .DS_Store
 Thumbs.db
-
-# legacy npm lockfile
 package-lock.json

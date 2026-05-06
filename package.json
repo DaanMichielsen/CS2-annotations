@@ -1,30 +1,14 @@
 {
-  "name": "cs2-annotations-manager",
-  "version": "1.0.0",
-  "description": "Manage CS2 nade guide annotations locally",
-  "main": "out/main/index.js",
+  "name": "cs2-annotations",
+  "private": true,
   "scripts": {
-    "dev": "electron-vite dev",
-    "build": "electron-vite build",
-    "preview": "electron-vite preview",
-    "test": "vitest run"
-  },
-  "dependencies": {
-    "@tailwindcss/vite": "^4.2.0",
-    "electron-store": "^8.1.0",
-    "tailwindcss": "^4.2.0"
+    "dev": "turbo dev --filter=@cs2ann/desktop",
+    "build": "turbo build",
+    "test": "turbo test",
+    "lint": "turbo lint"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0",
-    "@types/react": "^18.2.45",
-    "@types/react-dom": "^18.2.18",
-    "@vitejs/plugin-react": "^4.2.1",
-    "electron": "^28.0.0",
-    "electron-vite": "^2.0.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "typescript": "^5.3.3",
-    "vite": "^5.0.0",
-    "vitest": "^1.6.0"
-  }
+    "turbo": "^2.0.0"
+  },
+  "packageManager": "pnpm@9.0.0"
 }
