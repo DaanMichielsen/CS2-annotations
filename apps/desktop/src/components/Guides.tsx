@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type { AnnotationNode } from '../annotation/types'
+import type { AnnotationNode } from '@cs2ann/shared'
 import GuideEditor from './GuideEditor'
 
 type GuideSource = 'local' | 'workshop'

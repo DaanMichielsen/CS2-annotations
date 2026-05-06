@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
-import type { AnnotationNode, NodeType, GrenadeType, TextDescObject } from '../annotation/types'
-import { GRENADE_TYPES, defaultTextDesc, defaultPosition, defaultAngles, generateId } from '../annotation/types'
+import type { AnnotationNode, NodeType, GrenadeType, TextDescObject } from '@cs2ann/shared'
+import { GRENADE_TYPES, defaultTextDesc, defaultPosition, defaultAngles, generateId } from '@cs2ann/shared'
 
 // Nade-type icons bundled by Vite
 const _nadeIconModules = import.meta.glob<string>(
@@ -21,13 +21,13 @@ import {
   COLOR_CATEGORY_SHORT,
   THROW_TYPE_LABEL, THROW_TYPE_SHORT,
   type ColorCategory, type ThrowType,
-} from '../annotation/inferUtils'
+} from '@cs2ann/shared'
 import MapOverlay, { type MapMarker } from './MapOverlay'
 import AnnotationCreateModal, { type CreateMeta } from './AnnotationCreateModal'
 import CopyToFileModal from './CopyToFileModal'
 import NodeMapView from './NodeMapView'
-import { buildSetposCommand } from '../annotation/mapData'
-import { buildNodeGroups, nodeLabel, buildSelectedGroups, type NodeGroup, type SelectedGroup } from '../annotation/groupUtils'
+import { buildSetposCommand } from '@cs2ann/shared'
+import { buildNodeGroups, nodeLabel, buildSelectedGroups, type NodeGroup, type SelectedGroup } from '@cs2ann/shared'
 
 const MAX_NODES = 300
 

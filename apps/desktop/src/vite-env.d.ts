@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import type { AnnotationNode } from './annotation/types'
+import type { AnnotationNode } from '@cs2ann/shared'
 
 type GuideSource = 'local' | 'workshop'
 

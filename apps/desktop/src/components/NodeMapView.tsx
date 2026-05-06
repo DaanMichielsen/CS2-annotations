@@ -11,8 +11,8 @@
  *  - Zoom controls (+/−/⌂) in the corner
  */
 import { useState, useRef, useEffect, useMemo, useLayoutEffect, useCallback } from 'react'
-import type { AnnotationNode, GrenadeType } from '../annotation/types'
-import { MAP_DATA, worldToPixel, getMapImageUrl } from '../annotation/mapData'
+import type { AnnotationNode, GrenadeType } from '@cs2ann/shared'
+import { MAP_DATA, worldToPixel, getMapImageUrl } from '@cs2ann/shared'
 
 // ── nade icons (same glob pattern as GuideEditor) ─────────────────────────────
 const _nadeIconModules = import.meta.glob<string>(

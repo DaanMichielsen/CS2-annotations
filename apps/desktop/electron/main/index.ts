@@ -10,10 +10,8 @@ import path from 'path'
 import fs from 'fs'
 import { execFile } from 'child_process'
 import Store from 'electron-store'
-import { parseKv3Text, serializeKv3Text } from '../../src/kv3'
-import { kv3ToNodes, extractNodesKey, setNodesInRoot } from '../../src/annotation/kv3Mapping'
-import type { Kv3Object } from '../../src/kv3/types'
-import type { AnnotationNode } from '../../src/annotation/types'
+import { parseKv3Text, serializeKv3Text, kv3ToNodes, extractNodesKey, setNodesInRoot } from '@cs2ann/shared'
+import type { Kv3Object, AnnotationNode } from '@cs2ann/shared'
 
 const store = new Store<{
   annotationsRoot: string

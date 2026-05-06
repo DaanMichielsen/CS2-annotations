@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import type { AnnotationNode } from '../annotation/types'
-import { classifyDuplicates, type SelectedGroup } from '../annotation/groupUtils'
+import type { AnnotationNode } from '@cs2ann/shared'
+import { classifyDuplicates, type SelectedGroup } from '@cs2ann/shared'
 
 interface GuideOption {
   name: string
