@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
+    plugins: [externalizeDepsPlugin({ exclude: ['@cs2ann/shared'] })],
     build: {
       rollupOptions: {
         input: resolve(__dirname, 'electron/main/index.ts'),
@@ -16,7 +16,7 @@ export default defineConfig({
     }
   },
   preload: {
-    plugins: [externalizeDepsPlugin()],
+    plugins: [externalizeDepsPlugin({ exclude: ['@cs2ann/shared'] })],
     build: {
       rollupOptions: {
         input: resolve(__dirname, 'electron/preload/index.ts'),
