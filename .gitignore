@@ -1,1 +1,25 @@
+# dependencies
+node_modules/
+
+# build output
+out/
+dist/
+
+# claude code local settings
+.claude/
+
+# turbo cache
+.turbo/
+
+# worktrees
 .worktrees/
+
+# logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# legacy npm lockfile
+package-lock.json
