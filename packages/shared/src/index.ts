@@ -1,2 +1,8 @@
-// Shared types and utilities — populated in Task 3
-export {}
+export * from './annotation/index'
+export * from './annotation/types'
+export * from './annotation/mapData'
+export * from './annotation/kv3Mapping'
+export * from './annotation/inferUtils'
+export * from './annotation/groupUtils'
+export * from './kv3/index'
+export * from './kv3/types'
