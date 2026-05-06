@@ -1,0 +1,31 @@
+appId: com.cs2ann.desktop
+productName: CS2 Annotations Manager
+copyright: Copyright © 2026
+
+directories:
+  output: dist
+  buildResources: resources
+
+files:
+  - out/**/*
+  - node_modules/**/*
+  - package.json
+
+win:
+  target:
+    - target: nsis
+      arch: x64
+  # No code signing — self-signed build. SmartScreen shows "Unknown publisher" warning.
+  sign: null
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: CS2 Annotations Manager
+
+publish:
+  provider: github
+  owner: DaanMichielsen
+  repo: CS2-annotations
