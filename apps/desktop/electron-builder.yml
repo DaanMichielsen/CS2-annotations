@@ -2,9 +2,11 @@ appId: com.cs2ann.desktop
 productName: CS2 Annotations Manager
 copyright: Copyright © 2026
 electronVersion: 28.3.3
+npmRebuild: false
+buildDependenciesFromSource: false
 
 directories:
-  output: dist
+  output: release-dist
   buildResources: resources
 
 files:
@@ -13,6 +15,7 @@ files:
   - package.json
 
 win:
+  signAndEditExecutable: false
   target:
     - target: nsis
       arch: x64

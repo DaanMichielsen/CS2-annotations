@@ -27,6 +27,6 @@ jobs:
         run: pnpm --filter @cs2ann/shared build --if-present
 
       - name: Build and package desktop app
-        run: pnpm --filter @cs2ann/desktop dist
+        run: pnpm --filter @cs2ann/desktop dist:release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

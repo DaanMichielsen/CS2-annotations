@@ -6,3 +6,11 @@ export * from './annotation/inferUtils'
 export * from './annotation/groupUtils'
 export * from './kv3/index'
 export * from './kv3/types'
+export type {
+  GuideAdapter,
+  GuideSummary,
+  LoadedGuide,
+  SaveGuidePayload,
+  AppendNodesPayload,
+  CreateGuidePayload,
+} from './adapter'

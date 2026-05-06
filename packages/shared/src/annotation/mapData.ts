@@ -26,7 +26,7 @@ export interface MapOverviewData {
 export const MAP_DATA: Record<string, MapOverviewData> = {
   de_ancient:  { file: 'ancient.png',  posX: -2953, posY:  2164, scale: 6.400  },
   de_anubis:   { file: 'anubis.png',   posX: -2796, posY:  3328, scale: 6.682  },
-  de_cache:    { file: 'cache.png',    posX: -2278, posY:  3469, scale: 7.040  },
+  de_cache:    { file: 'cache.png',    posX: -2000, posY:  3250, scale: 7.040  },
   de_dust2:    { file: 'dust2.png',    posX: -2476, posY:  3239, scale: 5.632  },
   de_inferno:  { file: 'inferno.png',  posX: -2087, posY:  3870, scale: 6.272  },
   de_mirage:   { file: 'mirage.png',   posX: -3230, posY:  1713, scale: 6.400  },
@@ -35,14 +35,22 @@ export const MAP_DATA: Record<string, MapOverviewData> = {
   de_train:    { file: 'train.png',    posX: -2477, posY:  2401, scale: 6.016  },
 }
 
-// Vite bundles and hashes these at build time; keys are paths relative to this file.
-const imageModules = import.meta.glob(
-  '../../resources/*.png',
-  { eager: true, query: '?url', import: 'default' }
-) as Record<string, string>
+// Vite bundles and hashes these at build time; support both old and monorepo paths.
+const imageModules = {
+  ...(import.meta.glob('../../resources/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>),
+  ...(import.meta.glob('../../resources/maps/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>),
+  ...(import.meta.glob('../../../../apps/desktop/resources/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>),
+  ...(import.meta.glob('../../../../apps/desktop/resources/maps/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>),
+}
 
 export function getMapImageUrl(fileName: string): string | null {
-  return imageModules[`../../resources/${fileName}`] ?? null
+  return (
+    imageModules[`../../resources/${fileName}`] ??
+    imageModules[`../../resources/maps/${fileName}`] ??
+    imageModules[`../../../../apps/desktop/resources/${fileName}`] ??
+    imageModules[`../../../../apps/desktop/resources/maps/${fileName}`] ??
+    null
+  )
 }
 
 /** Convert in-game world coordinates to pixel coordinates within an 800×800 overview image. */
