@@ -7,6 +7,7 @@ import type {
   CreateGuidePayload,
 } from '@cs2ann/shared'
 import { serializeKv3Text, parseKv3Text, kv3ToNodes, extractNodesKey, setNodesInRoot } from '@cs2ann/shared'
+import type { Kv3Object } from '@cs2ann/shared'
 
 // In-memory version cache so saveGuide can send the correct version for optimistic locking
 const versionCache = new Map<string, number>()
@@ -26,10 +27,12 @@ export function createCloudAdapter(): GuideAdapter {
     },
 
     async createGuide(payload: CreateGuidePayload) {
-      const kv3 =
-        payload.nodes && payload.root && payload.nodesKey
-          ? serializeKv3Text(setNodesInRoot(payload.root, payload.nodesKey, payload.nodes))
-          : ''
+      let kv3 = ''
+      if (payload.nodes && payload.root && payload.nodesKey) {
+        const root = payload.root as Kv3Object
+        setNodesInRoot(root, payload.nodes, payload.nodesKey)
+        kv3 = serializeKv3Text(root)
+      }
       const form = new FormData()
       form.set('title', payload.filename)
       form.set('map', payload.mapName ?? '')
@@ -56,7 +59,9 @@ export function createCloudAdapter(): GuideAdapter {
     },
 
     async saveGuide(payload: SaveGuidePayload) {
-      const kv3 = serializeKv3Text(setNodesInRoot(payload.root, payload.nodesKey, payload.nodes))
+      const root = payload.root as Kv3Object
+      setNodesInRoot(root, payload.nodes, payload.nodesKey)
+      const kv3 = serializeKv3Text(root)
       const currentVersion = versionCache.get(payload.id) ?? 1
       const form = new FormData()
       form.set('version', String(currentVersion))

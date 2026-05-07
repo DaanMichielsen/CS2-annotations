@@ -1,7 +1,7 @@
 import { put, del, head } from '@vercel/blob'
 
 export async function uploadGuideBlob(guideId: string, kv3Content: string): Promise<string> {
-  const blob = await put(`guides/${guideId}/guide.kv3`, kv3Content, {
+  const blob = await put(`cs2annotations/guides/${guideId}/guide.kv3`, kv3Content, {
     access: 'public',
     contentType: 'text/plain',
   })
