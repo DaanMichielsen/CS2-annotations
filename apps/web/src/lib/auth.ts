@@ -3,31 +3,41 @@ import { PrismaAdapter } from '@auth/prisma-adapter'
 import Steam from 'next-auth-steam'
 import { db } from './db'
 
+// Resolve the app's base URL in priority order:
+// 1. request.url origin  — accurate during actual auth API calls
+// 2. AUTH_URL / NEXTAUTH_URL — explicitly configured env var
+// 3. VERCEL_URL            — auto-injected by Vercel on every deployment
+// 4. localhost             — local dev fallback
+function getBaseUrl(request?: Request): string {
+  if (request?.url) {
+    try { return new URL(request.url).origin } catch { /* fall through */ }
+  }
+  const explicit = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL
+  if (explicit) return explicit.replace(/\/$/, '')
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
+  return 'http://localhost:3000'
+}
+
 // next-auth-steam@0.4.0 targets NextAuth v4. NextAuth v5 beta.31 requires
-// both token.url and userinfo.url to be present (assertConfig line 81/83).
-// The package already provides custom request() functions that handle the
-// actual Steam OpenID flow — we just add the url fields to pass validation.
-function makeSteamProvider(request: Parameters<typeof Steam>[0]) {
-  const provider = Steam(request, {
+// token.url and userinfo.url to be present (assertConfig line 81/83).
+// The package provides custom request() functions that do the real work —
+// we only add url fields to satisfy the validator.
+function makeSteamProvider(request?: Request) {
+  const baseUrl = getBaseUrl(request)
+  const provider = Steam(request as Parameters<typeof Steam>[0], {
     clientSecret: process.env.STEAM_API_KEY!,
-    callbackUrl: `${process.env.NEXTAUTH_URL}/api/auth/callback/steam`
+    callbackUrl: `${baseUrl}/api/auth/callback/steam`
   })
   return {
     ...provider,
-    token: {
-      ...(provider.token as object),
-      url: 'https://steamcommunity.com/openid/login'
-    },
-    userinfo: {
-      ...(provider.userinfo as object),
-      url: 'https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002'
-    }
+    token: { ...(provider.token as object), url: 'https://steamcommunity.com/openid/login' },
+    userinfo: { ...(provider.userinfo as object), url: 'https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002' }
   } as typeof provider
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth((request) => ({
   adapter: PrismaAdapter(db),
-  providers: [makeSteamProvider(request!)],
+  providers: [makeSteamProvider(request)],
   callbacks: {
     async session({ session, user }) {
       if (session.user) {
