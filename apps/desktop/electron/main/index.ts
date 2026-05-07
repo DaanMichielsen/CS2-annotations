@@ -191,8 +191,8 @@ app.whenReady().then(() => {
   })
 
   ipcMain.handle('openSteamSignIn', () => {
-    const webAppUrl = 'https://cs2-annotations.vercel.app' // update after Vercel deployment
-    shell.openExternal(`${webAppUrl}/api/auth/signin?callbackUrl=/auth/desktop-callback`)
+    const webAppUrl = 'https://cs2annotation.com'
+    shell.openExternal(`${webAppUrl}/auth/signin?callbackUrl=/auth/desktop-callback`)
   })
 
   // Write annotation_manager.cfg with server commands so F8 is ready (if path set)

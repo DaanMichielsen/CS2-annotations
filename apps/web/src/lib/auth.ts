@@ -39,6 +39,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth((request) => ({
   adapter: PrismaAdapter(db),
   providers: [makeSteamProvider(request)],
   callbacks: {
+    async signIn({ user, account }) {
+      // PrismaAdapter creates the User row first (without steamId since it's not
+      // a standard NextAuth field), then this callback runs. We update the row
+      // to populate our Steam-specific fields.
+      if (account?.provider === 'steam' && account.providerAccountId && user.id) {
+        await db.user.update({
+          where: { id: user.id },
+          data: {
+            steamId: account.providerAccountId,
+            username: user.name ?? undefined,
+            avatar: user.image ?? undefined
+          }
+        })
+      }
+      return true
+    },
     async session({ session, user }) {
       if (session.user) {
         session.user.id = user.id
