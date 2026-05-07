@@ -5,9 +5,9 @@ import type {
   SaveGuidePayload,
   AppendNodesPayload,
   CreateGuidePayload,
-} from '@cs2ann/shared'
-import { serializeKv3Text, parseKv3Text, kv3ToNodes, extractNodesKey, setNodesInRoot, isKv3Object } from '@cs2ann/shared'
-import type { Kv3Object } from '@cs2ann/shared'
+  Kv3Object,
+} from '@cs2ann/shared/web'
+import { serializeKv3Text, parseKv3Text, kv3ToNodes, extractNodesKey, setNodesInRoot, isKv3Object } from '@cs2ann/shared/web'
 
 // In-memory version cache so saveGuide can send the correct version for optimistic locking
 const versionCache = new Map<string, number>()

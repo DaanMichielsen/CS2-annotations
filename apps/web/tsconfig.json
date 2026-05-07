@@ -17,6 +17,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@cs2ann/shared": ["../../packages/shared/src/index.ts"],
+      "@cs2ann/shared/web": ["../../packages/shared/src/web.ts"],
       "@cs2ann/ui": ["../../packages/ui/src/index.ts"]
     }
   },
