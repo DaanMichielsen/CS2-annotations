@@ -57,6 +57,11 @@ interface ElectronAPI {
   signOut: () => Promise<void>
   openSteamSignIn: () => Promise<void>
   onAuthStateChanged: (callback: (state: { token: string; name: string; avatar: string }) => void) => () => void
+  cloudListGuides: () => Promise<{ guides?: Array<{ id: string; title: string; map: string; version: number }>; error?: string }>
+  cloudPushGuide: (payload: { filePath: string; title: string; map: string; cloudId?: string; cloudVersion?: number }) =>
+    Promise<{ guide?: { id: string; version: number }; conflict?: boolean; cloudVersion?: number; error?: string }>
+  cloudPullGuide: (payload: { cloudId: string; filePath: string }) => Promise<{ ok?: boolean; error?: string }>
+  cloudGetSyncState: (filePath: string) => Promise<{ synced: boolean; cloudId?: string; localVersion?: number; cloudVersion?: number; behind?: boolean }>
 }
 
 declare global {

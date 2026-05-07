@@ -1,5 +1,6 @@
 import { auth, signIn, signOut } from '@/lib/auth'
 import Image from 'next/image'
+import Link from 'next/link'
 
 export default async function HomePage() {
   const session = await auth()
@@ -23,6 +24,9 @@ export default async function HomePage() {
 
           {user ? (
             <div className="flex items-center gap-3">
+              <Link href="/my-guides" className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors">
+                My Guides
+              </Link>
               {user.image && (
                 <Image
                   src={user.image}

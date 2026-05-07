@@ -38,7 +38,7 @@ export default async function SignInPage({ searchParams }: Props) {
             className="hover:opacity-90 active:scale-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
           >
             <Image
-              src="https://community.fastly.steamstatic.com/public/images/signinthroughsteam/sits_02.png"
+              src="https://community.fastly.steamstatic.com/public/images/signinthroughsteam/sits_01.png"
               alt="Sign in through Steam"
               width={180}
               height={35}

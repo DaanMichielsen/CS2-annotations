@@ -14,6 +14,7 @@
     "@cs2ann/ui": "workspace:*",
     "@prisma/client": "^5.10.0",
     "@tailwindcss/postcss": "^4.0.0",
+    "@vercel/blob": "^2.3.3",
     "next": "^15.0.0",
     "next-auth": "^5.0.0-beta.25",
     "next-auth-steam": "^0.4.0",

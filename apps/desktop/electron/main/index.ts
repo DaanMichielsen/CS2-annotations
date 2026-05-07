@@ -658,6 +658,101 @@ ipcMain.handle('launchCS2', async (): Promise<{ error?: string }> => {
   }
 })
 
+// ── Cloud sync ──────────────────────────────────────────────────────────────
+
+const WEB_API = 'https://cs2annotations.com/api'
+
+function cloudHeaders(): Record<string, string> {
+  const token = store.get('authToken', null) as string | null
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+ipcMain.handle('cloudListGuides', async () => {
+  try {
+    const res = await fetch(`${WEB_API}/guides`, { headers: cloudHeaders() })
+    if (!res.ok) return { error: 'Request failed' }
+    return res.json()
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) }
+  }
+})
+
+ipcMain.handle('cloudPushGuide', async (_event, payload: {
+  filePath: string; title: string; map: string; cloudId?: string; cloudVersion?: number
+}) => {
+  try {
+    const content = fs.readFileSync(payload.filePath, 'utf-8')
+    const form = new FormData()
+    form.set('title', payload.title)
+    form.set('map', payload.map)
+    form.set('nodeCount', '0')
+    form.set('file', new Blob([content], { type: 'text/plain' }), 'guide.kv3')
+
+    if (payload.cloudId) {
+      form.set('version', String(payload.cloudVersion ?? 1))
+      const res = await fetch(`${WEB_API}/guides/${payload.cloudId}`, {
+        method: 'PUT', headers: cloudHeaders(), body: form,
+      })
+      if (res.status === 409) {
+        const data = await res.json()
+        return { conflict: true, cloudVersion: data.cloudVersion }
+      }
+      if (!res.ok) return { error: 'Push failed' }
+      const { guide } = await res.json()
+      store.set(`cloudVersion:${payload.filePath}`, guide.version)
+      store.set(`cloudId:${payload.filePath}`, guide.id)
+      return { guide }
+    } else {
+      const res = await fetch(`${WEB_API}/guides`, {
+        method: 'POST', headers: cloudHeaders(), body: form,
+      })
+      if (!res.ok) return { error: 'Push failed' }
+      const { guide } = await res.json()
+      store.set(`cloudVersion:${payload.filePath}`, guide.version)
+      store.set(`cloudId:${payload.filePath}`, guide.id)
+      return { guide }
+    }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) }
+  }
+})
+
+ipcMain.handle('cloudPullGuide', async (_event, payload: { cloudId: string; filePath: string }) => {
+  try {
+    const res = await fetch(`${WEB_API}/guides/${payload.cloudId}`, { headers: cloudHeaders() })
+    if (!res.ok) return { error: 'Pull failed' }
+    const { guide, downloadUrl } = await res.json()
+
+    const kv3Res = await fetch(downloadUrl)
+    const kv3Content = await kv3Res.text()
+
+    if (fs.existsSync(payload.filePath)) {
+      fs.copyFileSync(payload.filePath, payload.filePath + '.bak')
+    }
+    fs.writeFileSync(payload.filePath, kv3Content, 'utf-8')
+    store.set(`cloudVersion:${payload.filePath}`, guide.version)
+    return { ok: true }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) }
+  }
+})
+
+ipcMain.handle('cloudGetSyncState', async (_event, filePath: string) => {
+  const cloudId = store.get(`cloudId:${filePath}`, null) as string | null
+  const localVersion = store.get(`cloudVersion:${filePath}`, 0) as number
+  if (!cloudId) return { synced: false }
+  try {
+    const res = await fetch(`${WEB_API}/guides/${cloudId}`, { headers: cloudHeaders() })
+    if (!res.ok) return { synced: false, cloudId, localVersion }
+    const { guide } = await res.json()
+    return { synced: true, cloudId, localVersion, cloudVersion: guide.version, behind: guide.version > localVersion }
+  } catch {
+    return { synced: false, cloudId, localVersion }
+  }
+})
+
+// ── CS2 console ─────────────────────────────────────────────────────────────
+
 ipcMain.handle(
   'sendCS2ConsoleCommand',
   async (_event, command: string): Promise<{ error?: string }> => {
