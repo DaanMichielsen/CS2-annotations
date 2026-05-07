@@ -37,6 +37,9 @@ function makeSteamProvider(request?: Request): any {
     clientId: 'steam',
     clientSecret: process.env.STEAM_API_KEY!,
     checks: ['none'],
+    // Synthetic emails (steamid@steamcommunity.com) are unforgeable, so linking
+    // an existing User to a new Account is safe and prevents OAuthAccountNotLinked.
+    allowDangerousEmailAccountLinking: true,
     authorization: {
       url: 'https://steamcommunity.com/openid/login',
       params: {
@@ -71,14 +74,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth((request) => ({
       // PrismaAdapter creates User without steamId (non-standard field).
       // Backfill it here — account.providerAccountId = profile.id = steamId.
       if (account?.provider === 'steam' && account.providerAccountId && user.id) {
-        await db.user.update({
-          where: { id: user.id },
-          data: {
-            steamId:  account.providerAccountId,
-            username: user.name  ?? undefined,
-            avatar:   user.image ?? undefined,
-          },
-        })
+        try {
+          await db.user.update({
+            where: { id: user.id },
+            data: {
+              steamId:  account.providerAccountId,
+              username: user.name  ?? undefined,
+              avatar:   user.image ?? undefined,
+            },
+          })
+        } catch {
+          // Non-fatal: user is still signed in, fields backfilled on next sign-in.
+        }
       }
       return true
     },
