@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'steamcdn-a.akamaihd.net'
+      },
+      {
+        protocol: 'https',
+        hostname: 'community.fastly.steamstatic.com'
       }
     ]
   }

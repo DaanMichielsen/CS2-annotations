@@ -10,7 +10,7 @@ datasource db {
 
 model User {
   id        String    @id @default(cuid())
-  steamId   String    @unique
+  steamId   String?   @unique
   username  String?
   avatar    String?
   createdAt DateTime  @default(now())
