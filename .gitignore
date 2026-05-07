@@ -23,3 +23,12 @@ apps/desktop/dist/
 .DS_Store
 Thumbs.db
 package-lock.json
+
+# env files (never commit secrets)
+.env
+.env.local
+.env*.local
+
+# Next.js build output
+.next/
+*.tsbuildinfo
