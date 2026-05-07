@@ -33,11 +33,27 @@ export async function PUT(
   if (!guide) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (guide.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const formData = await req.formData()
-  const file = formData.get('file') as File | null
-  const clientVersion = parseInt((formData.get('version') as string) ?? '0', 10)
-  const title = formData.get('title') as string | null
-  const nodeCount = parseInt((formData.get('nodeCount') as string) ?? '0', 10)
+  const contentType = req.headers.get('content-type') ?? ''
+
+  let title: string | null = null
+  let nodeCount = 0
+  let clientVersion = 0
+  let kv3Content: string | null = null
+
+  if (contentType.includes('application/json')) {
+    const body = await req.json()
+    title = body.title ?? null
+    nodeCount = parseInt(String(body.nodeCount ?? '0'), 10)
+    clientVersion = parseInt(String(body.version ?? '0'), 10)
+    kv3Content = body.content ?? null
+  } else {
+    const formData = await req.formData()
+    const file = formData.get('file') as File | null
+    title = formData.get('title') as string | null
+    nodeCount = parseInt((formData.get('nodeCount') as string) ?? '0', 10)
+    clientVersion = parseInt((formData.get('version') as string) ?? '0', 10)
+    if (file) kv3Content = await file.text()
+  }
 
   if (clientVersion !== guide.version) {
     return NextResponse.json(
@@ -47,8 +63,7 @@ export async function PUT(
   }
 
   let blobKey = guide.blobKey
-  if (file) {
-    const kv3Content = await file.text()
+  if (kv3Content) {
     blobKey = await uploadGuideBlob(guide.id, kv3Content)
   }
 

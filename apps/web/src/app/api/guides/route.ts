@@ -23,15 +23,29 @@ export async function POST(req: NextRequest) {
   const user = await getApiUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const formData = await req.formData()
-  const file = formData.get('file') as File | null
-  const title = formData.get('title') as string | null
-  const map = formData.get('map') as string | null
-  const nodeCount = parseInt((formData.get('nodeCount') as string) ?? '0', 10)
+  const contentType = req.headers.get('content-type') ?? ''
 
-  if (!file || !title) return NextResponse.json({ error: 'Missing file or title' }, { status: 400 })
+  let title: string | null = null
+  let map: string | null = null
+  let nodeCount = 0
+  let kv3Content: string | null = null
 
-  const kv3Content = await file.text()
+  if (contentType.includes('application/json')) {
+    const body = await req.json()
+    title = body.title ?? null
+    map = body.map ?? null
+    nodeCount = parseInt(String(body.nodeCount ?? '0'), 10)
+    kv3Content = body.content ?? null
+  } else {
+    const formData = await req.formData()
+    const file = formData.get('file') as File | null
+    title = formData.get('title') as string | null
+    map = formData.get('map') as string | null
+    nodeCount = parseInt((formData.get('nodeCount') as string) ?? '0', 10)
+    if (file) kv3Content = await file.text()
+  }
+
+  if (!kv3Content || !title) return NextResponse.json({ error: 'Missing content or title' }, { status: 400 })
 
   const guide = await db.guide.create({
     data: { userId: user.id, title, map: map ?? '', nodeCount, blobKey: '' },

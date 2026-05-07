@@ -1,12 +1,15 @@
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { notFound, redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
 import Link from 'next/link'
 import Image from 'next/image'
 import RatingButtons from '@/components/RatingButtons'
 import CommentThread from '@/components/CommentThread'
+import GuideAnnotationPreview from '@/components/GuideAnnotationPreview'
 import { getMapColor, getMapLabel } from '@/lib/mapColors'
+import { getGuideBlobUrl } from '@/lib/blob'
+import { parseKv3Text, kv3ToNodes, extractNodesKey } from '@cs2ann/shared/web'
+import type { Kv3Object, AnnotationNode } from '@cs2ann/shared/web'
 
 export default async function GuideDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -26,6 +29,26 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
 
   if (!guide) notFound()
   if (!guide.isPublic && guide.userId !== session?.user?.id) notFound()
+
+  // Fetch and parse annotation nodes from blob for preview
+  let nodes: AnnotationNode[] = []
+  if (guide.blobKey) {
+    try {
+      const blobUrl = await getGuideBlobUrl(guide.blobKey)
+      if (blobUrl) {
+        const kv3Res = await fetch(blobUrl, { next: { revalidate: 300 } })
+        if (kv3Res.ok) {
+          let kv3Text = await kv3Res.text()
+          if (kv3Text.charCodeAt(0) === 0xfeff) kv3Text = kv3Text.slice(1)
+          const root = parseKv3Text(kv3Text) as Kv3Object
+          const nodesKey = extractNodesKey(root)
+          nodes = kv3ToNodes(root, nodesKey)
+        }
+      }
+    } catch {
+      // blob unavailable — render preview with empty nodes
+    }
+  }
 
   const score = guide.ratings.reduce((acc, r) => acc + r.value, 0)
   const userVote = session?.user?.id
@@ -85,15 +108,18 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
 
             <div className="flex items-center gap-2">
               {guide.user.avatar ? (
-                <Image
-                  src={guide.user.avatar}
-                  alt={authorName}
-                  width={24}
-                  height={24}
-                  className="rounded-full ring-1 ring-zinc-700"
-                />
+                <div className="w-6 h-6 rounded-full overflow-hidden ring-1 ring-zinc-700 shrink-0">
+                  <Image
+                    src={guide.user.avatar}
+                    alt={authorName}
+                    width={24}
+                    height={24}
+                    className="w-full h-full object-cover"
+                    unoptimized
+                  />
+                </div>
               ) : (
-                <div className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700" />
+                <div className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 shrink-0" />
               )}
               <span className="text-sm text-zinc-400">{authorName}</span>
               <span className="text-zinc-700 text-xs font-data mx-1">·</span>
@@ -129,6 +155,14 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
           </div>
         </div>
       </div>
+
+      {/* Annotation preview */}
+      <section className="mb-10">
+        <h2 className="font-display font-semibold text-lg text-white mb-4 tracking-tight">
+          Annotations
+        </h2>
+        <GuideAnnotationPreview nodes={nodes} mapName={guide.map} />
+      </section>
 
       {/* Comments */}
       <div className="border-t border-zinc-800/60 pt-8">

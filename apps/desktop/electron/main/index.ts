@@ -681,17 +681,22 @@ ipcMain.handle('cloudPushGuide', async (_event, payload: {
   filePath: string; title: string; map: string; nodeCount?: number; cloudId?: string; cloudVersion?: number
 }) => {
   try {
-    const content = fs.readFileSync(payload.filePath, 'utf-8')
-    const form = new FormData()
-    form.set('title', payload.title)
-    form.set('map', payload.map)
-    form.set('nodeCount', String(payload.nodeCount ?? 0))
-    form.set('file', new Blob([content], { type: 'text/plain' }), 'guide.kv3')
+    let content = fs.readFileSync(payload.filePath, 'utf-8')
+    // Strip BOM so the API receives clean KV3 text
+    if (content.charCodeAt(0) === 0xfeff) content = content.slice(1)
+
+    const jsonHeaders = { ...cloudHeaders(), 'Content-Type': 'application/json' }
 
     if (payload.cloudId) {
-      form.set('version', String(payload.cloudVersion ?? 1))
+      const body = JSON.stringify({
+        title: payload.title,
+        map: payload.map,
+        nodeCount: payload.nodeCount ?? 0,
+        version: payload.cloudVersion ?? 1,
+        content,
+      })
       const res = await fetch(`${WEB_API}/guides/${payload.cloudId}`, {
-        method: 'PUT', headers: cloudHeaders(), body: form,
+        method: 'PUT', headers: jsonHeaders, body,
       })
       if (res.status === 409) {
         const data = await res.json()
@@ -703,8 +708,14 @@ ipcMain.handle('cloudPushGuide', async (_event, payload: {
       store.set(`cloudId:${payload.filePath}`, guide.id)
       return { guide }
     } else {
+      const body = JSON.stringify({
+        title: payload.title,
+        map: payload.map,
+        nodeCount: payload.nodeCount ?? 0,
+        content,
+      })
       const res = await fetch(`${WEB_API}/guides`, {
-        method: 'POST', headers: cloudHeaders(), body: form,
+        method: 'POST', headers: jsonHeaders, body,
       })
       if (!res.ok) return { error: 'Push failed' }
       const { guide } = await res.json()
