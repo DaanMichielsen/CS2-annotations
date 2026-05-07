@@ -18,7 +18,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@cs2ann/shared": ["../../packages/shared/src/index.ts"]
+      "@cs2ann/shared": ["../../packages/shared/src/index.ts"],
+      "@cs2ann/ui": ["../../packages/ui/src/index.ts"]
     }
   },
   "include": ["src", "electron"],

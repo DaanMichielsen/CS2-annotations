@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { GuideAdapterProvider, Guides, Settings, TopNav } from '@cs2ann/ui'
 import { createLocalAdapter } from './adapters/LocalAdapter'
+import AuthButton from './components/AuthButton'
 
 const adapter = createLocalAdapter()
 
@@ -10,7 +11,7 @@ export default function App() {
   return (
     <GuideAdapterProvider adapter={adapter}>
       <div className="h-full flex flex-col overflow-hidden">
-        <TopNav onOpenSettings={() => setShowSettings(true)} />
+        <TopNav onOpenSettings={() => setShowSettings(true)} authSlot={<AuthButton />} />
         <main className="flex-1 min-h-0 flex flex-col overflow-hidden p-4">
           <Guides />
         </main>

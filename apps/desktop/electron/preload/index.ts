@@ -40,4 +40,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('guideFileChanged', handler)
     return () => ipcRenderer.removeListener('guideFileChanged', handler)
   },
+  getAuthState: () => ipcRenderer.invoke('getAuthState'),
+  signOut: () => ipcRenderer.invoke('signOut'),
+  openSteamSignIn: () => ipcRenderer.invoke('openSteamSignIn'),
+  onAuthStateChanged: (callback: (state: { token: string; name: string; avatar: string }) => void) => {
+    const handler = (_: unknown, state: { token: string; name: string; avatar: string }) => callback(state)
+    ipcRenderer.on('authStateChanged', handler)
+    return () => ipcRenderer.removeAllListeners('authStateChanged')
+  },
 })

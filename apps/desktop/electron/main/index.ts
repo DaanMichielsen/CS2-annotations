@@ -14,10 +14,28 @@ import Store from 'electron-store'
 import { parseKv3Text, serializeKv3Text, kv3ToNodes, extractNodesKey, setNodesInRoot } from '@cs2ann/shared'
 import type { Kv3Object, AnnotationNode } from '@cs2ann/shared'
 
+// Register custom protocol for deep link auth callback
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient('cs2ann', process.execPath, [path.resolve(process.argv[1])])
+  }
+} else {
+  app.setAsDefaultProtocolClient('cs2ann')
+}
+
+// Ensure single instance (required for Windows deep links)
+const gotLock = app.requestSingleInstanceLock()
+if (!gotLock) {
+  app.quit()
+}
+
 const store = new Store<{
   annotationsRoot: string
   workshopContentPath: string
   autoCopyLoadCommandsOnOpen: boolean
+  authToken: string | null
+  authName: string
+  authAvatar: string
 }>()
 
 const CS2_SERVER_ANNOTATION_LINES = 'sv_cheats 1\nsv_allow_annotations_access_level 2'
@@ -108,8 +126,27 @@ function readMapName(filePath: string): string | undefined {
   return undefined
 }
 
+let mainWindow: BrowserWindow | null = null
+
+function handleDeepLink(url: string) {
+  try {
+    const parsed = new URL(url)
+    if (parsed.pathname === '//auth/callback') {
+      const token = parsed.searchParams.get('token')
+      const name = parsed.searchParams.get('name') ?? ''
+      const avatar = parsed.searchParams.get('avatar') ?? ''
+      if (token) {
+        store.set('authToken', token)
+        store.set('authName', name)
+        store.set('authAvatar', avatar)
+        mainWindow?.webContents.send('authStateChanged', { token, name, avatar })
+      }
+    }
+  } catch { /* ignore malformed deep link URLs */ }
+}
+
 function createWindow(): void {
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1000,
     height: 700,
     webPreferences: {
@@ -120,15 +157,44 @@ function createWindow(): void {
   })
 
   if (process.env.NODE_ENV === 'development' || process.env.ELECTRON_VITE_DEV_SERVER_URL) {
-    mainWindow.loadURL(process.env.ELECTRON_VITE_DEV_SERVER_URL ?? 'http://localhost:5173')
-    mainWindow.webContents.openDevTools()
+    mainWindow!.loadURL(process.env.ELECTRON_VITE_DEV_SERVER_URL ?? 'http://localhost:5173')
+    mainWindow!.webContents.openDevTools()
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../../out/renderer/index.html'))
+    mainWindow!.loadFile(path.join(__dirname, '../../out/renderer/index.html'))
   }
 }
 
 app.whenReady().then(() => {
   createWindow()
+
+  // Deep link: macOS fires open-url
+  app.on('open-url', (_event, url) => handleDeepLink(url))
+
+  // Deep link: Windows fires second-instance with argv
+  app.on('second-instance', (_event, argv) => {
+    const url = argv.find((arg) => arg.startsWith('cs2ann://'))
+    if (url) handleDeepLink(url)
+    if (mainWindow) { mainWindow.show(); mainWindow.focus() }
+  })
+
+  // Auth IPC
+  ipcMain.handle('getAuthState', () => ({
+    token: store.get('authToken', null) as string | null,
+    name: store.get('authName', '') as string,
+    avatar: store.get('authAvatar', '') as string
+  }))
+
+  ipcMain.handle('signOut', () => {
+    store.delete('authToken')
+    store.delete('authName')
+    store.delete('authAvatar')
+  })
+
+  ipcMain.handle('openSteamSignIn', () => {
+    const webAppUrl = 'https://cs2-annotations.vercel.app' // update after Vercel deployment
+    shell.openExternal(`${webAppUrl}/api/auth/signin?callbackUrl=/auth/desktop-callback`)
+  })
+
   // Write annotation_manager.cfg with server commands so F8 is ready (if path set)
   const annotationsRoot = store.get('annotationsRoot', '')
   if (annotationsRoot) {

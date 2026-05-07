@@ -53,6 +53,10 @@ interface ElectronAPI {
   watchGuideFile: (filePath: string) => void
   unwatchGuideFile: () => void
   onGuideFileChanged: (callback: (filePath: string) => void) => () => void
+  getAuthState: () => Promise<{ token: string | null; name: string; avatar: string }>
+  signOut: () => Promise<void>
+  openSteamSignIn: () => Promise<void>
+  onAuthStateChanged: (callback: (state: { token: string; name: string; avatar: string }) => void) => () => void
 }
 
 declare global {
