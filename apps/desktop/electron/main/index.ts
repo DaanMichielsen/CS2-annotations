@@ -131,7 +131,7 @@ let mainWindow: BrowserWindow | null = null
 function handleDeepLink(url: string) {
   try {
     const parsed = new URL(url)
-    if (parsed.pathname === '//auth/callback') {
+    if (parsed.pathname === '/callback') {
       const token = parsed.searchParams.get('token')
       const name = parsed.searchParams.get('name') ?? ''
       const avatar = parsed.searchParams.get('avatar') ?? ''
