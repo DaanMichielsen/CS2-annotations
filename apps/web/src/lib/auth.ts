@@ -28,6 +28,9 @@ function makeSteamProvider(request?: Request) {
     clientSecret: process.env.STEAM_API_KEY!,
     callbackUrl: `${baseUrl}/api/auth/callback/steam`
   })
+  // next-auth-steam targets NextAuth v4. v5 assertConfig requires token.url and
+  // userinfo.url to be present. The package's custom request() functions do the
+  // real work — we add url fields only to satisfy the validator.
   return {
     ...provider,
     token: { ...(provider.token as object), url: 'https://steamcommunity.com/openid/login' },
