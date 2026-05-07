@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import type { AnnotationNode, GrenadeType } from '@cs2ann/shared/web'
 import { MAP_DATA, worldToPixel } from '@/lib/mapData'
+import InteractiveMapView from './InteractiveMapView'
 
 interface Props {
   nodes: AnnotationNode[]
@@ -57,10 +58,11 @@ export default function GuideAnnotationPreview({ nodes, mapName }: Props) {
     {} as Record<GrenadeType, AnnotationNode[]>
   )
 
-  const otherNodes = nodes.filter((n) => n.Type !== 'grenade' && isMainNode(n))
   const activeTypes = GRENADE_ORDER.filter((gt) => byType[gt].length > 0)
+  const otherNodes  = nodes.filter((n) => n.Type !== 'grenade' && isMainNode(n))
 
-  const dots = mapData
+  // Mini radar dots for the thumbnail
+  const miniDots = mapData
     ? mainGrenadeNodes
         .filter((n) => n.Position && n.GrenadeType)
         .map((n) => {
@@ -86,27 +88,26 @@ export default function GuideAnnotationPreview({ nodes, mapName }: Props) {
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/20 overflow-hidden">
       {/* Summary row — always visible */}
       <div className="flex flex-wrap items-center gap-4 px-5 py-4">
-        {/* Map radar thumbnail */}
+        {/* Mini radar thumbnail */}
         {mapData && (
-          <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-zinc-700/60 shrink-0">
+          <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-zinc-700/60 shrink-0">
             <Image
               src={`/maps/radars/${mapData.file}`}
               alt={mapName ?? 'map'}
               fill
-              className="object-cover opacity-70"
+              className="object-cover opacity-60"
               unoptimized
             />
-            {/* Mini dots overlay */}
             <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-              {dots.map((d, i) => (
-                <circle key={i} cx={d.xPct} cy={d.yPct} r={3} fill={d.color} opacity={0.9} />
+              {miniDots.map((d, i) => (
+                <circle key={i} cx={d.xPct} cy={d.yPct} r={3.5} fill={d.color} opacity={0.9} />
               ))}
             </svg>
           </div>
         )}
 
         {/* Grenade type chips */}
-        <div className="flex flex-wrap items-center gap-2 flex-1">
+        <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
           {activeTypes.map((gt) => (
             <div
               key={gt}
@@ -115,8 +116,8 @@ export default function GuideAnnotationPreview({ nodes, mapName }: Props) {
               <Image
                 src={GRENADE_ICON_FILES[gt]}
                 alt={GRENADE_LABELS[gt]}
-                width={16}
-                height={16}
+                width={15}
+                height={15}
                 className="opacity-85"
                 unoptimized
               />
@@ -134,166 +135,23 @@ export default function GuideAnnotationPreview({ nodes, mapName }: Props) {
           )}
         </div>
 
-        {/* Expand toggle */}
+        {/* Toggle */}
         <button
           onClick={() => setExpanded((v) => !v)}
           className="shrink-0 flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors font-data px-2 py-1 rounded hover:bg-zinc-800/60"
         >
-          {expanded ? '▲ Hide' : '▼ Show all'}
+          {expanded ? '▲ Hide map' : '▼ Show map'}
         </button>
       </div>
 
-      {/* Expanded section */}
+      {/* Interactive map */}
       {expanded && (
-        <div className="border-t border-zinc-800 px-5 py-5 space-y-6">
-          {/* Map radar + type list */}
-          <div className="flex flex-col sm:flex-row gap-5">
-            {mapData && (
-              <div className="shrink-0 sm:w-64">
-                <div
-                  className="relative aspect-square w-full rounded-xl overflow-hidden border border-zinc-800"
-                  style={{ background: '#09090f' }}
-                >
-                  <Image
-                    src={`/maps/radars/${mapData.file}`}
-                    alt={mapName ?? 'map'}
-                    fill
-                    className="object-cover opacity-55"
-                    unoptimized
-                  />
-                  <svg
-                    className="absolute inset-0 w-full h-full"
-                    viewBox="0 0 100 100"
-                    preserveAspectRatio="none"
-                  >
-                    {dots.map((d, i) => (
-                      <circle
-                        key={i}
-                        cx={d.xPct}
-                        cy={d.yPct}
-                        r={1.4}
-                        fill={d.color}
-                        stroke="rgba(0,0,0,0.5)"
-                        strokeWidth={0.3}
-                        opacity={0.92}
-                      />
-                    ))}
-                  </svg>
-                </div>
-              </div>
-            )}
-
-            <div className="flex-1 grid grid-cols-1 gap-2 content-start">
-              {activeTypes.map((gt) => (
-                <div
-                  key={gt}
-                  className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-zinc-800 bg-zinc-900/40"
-                >
-                  <Image
-                    src={GRENADE_ICON_FILES[gt]}
-                    alt={GRENADE_LABELS[gt]}
-                    width={18}
-                    height={18}
-                    className="opacity-85 shrink-0"
-                    unoptimized
-                  />
-                  <span className="text-sm text-zinc-300 font-display font-semibold flex-1">
-                    {GRENADE_LABELS[gt]}
-                  </span>
-                  <span className="text-sm font-data font-bold tabular-nums" style={{ color: GRENADE_COLORS[gt] }}>
-                    {byType[gt].length}
-                  </span>
-                </div>
-              ))}
-              {otherNodes.length > 0 && (
-                <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-zinc-800 bg-zinc-900/40">
-                  <div className="w-[18px] h-[18px] shrink-0 flex items-center justify-center text-zinc-500 text-xs">⬡</div>
-                  <span className="text-sm text-zinc-400 font-display flex-1">Other</span>
-                  <span className="text-sm font-data font-bold tabular-nums text-zinc-500">{otherNodes.length}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Annotation list */}
-          <div className="space-y-4">
-            {activeTypes.map((gt) => (
-              <div key={gt}>
-                <div className="flex items-center gap-2 mb-2">
-                  <Image
-                    src={GRENADE_ICON_FILES[gt]}
-                    alt={GRENADE_LABELS[gt]}
-                    width={13}
-                    height={13}
-                    className="opacity-70"
-                    unoptimized
-                  />
-                  <span
-                    className="text-xs font-data uppercase tracking-widest font-semibold"
-                    style={{ color: GRENADE_COLORS[gt] }}
-                  >
-                    {GRENADE_LABELS[gt]}
-                  </span>
-                  <div className="flex-1 h-px" style={{ backgroundColor: `${GRENADE_COLORS[gt]}22` }} />
-                  <span className="text-xs font-data text-zinc-600">{byType[gt].length}</span>
-                </div>
-
-                <div className="space-y-1 pl-1">
-                  {byType[gt].map((node, i) => {
-                    const title = node.Title?.Text?.trim()
-                    const desc = node.Desc?.Text?.trim()
-                    return (
-                      <div
-                        key={node.Id ?? i}
-                        className="flex items-start gap-3 px-3 py-2 rounded-lg bg-zinc-900/30 border border-zinc-800/50"
-                      >
-                        <span
-                          className="mt-[5px] shrink-0 w-1.5 h-1.5 rounded-full"
-                          style={{ backgroundColor: GRENADE_COLORS[gt] }}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm text-zinc-200 font-display font-medium leading-snug truncate">
-                            {title || `${GRENADE_LABELS[gt]} ${i + 1}`}
-                          </p>
-                          {desc && (
-                            <p className="text-xs text-zinc-500 mt-0.5 truncate">{desc}</p>
-                          )}
-                        </div>
-                        {node.JumpThrow && (
-                          <span className="ml-auto shrink-0 text-[0.6rem] font-data uppercase tracking-widest px-1.5 py-0.5 rounded bg-violet-900/40 text-violet-400 border border-violet-800/40">
-                            jump
-                          </span>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            ))}
-
-            {otherNodes.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-data uppercase tracking-widest text-zinc-600 font-semibold">Other</span>
-                  <div className="flex-1 h-px bg-zinc-800" />
-                  <span className="text-xs font-data text-zinc-600">{otherNodes.length}</span>
-                </div>
-                <div className="space-y-1 pl-1">
-                  {otherNodes.map((node, i) => (
-                    <div
-                      key={node.Id ?? i}
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg bg-zinc-900/30 border border-zinc-800/50"
-                    >
-                      <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-zinc-600" />
-                      <p className="text-sm text-zinc-400 font-display truncate">
-                        {node.Title?.Text?.trim() || node.Type}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+        <div className="border-t border-zinc-800">
+          <InteractiveMapView
+            nodes={nodes}
+            mapName={mapName}
+            className="h-[480px] sm:h-[560px] rounded-none border-0"
+          />
         </div>
       )}
     </div>
