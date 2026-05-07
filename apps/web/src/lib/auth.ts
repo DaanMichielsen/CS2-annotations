@@ -2,14 +2,20 @@ import NextAuth from 'next-auth'
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import { db } from './db'
 
-// NextAuth v5 beta.31 unconditionally checks for an OAuth `code` parameter in
-// the callback before it reaches any custom token.request(). Steam uses OpenID
-// 2.0 which has no code — next-auth-steam@0.4.0 therefore fails at that check.
+// NextAuth v5 beta.31 unconditionally calls openid-client's oauthCallback() for
+// OAuth providers, which makes a real HTTP request to token.url regardless of any
+// custom token.request() function we provide. Steam's endpoint isn't an OAuth
+// token server, so that call fails.
 //
-// Fix: /api/steam-auth/callback verifies the Steam OpenID assertion directly and
-// redirects to /api/auth/callback/steam?code=<steamId> so NextAuth sees a code.
-// token.request() then extracts the steamId from ctx.params.code and returns it
-// as the access_token, which userinfo.request() uses to fetch the Steam profile.
+// Architecture:
+//   1. /api/steam-auth/callback  — verifies Steam's OpenID 2.0 signature,
+//                                  signs the steamId with HMAC (NEXTAUTH_SECRET),
+//                                  redirects to /api/auth/callback/steam?code=<signed>
+//   2. /api/steam-token          — NextAuth POSTs here to exchange the code;
+//                                  verifies HMAC, returns access_token = steamId
+//   3. /api/steam-userinfo       — NextAuth GETs here with Bearer <steamId>;
+//                                  fetches Steam profile and returns it
+//   4. profile()                 — maps the Steam player object to a NextAuth user
 
 function getBaseUrl(request?: Request): string {
   if (request?.url) {
@@ -42,28 +48,9 @@ function makeSteamProvider(request?: Request): any {
         'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select',
       },
     },
-    token: {
-      url: 'https://steamcommunity.com/openid/login',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      async request(ctx: any) {
-        // ctx.params.code is the steamId set by /api/steam-auth/callback
-        const steamId: string = ctx?.params?.code ?? ''
-        return { tokens: { access_token: steamId, token_type: 'bearer' } }
-      },
-    },
-    userinfo: {
-      url: 'https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      async request(ctx: any) {
-        const steamId: string = ctx?.tokens?.access_token ?? ''
-        const url = new URL('https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002')
-        url.searchParams.set('key', process.env.STEAM_API_KEY!)
-        url.searchParams.set('steamids', steamId)
-        const res = await fetch(url.toString())
-        const data = await res.json()
-        return data.response.players[0]
-      },
-    },
+    // Real HTTP endpoints within this app — openid-client calls these successfully
+    token:    { url: `${baseUrl}/api/steam-token` },
+    userinfo: { url: `${baseUrl}/api/steam-userinfo` },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     profile(profile: any) {
       return {
@@ -82,7 +69,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth((request) => ({
   callbacks: {
     async signIn({ user, account }) {
       // PrismaAdapter creates User without steamId (non-standard field).
-      // Backfill it here using account.providerAccountId = profile.id = steamId.
+      // Backfill it here — account.providerAccountId = profile.id = steamId.
       if (account?.provider === 'steam' && account.providerAccountId && user.id) {
         await db.user.update({
           where: { id: user.id },
