@@ -64,13 +64,16 @@ export default function CommentThread({ guideId, initialComments, isAuthenticate
           return (
             <div key={c.id} className="flex gap-3">
               {c.user.avatar ? (
-                <Image
-                  src={c.user.avatar}
-                  alt={displayName}
-                  width={32}
-                  height={32}
-                  className="rounded-full ring-1 ring-zinc-700 shrink-0 mt-0.5"
-                />
+                <div className="w-8 h-8 shrink-0 mt-0.5 rounded-full overflow-hidden ring-1 ring-zinc-700">
+                  <Image
+                    src={c.user.avatar}
+                    alt={displayName}
+                    width={32}
+                    height={32}
+                    className="w-full h-full object-cover"
+                    unoptimized
+                  />
+                </div>
               ) : (
                 <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 shrink-0 mt-0.5" />
               )}

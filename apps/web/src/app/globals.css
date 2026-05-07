@@ -27,3 +27,11 @@
 @utility font-data {
   font-family: var(--font-mono, ui-monospace, monospace);
 }
+
+@keyframes mapfade {
+  0% { opacity: 0; }
+  5% { opacity: 1; }
+  20% { opacity: 1; }
+  25% { opacity: 0; }
+  100% { opacity: 0; }
+}

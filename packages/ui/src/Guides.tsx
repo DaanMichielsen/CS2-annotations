@@ -33,6 +33,7 @@ export interface OpenGuideInfo {
   filePath: string
   name: string
   mapName?: string
+  nodeCount?: number
 }
 
 interface GuidesProps {
@@ -60,7 +61,7 @@ export default function Guides({ onGuideChange }: GuidesProps = {}) {
     if (!onGuideChange) return
     if (!openGuide) { onGuideChange(null); return }
     const mapName = (openGuide.root['MapName'] as string | undefined) ?? openGuide.mapName
-    onGuideChange({ filePath: openGuide.filePath, name: openGuide.name, mapName })
+    onGuideChange({ filePath: openGuide.filePath, name: openGuide.name, mapName, nodeCount: openGuide.nodes.length })
   }, [openGuide])
 
   async function loadGuides() {

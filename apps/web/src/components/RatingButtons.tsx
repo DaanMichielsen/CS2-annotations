@@ -15,17 +15,19 @@ export default function RatingButtons({ guideId, initialScore, userVote }: Props
 
   async function vote(value: 1 | -1) {
     if (loading) return
+    // Clicking the same button again removes the vote
+    const next = voted === value ? 0 : value
     setLoading(true)
     try {
       const res = await fetch(`/api/guides/${guideId}/rate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ value }),
+        body: JSON.stringify({ value: next }),
       })
       if (res.ok) {
         const data = await res.json()
         setScore(data.score)
-        setVoted(value)
+        setVoted(next === 0 ? null : next)
       } else if (res.status === 401) {
         window.location.href = '/auth/signin'
       }
@@ -44,8 +46,8 @@ export default function RatingButtons({ guideId, initialScore, userVote }: Props
             ? 'bg-violet-600 text-white'
             : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-violet-400'
         }`}
-        title="Upvote"
-        aria-label="Upvote"
+        title={voted === 1 ? 'Remove upvote' : 'Upvote'}
+        aria-label={voted === 1 ? 'Remove upvote' : 'Upvote'}
       >
         ▲
       </button>
@@ -60,8 +62,8 @@ export default function RatingButtons({ guideId, initialScore, userVote }: Props
             ? 'bg-red-800 text-white'
             : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-red-400'
         }`}
-        title="Downvote"
-        aria-label="Downvote"
+        title={voted === -1 ? 'Remove downvote' : 'Downvote'}
+        aria-label={voted === -1 ? 'Remove downvote' : 'Downvote'}
       >
         ▼
       </button>

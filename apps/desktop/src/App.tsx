@@ -19,11 +19,26 @@ export default function App() {
           <div className="flex-1 min-h-0 flex flex-col overflow-hidden p-4">
             <Guides onGuideChange={setOpenGuide} />
           </div>
-          {openGuide && (
-            <div className="w-60 shrink-0 border-l border-zinc-800 overflow-y-auto">
+
+          {/* Right sidebar — always visible */}
+          <div className="w-56 shrink-0 border-l border-zinc-800 flex flex-col overflow-y-auto">
+            {openGuide ? (
               <CloudPanel guide={openGuide} />
+            ) : (
+              <div className="p-4 text-xs text-zinc-600">
+                Open a guide to manage cloud sync.
+              </div>
+            )}
+            <div className="mt-auto p-3 border-t border-zinc-800">
+              <button
+                type="button"
+                onClick={() => void window.electronAPI.openCommunity()}
+                className="w-full text-xs px-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-400 hover:text-zinc-200 rounded transition-colors text-left"
+              >
+                Browse community →
+              </button>
             </div>
-          )}
+          </div>
         </main>
 
         {showSettings && (

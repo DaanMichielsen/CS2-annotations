@@ -72,6 +72,7 @@ export default function CloudPanel({ guide }: Props) {
         filePath: guide.filePath,
         title: guide.name,
         map: guide.mapName ?? '',
+        nodeCount: guide.nodeCount,
         cloudId: syncState?.cloudId,
         cloudVersion: syncState?.cloudVersion,
       })
@@ -205,15 +206,6 @@ export default function CloudPanel({ guide }: Props) {
         </div>
       )}
 
-      <div className="mt-4 pt-4 border-t border-zinc-800">
-        <button
-          type="button"
-          onClick={() => void window.electronAPI.openCommunity()}
-          className="w-full text-xs px-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-400 hover:text-zinc-200 rounded transition-colors text-left"
-        >
-          Browse community guides →
-        </button>
-      </div>
     </div>
   )
 }

@@ -678,14 +678,14 @@ ipcMain.handle('cloudListGuides', async () => {
 })
 
 ipcMain.handle('cloudPushGuide', async (_event, payload: {
-  filePath: string; title: string; map: string; cloudId?: string; cloudVersion?: number
+  filePath: string; title: string; map: string; nodeCount?: number; cloudId?: string; cloudVersion?: number
 }) => {
   try {
     const content = fs.readFileSync(payload.filePath, 'utf-8')
     const form = new FormData()
     form.set('title', payload.title)
     form.set('map', payload.map)
-    form.set('nodeCount', '0')
+    form.set('nodeCount', String(payload.nodeCount ?? 0))
     form.set('file', new Blob([content], { type: 'text/plain' }), 'guide.kv3')
 
     if (payload.cloudId) {

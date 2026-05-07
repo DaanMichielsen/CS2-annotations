@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import Image from 'next/image'
 import Link from 'next/link'
 import GuideCard from '@/components/GuideCard'
+import MapCarousel from '@/components/MapCarousel'
 
 export const revalidate = 120
 
@@ -67,11 +68,9 @@ export default async function HomePage() {
                 </form>
               </>
             ) : (
-              <form action={handleSignIn}>
-                <button type="submit" className="text-xs px-4 py-1.5 bg-violet-600 hover:bg-violet-500 text-white rounded font-semibold transition-colors">
-                  Sign in with Steam
-                </button>
-              </form>
+              <Link href="/auth/signin" className="text-xs px-4 py-1.5 bg-violet-600 hover:bg-violet-500 text-white rounded font-semibold transition-colors">
+                Sign in
+              </Link>
             )}
           </div>
         </div>
@@ -79,16 +78,13 @@ export default async function HomePage() {
 
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-zinc-800/60">
+        {/* Map image carousel — crossfades between map screenshots */}
+        <MapCarousel />
+
+        {/* Violet glow on the left where text sits */}
         <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 39px, #71717a 39px, #71717a 40px),
-              repeating-linear-gradient(90deg, transparent, transparent 39px, #71717a 39px, #71717a 40px)`,
-          }}
-        />
-        <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px] rounded-full opacity-[0.07]"
-          style={{ background: 'radial-gradient(ellipse, #8b5cf6 0%, transparent 70%)' }}
+          className="absolute top-0 left-0 w-[500px] h-full opacity-[0.06] pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse at left center, #8b5cf6 0%, transparent 70%)' }}
         />
 
         <div className="relative max-w-7xl mx-auto px-6 py-24 sm:py-32">
@@ -112,14 +108,12 @@ export default async function HomePage() {
                 Browse Guides
               </Link>
               {!user && (
-                <form action={handleSignIn}>
-                  <button
-                    type="submit"
-                    className="px-6 py-3 border border-zinc-700 hover:border-zinc-500 text-zinc-300 hover:text-white font-semibold rounded-lg transition-colors text-sm"
-                  >
-                    Sign in with Steam
-                  </button>
-                </form>
+                <Link
+                  href="/auth/signin"
+                  className="px-6 py-3 border border-zinc-700 hover:border-zinc-500 text-zinc-300 hover:text-white font-semibold rounded-lg transition-colors text-sm"
+                >
+                  Sign in with Steam
+                </Link>
               )}
               {user && (
                 <Link
