@@ -20,7 +20,10 @@ export default async function SignInPage({ searchParams }: Props) {
     <main className="min-h-screen flex flex-col items-center justify-center bg-zinc-950">
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-10 flex flex-col items-center gap-6 w-full max-w-sm">
         <div className="text-center space-y-1">
-          <h1 className="text-xl font-bold text-zinc-100">CS2 Annotations</h1>
+          <h1 className="text-xl font-display font-bold">
+            <span className="text-white">CS2</span>
+            <span className="text-violet-400"> Annotations</span>
+          </h1>
           <p className="text-sm text-zinc-400">
             Sign in to sync and share your nade guides
           </p>
@@ -35,7 +38,7 @@ export default async function SignInPage({ searchParams }: Props) {
         <form action={steamSignIn}>
           <button
             type="submit"
-            className="hover:opacity-90 active:scale-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+            className="hover:opacity-90 active:scale-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 rounded"
           >
             <Image
               src="https://community.fastly.steamstatic.com/public/images/signinthroughsteam/sits_01.png"

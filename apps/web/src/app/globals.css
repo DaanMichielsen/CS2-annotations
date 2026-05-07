@@ -1,1 +1,29 @@
 @import 'tailwindcss';
+
+@layer base {
+  :root {
+    --brand: #8b5cf6;
+    --brand-hover: #7c3aed;
+    --brand-bright: #a78bfa;
+    --brand-dim: rgba(139, 92, 246, 0.12);
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: #09090f;
+    color: #f1f5f9;
+    font-family: var(--font-body, system-ui, -apple-system, sans-serif);
+  }
+
+  h1, h2, h3, h4, h5 {
+    font-family: var(--font-display, system-ui, sans-serif);
+  }
+}
+
+@utility font-display {
+  font-family: var(--font-display, system-ui, sans-serif);
+}
+
+@utility font-data {
+  font-family: var(--font-mono, ui-monospace, monospace);
+}

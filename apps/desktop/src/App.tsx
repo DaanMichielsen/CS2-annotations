@@ -1,19 +1,29 @@
 import { useState } from 'react'
 import { GuideAdapterProvider, Guides, Settings, TopNav } from '@cs2ann/ui'
+import type { OpenGuideInfo } from '@cs2ann/ui'
 import { createLocalAdapter } from './adapters/LocalAdapter'
 import AuthButton from './components/AuthButton'
+import CloudPanel from './components/CloudPanel'
 
 const adapter = createLocalAdapter()
 
 export default function App() {
   const [showSettings, setShowSettings] = useState(false)
+  const [openGuide, setOpenGuide] = useState<OpenGuideInfo | null>(null)
 
   return (
     <GuideAdapterProvider adapter={adapter}>
       <div className="h-full flex flex-col overflow-hidden">
         <TopNav onOpenSettings={() => setShowSettings(true)} authSlot={<AuthButton />} />
-        <main className="flex-1 min-h-0 flex flex-col overflow-hidden p-4">
-          <Guides />
+        <main className="flex-1 min-h-0 flex overflow-hidden">
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden p-4">
+            <Guides onGuideChange={setOpenGuide} />
+          </div>
+          {openGuide && (
+            <div className="w-60 shrink-0 border-l border-zinc-800 overflow-y-auto">
+              <CloudPanel guide={openGuide} />
+            </div>
+          )}
         </main>
 
         {showSettings && (

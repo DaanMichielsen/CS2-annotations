@@ -22,16 +22,27 @@ const FEATURED_IDS = new Set([
 interface OpenGuide {
   name: string
   filePath: string
+  mapName?: string
   source: GuideSource
   root: Record<string, unknown>
   nodes: AnnotationNode[]
   nodesKey: string
 }
 
+export interface OpenGuideInfo {
+  filePath: string
+  name: string
+  mapName?: string
+}
+
+interface GuidesProps {
+  onGuideChange?: (guide: OpenGuideInfo | null) => void
+}
+
 const btn =
   'px-4 py-2 bg-zinc-700 hover:bg-zinc-600 border-none rounded text-zinc-200 cursor-pointer text-sm disabled:opacity-60 disabled:cursor-not-allowed transition-colors'
 
-export default function Guides() {
+export default function Guides({ onGuideChange }: GuidesProps = {}) {
   const adapter = useGuideAdapter()
   const [guides, setGuides] = useState<GuideItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -44,6 +55,13 @@ export default function Guides() {
   const [createError, setCreateError] = useState('')
 
   useEffect(() => { loadGuides() }, [])
+
+  useEffect(() => {
+    if (!onGuideChange) return
+    if (!openGuide) { onGuideChange(null); return }
+    const mapName = (openGuide.root['MapName'] as string | undefined) ?? openGuide.mapName
+    onGuideChange({ filePath: openGuide.filePath, name: openGuide.name, mapName })
+  }, [openGuide])
 
   async function loadGuides() {
     setLoading(true)

@@ -1,0 +1,64 @@
+import Link from 'next/link'
+import Image from 'next/image'
+import { getMapColor, getMapLabel } from '@/lib/mapColors'
+
+interface GuideCardProps {
+  id: string
+  title: string
+  map?: string | null
+  nodeCount: number
+  score: number
+  authorName?: string | null
+  authorAvatar?: string | null
+}
+
+export default function GuideCard({ id, title, map, nodeCount, score, authorName, authorAvatar }: GuideCardProps) {
+  const { accent, dim } = getMapColor(map)
+  const mapLabel = getMapLabel(map)
+
+  return (
+    <Link
+      href={`/guides/${id}`}
+      className="group block rounded-lg border border-zinc-800 bg-zinc-900/40 hover:bg-zinc-900/80 hover:border-zinc-700 transition-all duration-200 overflow-hidden"
+      style={{ borderLeftColor: accent, borderLeftWidth: '3px' }}
+    >
+      <div className="px-5 pt-5 pb-4">
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <h3
+            className="font-display font-semibold text-[1.05rem] leading-snug text-zinc-100 group-hover:text-white transition-colors line-clamp-2"
+          >
+            {title}
+          </h3>
+          <span
+            className="shrink-0 text-[0.65rem] font-data uppercase tracking-widest px-2 py-0.5 rounded mt-0.5"
+            style={{ backgroundColor: dim, color: accent }}
+          >
+            {mapLabel}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 mt-4">
+          {authorAvatar ? (
+            <Image
+              src={authorAvatar}
+              alt={authorName ?? 'author'}
+              width={20}
+              height={20}
+              className="rounded-full ring-1 ring-zinc-700"
+            />
+          ) : (
+            <div className="w-5 h-5 rounded-full bg-zinc-700 shrink-0" />
+          )}
+          <span className="text-xs text-zinc-500 truncate flex-1">{authorName ?? 'Anonymous'}</span>
+          <span className="text-xs font-data text-zinc-600">{nodeCount} nodes</span>
+          <span
+            className="text-xs font-data font-medium ml-1"
+            style={{ color: score > 0 ? '#a78bfa' : score < 0 ? '#ef4444' : '#52525b' }}
+          >
+            {score > 0 ? '+' : ''}{score}
+          </span>
+        </div>
+      </div>
+    </Link>
+  )
+}

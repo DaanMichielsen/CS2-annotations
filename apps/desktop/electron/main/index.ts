@@ -751,6 +751,10 @@ ipcMain.handle('cloudGetSyncState', async (_event, filePath: string) => {
   }
 })
 
+ipcMain.handle('openCommunity', () => {
+  shell.openExternal('https://cs2annotations.com/guides')
+})
+
 // ── CS2 console ─────────────────────────────────────────────────────────────
 
 ipcMain.handle(

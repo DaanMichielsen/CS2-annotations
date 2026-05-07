@@ -62,6 +62,7 @@ interface ElectronAPI {
     Promise<{ guide?: { id: string; version: number }; conflict?: boolean; cloudVersion?: number; error?: string }>
   cloudPullGuide: (payload: { cloudId: string; filePath: string }) => Promise<{ ok?: boolean; error?: string }>
   cloudGetSyncState: (filePath: string) => Promise<{ synced: boolean; cloudId?: string; localVersion?: number; cloudVersion?: number; behind?: boolean }>
+  openCommunity: () => Promise<void>
 }
 
 declare global {

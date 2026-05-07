@@ -22,6 +22,8 @@ model User {
   accounts  Account[]
   sessions  Session[]
   guides    Guide[]
+  ratings   GuideRating[]
+  comments  GuideComment[]
 }
 
 model Guide {
@@ -39,7 +41,32 @@ model Guide {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ratings  GuideRating[]
+  comments GuideComment[]
+}
+
+model GuideRating {
+  id      String @id @default(cuid())
+  userId  String
+  guideId String
+  value   Int
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guide Guide @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, guideId])
+}
+
+model GuideComment {
+  id        String   @id @default(cuid())
+  userId    String
+  guideId   String
+  body      String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guide Guide @relation(fields: [guideId], references: [id], onDelete: Cascade)
 }
 
 model Account {
