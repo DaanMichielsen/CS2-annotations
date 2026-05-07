@@ -687,6 +687,23 @@ ipcMain.handle('cloudPushGuide', async (_event, payload: {
 
     const jsonHeaders = { ...cloudHeaders(), 'Content-Type': 'application/json' }
 
+    const createGuide = async () => {
+      const body = JSON.stringify({
+        title: payload.title,
+        map: payload.map,
+        nodeCount: payload.nodeCount ?? 0,
+        content,
+      })
+      const res = await fetch(`${WEB_API}/guides`, {
+        method: 'POST', headers: jsonHeaders, body,
+      })
+      if (!res.ok) return { error: 'Push failed' }
+      const { guide } = await res.json()
+      store.set(`cloudVersion:${payload.filePath}`, guide.version)
+      store.set(`cloudId:${payload.filePath}`, guide.id)
+      return { guide }
+    }
+
     if (payload.cloudId) {
       const body = JSON.stringify({
         title: payload.title,
@@ -702,26 +719,19 @@ ipcMain.handle('cloudPushGuide', async (_event, payload: {
         const data = await res.json()
         return { conflict: true, cloudVersion: data.cloudVersion }
       }
+      // Guide was deleted on the server — create a fresh one
+      if (res.status === 404) {
+        store.delete(`cloudId:${payload.filePath}` as never)
+        store.delete(`cloudVersion:${payload.filePath}` as never)
+        return createGuide()
+      }
       if (!res.ok) return { error: 'Push failed' }
       const { guide } = await res.json()
       store.set(`cloudVersion:${payload.filePath}`, guide.version)
       store.set(`cloudId:${payload.filePath}`, guide.id)
       return { guide }
     } else {
-      const body = JSON.stringify({
-        title: payload.title,
-        map: payload.map,
-        nodeCount: payload.nodeCount ?? 0,
-        content,
-      })
-      const res = await fetch(`${WEB_API}/guides`, {
-        method: 'POST', headers: jsonHeaders, body,
-      })
-      if (!res.ok) return { error: 'Push failed' }
-      const { guide } = await res.json()
-      store.set(`cloudVersion:${payload.filePath}`, guide.version)
-      store.set(`cloudId:${payload.filePath}`, guide.id)
-      return { guide }
+      return createGuide()
     }
   } catch (err) {
     return { error: err instanceof Error ? err.message : String(err) }

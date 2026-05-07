@@ -9,7 +9,23 @@ import GuideAnnotationPreview from '@/components/GuideAnnotationPreview'
 import { getMapColor, getMapLabel } from '@/lib/mapColors'
 import { getGuideBlobUrl } from '@/lib/blob'
 import { parseKv3Text, kv3ToNodes, extractNodesKey } from '@cs2ann/shared/web'
-import type { Kv3Object, AnnotationNode } from '@cs2ann/shared/web'
+import type { Kv3Object, AnnotationNode, GrenadeType } from '@cs2ann/shared/web'
+
+const GRENADE_ORDER: GrenadeType[] = ['smoke', 'flash', 'he', 'molotov', 'decoy']
+const GRENADE_ICON_FILES: Record<GrenadeType, string> = {
+  smoke:   '/nades/smoke.png',
+  flash:   '/nades/flash.png',
+  he:      '/nades/hegrenade.png',
+  molotov: '/nades/molotov.png',
+  decoy:   '/nades/decoy.png',
+}
+const GRENADE_COLORS: Record<GrenadeType, string> = {
+  smoke:   '#94a3b8',
+  flash:   '#fde68a',
+  he:      '#f87171',
+  molotov: '#fb923c',
+  decoy:   '#a3e635',
+}
 
 export default async function GuideDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -49,6 +65,19 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
       // blob unavailable — render preview with empty nodes
     }
   }
+
+  // Grenade type summary from parsed nodes
+  const mainGrenadeNodes = nodes.filter(
+    (n) => n.Type === 'grenade' && n.SubType !== 'aim_target' && n.SubType !== 'destination'
+  )
+  const grenadeCounts = GRENADE_ORDER.reduce<Partial<Record<GrenadeType, number>>>(
+    (acc, gt) => {
+      const count = mainGrenadeNodes.filter((n) => n.GrenadeType === gt).length
+      if (count > 0) acc[gt] = count
+      return acc
+    },
+    {}
+  )
 
   const score = guide.ratings.reduce((acc, r) => acc + r.value, 0)
   const userVote = session?.user?.id
@@ -123,10 +152,26 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
               )}
               <span className="text-sm text-zinc-400">{authorName}</span>
               <span className="text-zinc-700 text-xs font-data mx-1">·</span>
-              <span className="text-xs font-data text-zinc-600">{guide.nodeCount} annotations</span>
-              <span className="text-zinc-700 text-xs font-data mx-1">·</span>
               <span className="text-xs font-data text-zinc-600">v{guide.version}</span>
             </div>
+
+            {/* Grenade type summary */}
+            {Object.keys(grenadeCounts).length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 mt-3">
+                {GRENADE_ORDER.filter((gt) => grenadeCounts[gt]).map((gt) => (
+                  <div
+                    key={gt}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded border border-zinc-800 bg-zinc-900/60"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={GRENADE_ICON_FILES[gt]} alt={gt} width={14} height={14} className="opacity-80" />
+                    <span className="text-xs font-data font-bold tabular-nums" style={{ color: GRENADE_COLORS[gt] }}>
+                      {grenadeCounts[gt]}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Actions */}
