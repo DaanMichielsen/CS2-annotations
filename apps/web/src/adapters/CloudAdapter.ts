@@ -6,7 +6,7 @@ import type {
   AppendNodesPayload,
   CreateGuidePayload,
 } from '@cs2ann/shared'
-import { serializeKv3Text, parseKv3Text, kv3ToNodes, extractNodesKey, setNodesInRoot } from '@cs2ann/shared'
+import { serializeKv3Text, parseKv3Text, kv3ToNodes, extractNodesKey, setNodesInRoot, isKv3Object } from '@cs2ann/shared'
 import type { Kv3Object } from '@cs2ann/shared'
 
 // In-memory version cache so saveGuide can send the correct version for optimistic locking
@@ -53,6 +53,7 @@ export function createCloudAdapter(): GuideAdapter {
       const kv3Res = await fetch(downloadUrl)
       const kv3Text = await kv3Res.text()
       const root = parseKv3Text(kv3Text)
+      if (!isKv3Object(root)) return { error: 'Failed to parse guide file' }
       const nodesKey = extractNodesKey(root)
       const nodes = kv3ToNodes(root, nodesKey)
       return { nodes, nodesKey, root }
