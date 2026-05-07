@@ -3,15 +3,18 @@ import { PrismaAdapter } from '@auth/prisma-adapter'
 import Steam from 'next-auth-steam'
 import { db } from './db'
 
-// next-auth-steam@0.4.0 targets NextAuth v4. NextAuth v5 beta.31 requires
-// both token.url and userinfo.url to be present (assertConfig line 81/83).
-// The package already provides custom request() functions that handle the
-// actual Steam OpenID flow — we just add the url fields to pass validation.
+// next-auth-steam@0.4.0 appends `/${providerId}` to the callbackUrl internally
+// (steam.js line 15: returnTo = `${callbackUrl.href}/${STEAM_PROVIDER_ID}`).
+// So we must pass the base path WITHOUT the provider segment.
 function makeSteamProvider(request: Parameters<typeof Steam>[0]) {
+  const baseUrl = (process.env.NEXTAUTH_URL ?? 'http://localhost:3000').replace(/\/$/, '')
   const provider = Steam(request, {
     clientSecret: process.env.STEAM_API_KEY!,
-    callbackUrl: `${process.env.NEXTAUTH_URL}/api/auth/callback/steam`
+    callbackUrl: `${baseUrl}/api/auth/callback`
   })
+  // next-auth-steam targets NextAuth v4. v5 assertConfig requires token.url and
+  // userinfo.url to be present. The package's custom request() functions do the
+  // real work — we add url fields only to satisfy the validator.
   return {
     ...provider,
     token: {
@@ -29,6 +32,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth((request) => ({
   adapter: PrismaAdapter(db),
   providers: [makeSteamProvider(request!)],
   callbacks: {
+    async signIn({ user, account }) {
+      // PrismaAdapter creates the User row first (without steamId since it's not
+      // a standard NextAuth field), then this callback runs. We backfill it here.
+      if (account?.provider === 'steam' && account.providerAccountId && user.id) {
+        await db.user.update({
+          where: { id: user.id },
+          data: {
+            steamId: account.providerAccountId,
+            username: user.name ?? undefined,
+            avatar: user.image ?? undefined
+          }
+        })
+      }
+      return true
+    },
     async session({ session, user }) {
       if (session.user) {
         session.user.id = user.id
