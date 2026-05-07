@@ -41,7 +41,7 @@ export default function RatingButtons({ guideId, initialScore, userVote }: Props
       <button
         onClick={() => vote(1)}
         disabled={loading}
-        className={`w-8 h-8 flex items-center justify-center rounded text-sm transition-colors ${
+        className={`w-8 h-8 flex cursor-pointer items-center justify-center rounded text-sm transition-colors ${
           voted === 1
             ? 'bg-violet-600 text-white'
             : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-violet-400'
@@ -57,7 +57,7 @@ export default function RatingButtons({ guideId, initialScore, userVote }: Props
       <button
         onClick={() => vote(-1)}
         disabled={loading}
-        className={`w-8 h-8 flex items-center justify-center rounded text-sm transition-colors ${
+        className={`w-8 h-8 flex cursor-pointer items-center justify-center rounded text-sm transition-colors ${
           voted === -1
             ? 'bg-red-800 text-white'
             : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-red-400'
