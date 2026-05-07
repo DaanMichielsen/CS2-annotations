@@ -1,13 +1,16 @@
 import NextAuth from 'next-auth'
 import { PrismaAdapter } from '@auth/prisma-adapter'
-import Steam from 'next-auth-steam'
 import { db } from './db'
 
-// Resolve the app's base URL in priority order:
-// 1. request.url origin  — accurate during actual auth API calls
-// 2. AUTH_URL / NEXTAUTH_URL — explicitly configured env var
-// 3. VERCEL_URL            — auto-injected by Vercel on every deployment
-// 4. localhost             — local dev fallback
+// NextAuth v5 beta.31 unconditionally checks for an OAuth `code` parameter in
+// the callback before it reaches any custom token.request(). Steam uses OpenID
+// 2.0 which has no code — next-auth-steam@0.4.0 therefore fails at that check.
+//
+// Fix: /api/steam-auth/callback verifies the Steam OpenID assertion directly and
+// redirects to /api/auth/callback/steam?code=<steamId> so NextAuth sees a code.
+// token.request() then extracts the steamId from ctx.params.code and returns it
+// as the access_token, which userinfo.request() uses to fetch the Steam profile.
+
 function getBaseUrl(request?: Request): string {
   if (request?.url) {
     try { return new URL(request.url).origin } catch { /* fall through */ }
@@ -18,24 +21,59 @@ function getBaseUrl(request?: Request): string {
   return 'http://localhost:3000'
 }
 
-// next-auth-steam@0.4.0 targets NextAuth v4. NextAuth v5 beta.31 requires
-// token.url and userinfo.url to be present (assertConfig line 81/83).
-// The package provides custom request() functions that do the real work —
-// we only add url fields to satisfy the validator.
-function makeSteamProvider(request?: Request) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function makeSteamProvider(request?: Request): any {
   const baseUrl = getBaseUrl(request)
-  const provider = Steam(request as Parameters<typeof Steam>[0], {
-    clientSecret: process.env.STEAM_API_KEY!,
-    callbackUrl: `${baseUrl}/api/auth/callback`
-  })
-  // next-auth-steam targets NextAuth v4. v5 assertConfig requires token.url and
-  // userinfo.url to be present. The package's custom request() functions do the
-  // real work — we add url fields only to satisfy the validator.
   return {
-    ...provider,
-    token: { ...(provider.token as object), url: 'https://steamcommunity.com/openid/login' },
-    userinfo: { ...(provider.userinfo as object), url: 'https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002' }
-  } as typeof provider
+    id: 'steam',
+    name: 'Steam',
+    type: 'oauth',
+    clientId: 'steam',
+    clientSecret: process.env.STEAM_API_KEY!,
+    checks: ['none'],
+    authorization: {
+      url: 'https://steamcommunity.com/openid/login',
+      params: {
+        'openid.ns':         'http://specs.openid.net/auth/2.0',
+        'openid.mode':       'checkid_setup',
+        'openid.return_to':  `${baseUrl}/api/steam-auth/callback`,
+        'openid.realm':      baseUrl,
+        'openid.identity':   'http://specs.openid.net/auth/2.0/identifier_select',
+        'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select',
+      },
+    },
+    token: {
+      url: 'https://steamcommunity.com/openid/login',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      async request(ctx: any) {
+        // ctx.params.code is the steamId set by /api/steam-auth/callback
+        const steamId: string = ctx?.params?.code ?? ''
+        return { tokens: { access_token: steamId, token_type: 'bearer' } }
+      },
+    },
+    userinfo: {
+      url: 'https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      async request(ctx: any) {
+        const steamId: string = ctx?.tokens?.access_token ?? ''
+        const url = new URL('https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002')
+        url.searchParams.set('key', process.env.STEAM_API_KEY!)
+        url.searchParams.set('steamids', steamId)
+        const res = await fetch(url.toString())
+        const data = await res.json()
+        return data.response.players[0]
+      },
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    profile(profile: any) {
+      return {
+        id:    profile.steamid,
+        name:  profile.personaname,
+        image: profile.avatarfull,
+        email: `${profile.steamid}@steamcommunity.com`,
+      }
+    },
+  }
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth((request) => ({
@@ -43,17 +81,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth((request) => ({
   providers: [makeSteamProvider(request)],
   callbacks: {
     async signIn({ user, account }) {
-      // PrismaAdapter creates the User row first (without steamId since it's not
-      // a standard NextAuth field), then this callback runs. We update the row
-      // to populate our Steam-specific fields.
+      // PrismaAdapter creates User without steamId (non-standard field).
+      // Backfill it here using account.providerAccountId = profile.id = steamId.
       if (account?.provider === 'steam' && account.providerAccountId && user.id) {
         await db.user.update({
           where: { id: user.id },
           data: {
-            steamId: account.providerAccountId,
-            username: user.name ?? undefined,
-            avatar: user.image ?? undefined
-          }
+            steamId:  account.providerAccountId,
+            username: user.name  ?? undefined,
+            avatar:   user.image ?? undefined,
+          },
         })
       }
       return true
@@ -63,18 +100,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth((request) => ({
         session.user.id = user.id
         const dbUser = await db.user.findUnique({ where: { id: user.id } })
         session.user.steamId = dbUser?.steamId ?? ''
-        session.user.image = dbUser?.avatar ?? session.user.image
-        session.user.name = dbUser?.username ?? session.user.name
+        session.user.image   = dbUser?.avatar   ?? session.user.image
+        session.user.name    = dbUser?.username  ?? session.user.name
       }
       return session
     },
     async redirect({ url, baseUrl }) {
       if (url.startsWith(baseUrl)) return url
-      if (url.startsWith('/')) return `${baseUrl}${url}`
+      if (url.startsWith('/'))     return `${baseUrl}${url}`
       return baseUrl
-    }
+    },
   },
-  pages: {
-    signIn: '/auth/signin'
-  }
+  pages: { signIn: '/auth/signin' },
 }))
