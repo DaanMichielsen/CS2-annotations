@@ -191,7 +191,7 @@ app.whenReady().then(() => {
   })
 
   ipcMain.handle('openSteamSignIn', () => {
-    const webAppUrl = 'https://cs2annotation.com'
+    const webAppUrl = 'https://cs2annotations.com'
     shell.openExternal(`${webAppUrl}/auth/signin?callbackUrl=/auth/desktop-callback`)
   })
 
