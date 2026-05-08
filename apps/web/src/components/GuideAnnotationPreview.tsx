@@ -43,6 +43,16 @@ function isMainNode(node: AnnotationNode): boolean {
 
 export default function GuideAnnotationPreview({ nodes, mapName }: Props) {
   const [expanded, setExpanded] = useState(false)
+  const [activeFilters, setActiveFilters] = useState<Set<GrenadeType>>(new Set())
+
+  const toggleFilter = (gt: GrenadeType) => {
+    setActiveFilters((prev) => {
+      const next = new Set(prev)
+      if (next.has(gt)) next.delete(gt)
+      else next.add(gt)
+      return next
+    })
+  }
 
   const mapData = mapName ? MAP_DATA[mapName.toLowerCase()] : null
 
@@ -108,25 +118,39 @@ export default function GuideAnnotationPreview({ nodes, mapName }: Props) {
 
         {/* Grenade type chips */}
         <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
-          {activeTypes.map((gt) => (
-            <div
-              key={gt}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-zinc-800 bg-zinc-900/60"
-            >
-              <Image
-                src={GRENADE_ICON_FILES[gt]}
-                alt={GRENADE_LABELS[gt]}
-                width={15}
-                height={15}
-                className="opacity-85"
-                unoptimized
-              />
-              <span className="text-xs font-data font-bold tabular-nums" style={{ color: GRENADE_COLORS[gt] }}>
-                {byType[gt].length}
-              </span>
-              <span className="text-xs text-zinc-500 font-display hidden sm:inline">{GRENADE_LABELS[gt]}</span>
-            </div>
-          ))}
+          {activeTypes.map((gt) => {
+            const isActive = activeFilters.has(gt)
+            return (
+              <button
+                key={gt}
+                onClick={() => toggleFilter(gt)}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-colors"
+                style={
+                  isActive
+                    ? { borderColor: GRENADE_COLORS[gt], backgroundColor: `${GRENADE_COLORS[gt]}18` }
+                    : { borderColor: 'rgb(39 39 42)', backgroundColor: 'rgb(24 24 27 / 0.6)' }
+                }
+              >
+                <Image
+                  src={GRENADE_ICON_FILES[gt]}
+                  alt={GRENADE_LABELS[gt]}
+                  width={15}
+                  height={15}
+                  className={isActive ? 'opacity-100' : 'opacity-60'}
+                  unoptimized
+                />
+                <span
+                  className="text-xs font-data font-bold tabular-nums"
+                  style={{ color: isActive ? GRENADE_COLORS[gt] : '#71717a' }}
+                >
+                  {byType[gt].length}
+                </span>
+                <span className={`text-xs font-display hidden sm:inline ${isActive ? 'text-zinc-300' : 'text-zinc-600'}`}>
+                  {GRENADE_LABELS[gt]}
+                </span>
+              </button>
+            )
+          })}
           {otherNodes.length > 0 && (
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-zinc-800 bg-zinc-900/60">
               <span className="text-xs font-data font-bold text-zinc-500 tabular-nums">{otherNodes.length}</span>
@@ -151,6 +175,7 @@ export default function GuideAnnotationPreview({ nodes, mapName }: Props) {
             nodes={nodes}
             mapName={mapName}
             className="h-[480px] sm:h-[560px] rounded-none border-0"
+            filterTypes={activeFilters.size > 0 ? [...activeFilters] : undefined}
           />
         </div>
       )}

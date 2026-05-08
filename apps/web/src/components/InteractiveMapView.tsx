@@ -79,10 +79,11 @@ function rgbToHex(c: [number, number, number]) {
 interface Props {
   nodes: AnnotationNode[]
   mapName: string | null | undefined
+  filterTypes?: GrenadeType[]
   className?: string
 }
 
-export default function InteractiveMapView({ nodes, mapName, className = '' }: Props) {
+export default function InteractiveMapView({ nodes, mapName, filterTypes, className = '' }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale,  setScale]  = useState(1)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
@@ -93,6 +94,9 @@ export default function InteractiveMapView({ nodes, mapName, className = '' }: P
 
   const [expandedCluster, setExpandedCluster] = useState<string | null>(null)
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
+
+  // Clear selection when filter changes so we don't hold a hidden node selected
+  useEffect(() => { setSelectedKey(null); setExpandedCluster(null) }, [filterTypes?.join(',')])
   const [hoveredItem, setHoveredItem] = useState<MapItem | null>(null)
   const [tooltipPos,  setTooltipPos]  = useState({ x: 0, y: 0 })
 
@@ -238,8 +242,12 @@ export default function InteractiveMapView({ nodes, mapName, className = '' }: P
       })
     }
 
-    return { items, nonGrenade }
-  }, [grenadeGroups, nodes, mapData, selectedKey])
+    const filteredItems = filterTypes && filterTypes.length > 0
+      ? items.filter((it) => it.grenadeType && filterTypes.includes(it.grenadeType))
+      : items
+
+    return { items: filteredItems, nonGrenade }
+  }, [grenadeGroups, nodes, mapData, selectedKey, filterTypes])
 
   // ── clustering ────────────────────────────────────────────────────────────
   const clusters: Cluster[] = useMemo(() => {

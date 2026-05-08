@@ -86,7 +86,7 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
 
   const isOwner = session?.user?.id === guide.userId
   const authorName = guide.user.username ?? guide.user.name ?? 'Anonymous'
-  const { accent, dim } = getMapColor(guide.map)
+  const { accent, dim, icon: mapIcon } = getMapColor(guide.map)
   const mapLabel = getMapLabel(guide.map)
 
   async function forkGuide() {
@@ -111,12 +111,15 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-3">
-              <span
-                className="text-[0.65rem] font-data uppercase tracking-widest px-2 py-0.5 rounded font-semibold"
+              <div
+                className="flex items-center gap-1.5 text-[0.65rem] font-data uppercase tracking-widest px-2 py-0.5 rounded font-semibold"
                 style={{ backgroundColor: dim, color: accent }}
               >
+                {mapIcon && (
+                  <Image src={mapIcon} alt={mapLabel} width={14} height={14} className="opacity-80" unoptimized />
+                )}
                 {mapLabel}
-              </span>
+              </div>
               {guide.forkOf && (
                 <span className="text-[0.65rem] text-zinc-600 font-data">forked</span>
               )}
