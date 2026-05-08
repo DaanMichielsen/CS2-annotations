@@ -52,9 +52,11 @@ export interface GuideAdapter {
   getAnnotationsRoot?(): Promise<string>
   getWorkshopContentPath?(): Promise<string>
   getAutoCopyLoadCommandsOnOpen?(): Promise<boolean>
+  getCfgKeybind?(): Promise<string>
   setAnnotationsRoot?(root: string): Promise<void>
   setWorkshopContentPath?(path: string): Promise<void>
   setAutoCopyLoadCommandsOnOpen?(value: boolean): Promise<void>
+  setCfgKeybind?(key: string): Promise<void>
   detectSteamPath?(): Promise<
     | { path: string; annotationsRoot: string; workshopContentPath: string }
     | { error: string }

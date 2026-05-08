@@ -10,35 +10,50 @@ const adapter = createLocalAdapter()
 export default function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [openGuide, setOpenGuide] = useState<OpenGuideInfo | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [syncDotColor, setSyncDotColor] = useState('')
+  const [syncStatusText, setSyncStatusText] = useState('')
 
   return (
     <GuideAdapterProvider adapter={adapter}>
       <div className="h-full flex flex-col overflow-hidden">
-        <TopNav onOpenSettings={() => setShowSettings(true)} authSlot={<AuthButton />} />
+        <TopNav
+          onOpenSettings={() => setShowSettings(true)}
+          authSlot={<AuthButton />}
+          onToggleSidebar={() => setSidebarOpen((v) => !v)}
+          sidebarOpen={sidebarOpen}
+          syncDotColor={openGuide ? syncDotColor : ''}
+          syncStatusText={openGuide ? syncStatusText : ''}
+        />
         <main className="flex-1 min-h-0 flex overflow-hidden">
           <div className="flex-1 min-h-0 flex flex-col overflow-hidden p-4">
             <Guides onGuideChange={setOpenGuide} />
           </div>
 
-          {/* Right sidebar — always visible */}
-          <div className="w-56 shrink-0 border-l border-zinc-800 flex flex-col overflow-y-auto">
-            {openGuide ? (
-              <CloudPanel guide={openGuide} />
-            ) : (
-              <div className="p-4 text-xs text-zinc-600">
-                Open a guide to manage cloud sync.
+          {/* Right sidebar — collapsible */}
+          {sidebarOpen && (
+            <div className="w-56 shrink-0 border-l border-zinc-800 flex flex-col overflow-y-auto">
+              {openGuide ? (
+                <CloudPanel
+                  guide={openGuide}
+                  onStatusChange={(color, text) => { setSyncDotColor(color); setSyncStatusText(text) }}
+                />
+              ) : (
+                <div className="p-4 text-xs text-zinc-600">
+                  Open a guide to manage cloud sync.
+                </div>
+              )}
+              <div className="mt-auto p-3 border-t border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => void window.electronAPI.openCommunity()}
+                  className="w-full text-xs px-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-400 hover:text-zinc-200 rounded transition-colors text-left"
+                >
+                  Browse community →
+                </button>
               </div>
-            )}
-            <div className="mt-auto p-3 border-t border-zinc-800">
-              <button
-                type="button"
-                onClick={() => void window.electronAPI.openCommunity()}
-                className="w-full text-xs px-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-400 hover:text-zinc-200 rounded transition-colors text-left"
-              >
-                Browse community →
-              </button>
             </div>
-          </div>
+          )}
         </main>
 
         {showSettings && (

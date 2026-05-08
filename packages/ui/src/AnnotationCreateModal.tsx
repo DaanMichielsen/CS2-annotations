@@ -56,9 +56,11 @@ interface Props {
   onSaveCreate: (meta: CreateMeta) => Promise<void>
   /** Step 2 — send annotation_reload to discard in-memory node + clear pending meta. */
   onAbortCreate: () => Promise<void>
+  /** Key the user has bound to exec annotation_manager in CS2. Shown in button labels. */
+  cfgKey?: string
 }
 
-export default function AnnotationCreateModal({ onClose, onSendCreate, onSaveCreate, onAbortCreate }: Props) {
+export default function AnnotationCreateModal({ onClose, onSendCreate, onSaveCreate, onAbortCreate, cfgKey = 'F8' }: Props) {
   // ── form state ────────────────────────────────────────────────────────────
   const [kind, setKind] = useState<NodeKind>('grenade')
   const [step, setStep] = useState<'form' | 'created'>('form')
@@ -253,8 +255,8 @@ export default function AnnotationCreateModal({ onClose, onSendCreate, onSaveCre
             {/* Instructions */}
             <div className="text-xs text-zinc-500 flex flex-col gap-1">
               <p className="m-0">① In CS2, verify your standing position and aim are correct.</p>
-              <p className="m-0">② Click <strong className="text-zinc-300">Save (F8)</strong> — press F8 in CS2 to write the file.</p>
-              <p className="m-0 text-red-400/80">Or click <strong className="text-red-400">Abort (F8)</strong> to discard this annotation entirely.</p>
+              <p className="m-0">② Click <strong className="text-zinc-300">Save ({cfgKey})</strong> — press {cfgKey} in CS2 to write the file.</p>
+              <p className="m-0 text-red-400/80">Or click <strong className="text-red-400">Abort ({cfgKey})</strong> to discard this annotation entirely.</p>
             </div>
 
             <div className="flex items-start gap-2 px-3 py-2.5 bg-red-950/40 border border-red-700/40 rounded-lg">
@@ -272,10 +274,10 @@ export default function AnnotationCreateModal({ onClose, onSendCreate, onSaveCre
             <button type="button" className={btnSecondary} onClick={() => setStep('form')}>← Edit</button>
             <div className="flex-1" />
             <button type="button" className={btnDanger} disabled={busy} onClick={handleAbort}>
-              {busy ? '…' : '✕ Abort (F8)'}
+              {busy ? '…' : `✕ Abort (${cfgKey})`}
             </button>
             <button type="button" className={`${btnPrimary} font-semibold`} disabled={busy} onClick={handleSave}>
-              {busy ? 'Sending…' : '✓ Save annotation (F8)'}
+              {busy ? 'Sending…' : `✓ Save annotation (${cfgKey})`}
             </button>
           </div>
         </div>
@@ -417,7 +419,7 @@ export default function AnnotationCreateModal({ onClose, onSendCreate, onSaveCre
                         setBusy(false)
                       }}
                     >
-                      {lineStarted ? '✓ Started' : '▶ Start new line (F8)'}
+                      {lineStarted ? '✓ Started' : `▶ Start new line (${cfgKey})`}
                     </button>
                   </div>
                 </div>
@@ -443,7 +445,7 @@ export default function AnnotationCreateModal({ onClose, onSendCreate, onSaveCre
                           setBusy(false)
                         }}
                       >
-                        + Add point (F8)
+                        + Add point ({cfgKey})
                       </button>
                       {pointsPlaced >= 2 && (
                         <span className="text-[0.65rem] text-zinc-500">{pointsPlaced} points</span>
@@ -494,7 +496,7 @@ export default function AnnotationCreateModal({ onClose, onSendCreate, onSaveCre
                   disabled={busy || pointsPlaced < 2}
                   onClick={async () => { setBusy(true); await onSaveCreate(buildMeta()); setBusy(false); onClose() }}
                 >
-                  {busy ? 'Sending…' : '✓ Save annotation (F8)'}
+                  {busy ? 'Sending…' : `✓ Save annotation (${cfgKey})`}
                 </button>
                 {pointsPlaced < 2 && (
                   <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-zinc-700 text-zinc-200 text-[0.65rem] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
@@ -503,7 +505,7 @@ export default function AnnotationCreateModal({ onClose, onSendCreate, onSaveCre
                 )}
               </div>
               <button type="button" className={`${btnDanger} w-full`} disabled={busy} onClick={handleAbort}>
-                {busy ? '…' : '✕ Abort & discard (F8)'}
+                {busy ? '…' : `✕ Abort & discard (${cfgKey})`}
               </button>
             </div>
           )}
@@ -536,7 +538,7 @@ export default function AnnotationCreateModal({ onClose, onSendCreate, onSaveCre
             <div className="flex-1" />
             <button type="button" className={btnPrimary} disabled={busy}
               onClick={() => handleSendCreate(buildCmd())}>
-              {busy ? 'Sending…' : '▶ Send to CS2 (F8)'}
+              {busy ? 'Sending…' : `▶ Send to CS2 (${cfgKey})`}
             </button>
           </div>
         )}

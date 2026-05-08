@@ -48,6 +48,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('authStateChanged', handler)
     return () => ipcRenderer.removeAllListeners('authStateChanged')
   },
+  getCfgKeybind: () => ipcRenderer.invoke('getCfgKeybind'),
+  setCfgKeybind: (key: string) => ipcRenderer.invoke('setCfgKeybind', key),
   cloudListGuides: () => ipcRenderer.invoke('cloudListGuides'),
   cloudPushGuide: (payload: { filePath: string; title: string; map: string; nodeCount?: number; cloudId?: string; cloudVersion?: number }) =>
     ipcRenderer.invoke('cloudPushGuide', payload),

@@ -82,6 +82,12 @@ export function createLocalAdapter(): GuideAdapter {
     async setAutoCopyLoadCommandsOnOpen(value: boolean) {
       await window.electronAPI.setAutoCopyLoadCommandsOnOpen(value)
     },
+    async getCfgKeybind() {
+      return window.electronAPI.getCfgKeybind()
+    },
+    async setCfgKeybind(key: string) {
+      await window.electronAPI.setCfgKeybind(key)
+    },
     async detectSteamPath() {
       return window.electronAPI.detectSteamPath()
     },

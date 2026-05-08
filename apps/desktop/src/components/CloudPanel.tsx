@@ -1,6 +1,22 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { OpenGuideInfo } from '@cs2ann/ui'
 
+function syncDotColor(state: SyncState | null): string {
+  if (!state) return 'bg-zinc-600'
+  if (state.synced) return 'bg-emerald-500'
+  if (state.behind) return 'bg-yellow-500'
+  if (state.cloudId) return 'bg-orange-500'
+  return 'bg-zinc-600'
+}
+
+function syncStatusText(state: SyncState | null): string {
+  if (!state) return 'Checking…'
+  if (state.synced) return 'Up to date'
+  if (state.behind) return 'Cloud has newer version'
+  if (state.cloudId) return 'Local changes not pushed'
+  return 'Not backed up yet'
+}
+
 interface SyncState {
   synced: boolean
   cloudId?: string
@@ -18,13 +34,14 @@ interface CloudGuide {
 
 interface Props {
   guide: OpenGuideInfo
+  onStatusChange?: (dotColor: string, statusText: string) => void
 }
 
 const btn = 'px-3 py-1.5 rounded text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
 const btnPrimary = `${btn} bg-indigo-700 hover:bg-indigo-600 text-white`
 const btnSecondary = `${btn} bg-zinc-700 hover:bg-zinc-600 text-zinc-200`
 
-export default function CloudPanel({ guide }: Props) {
+export default function CloudPanel({ guide, onStatusChange }: Props) {
   const [authState, setAuthState] = useState<{ token: string | null; name: string; avatar: string } | null>(null)
   const [syncState, setSyncState] = useState<SyncState | null>(null)
   const [cloudGuides, setCloudGuides] = useState<CloudGuide[]>([])
@@ -62,6 +79,10 @@ export default function CloudPanel({ guide }: Props) {
       })
     }
   }, [guide.filePath, authState?.token, loadSyncState])
+
+  useEffect(() => {
+    onStatusChange?.(syncDotColor(syncState), syncStatusText(syncState))
+  }, [syncState, onStatusChange])
 
   async function handlePush() {
     setPushing(true)

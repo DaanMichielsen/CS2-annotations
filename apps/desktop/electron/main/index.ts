@@ -33,6 +33,7 @@ const store = new Store<{
   annotationsRoot: string
   workshopContentPath: string
   autoCopyLoadCommandsOnOpen: boolean
+  cfgKeybind: string
   authToken: string | null
   authName: string
   authAvatar: string
@@ -251,6 +252,11 @@ ipcMain.handle('getAutoCopyLoadCommandsOnOpen', (): boolean => {
 
 ipcMain.handle('setAutoCopyLoadCommandsOnOpen', (_event, value: boolean): void => {
   store.set('autoCopyLoadCommandsOnOpen', value)
+})
+
+ipcMain.handle('getCfgKeybind', (): string => store.get('cfgKeybind', 'f8'))
+ipcMain.handle('setCfgKeybind', (_event, key: string): void => {
+  store.set('cfgKeybind', key)
 })
 
 ipcMain.handle(

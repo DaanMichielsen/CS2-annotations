@@ -96,6 +96,7 @@ export default function GuideEditor({
   onDeleted,
 }: GuideEditorProps) {
   const adapter = useGuideAdapter()
+  const [cfgKey, setCfgKey] = useState('F8')
   const [nodes, setNodes] = useState<AnnotationNode[]>(initialNodes)
   const [root, setRoot] = useState<Record<string, unknown>>(initialRoot)
   const [nodesKey, setNodesKey] = useState(initialNodesKey)
@@ -279,6 +280,11 @@ export default function GuideEditor({
     return []
   }, [selectedIndex, nodes, groups])
 
+  // ── load configured keybind label ────────────────────────────────────────
+  useEffect(() => {
+    adapter.getCfgKeybind?.().then((k) => { if (k) setCfgKey(k.toUpperCase()) })
+  }, [])
+
   // ── file watcher (auto-reload on external change) ─────────────────────────
   useEffect(() => {
     if (!filePath) return
@@ -397,7 +403,7 @@ export default function GuideEditor({
         if (!cfgResult?.error) {
           setRunCommandStatus('idle')
           if (cfgResult?.cfgPath) setLastCfgPath(cfgResult.cfgPath)
-          setMsg('Written to annotation_manager.cfg and copied to clipboard. Press F8 or paste in CS2 console.')
+          setMsg(`Written to annotation_manager.cfg and copied to clipboard. Press ${cfgKey} or paste in CS2 console.`)
           return
         }
         setMsg(cfgResult.error, true)
@@ -438,7 +444,7 @@ export default function GuideEditor({
     storePendingMeta({ ...meta, existingIds })
     pendingMetaTimer.current = setTimeout(() => {
       storePendingMeta(null)
-      setMsg('Save timed out — no file change detected. Did you press F8?', true)
+      setMsg(`Save timed out — no file change detected. Did you press ${cfgKey}?`, true)
     }, 120_000)
     await handleRunInCS2(`annotation_save ${guideName}`)
   }
@@ -759,7 +765,7 @@ export default function GuideEditor({
         <div className="flex items-center gap-2 px-4 py-2 bg-amber-950/60 border-b border-amber-700/50 shrink-0">
           <span className="text-amber-400 text-sm animate-pulse">⏳</span>
           <span className="text-amber-300 text-xs flex-1">
-            Waiting for CS2 to write the file… Press <strong>F8</strong> in CS2 to complete the save.
+            Waiting for CS2 to write the file… Press <strong>{cfgKey}</strong> in CS2 to complete the save.
             Metadata will be applied automatically.
           </span>
           <button
@@ -1144,6 +1150,7 @@ export default function GuideEditor({
           onSendCreate={handleSendCreate}
           onSaveCreate={handleSaveAnnotation}
           onAbortCreate={handleAbortAnnotation}
+          cfgKey={cfgKey}
         />
       )}
       {showCopyModal && (

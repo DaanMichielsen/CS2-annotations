@@ -8,8 +8,10 @@ export default function Settings() {
   const [annotationsRoot, setAnnotationsRootState] = useState('')
   const [workshopContentPath, setWorkshopContentPathState] = useState('')
   const [autoCopyLoadCommandsOnOpen, setAutoCopyLoadCommandsOnOpen] = useState(false)
+  const [cfgKeybind, setCfgKeybindState] = useState('f8')
   const [status, setStatus] = useState<'idle' | 'detecting' | 'saved' | 'error'>('idle')
   const [message, setMessage] = useState('')
+  const [bindCopied, setBindCopied] = useState(false)
 
   useEffect(() => {
     adapter.getAnnotationsRoot?.().then((value) => setAnnotationsRootState(value ?? ''))
@@ -18,6 +20,9 @@ export default function Settings() {
     }
     if (typeof adapter.getAutoCopyLoadCommandsOnOpen === 'function') {
       adapter.getAutoCopyLoadCommandsOnOpen().then((value) => setAutoCopyLoadCommandsOnOpen(Boolean(value)))
+    }
+    if (typeof adapter.getCfgKeybind === 'function') {
+      adapter.getCfgKeybind().then((value) => setCfgKeybindState(value ?? 'f8'))
     }
   }, [])
 
@@ -54,6 +59,11 @@ export default function Settings() {
     }
     if (typeof adapter.setAutoCopyLoadCommandsOnOpen === 'function') {
       await adapter.setAutoCopyLoadCommandsOnOpen(autoCopyLoadCommandsOnOpen)
+    }
+    if (typeof adapter.setCfgKeybind === 'function') {
+      const key = cfgKeybind.trim().toLowerCase() || 'f8'
+      setCfgKeybindState(key)
+      await adapter.setCfgKeybind(key)
     }
     setStatus('saved')
     setMessage('Paths saved.')
@@ -114,6 +124,39 @@ export default function Settings() {
           <label htmlFor="auto-copy-load" className="text-sm text-zinc-300 cursor-pointer">
             Auto-copy load commands when opening a guide (sv_cheats, sv_allow_annotations_access_level, annotation_load)
           </label>
+        </div>
+      )}
+
+      {typeof adapter.getCfgKeybind === 'function' && (
+        <div className="mb-5">
+          <label className="block mb-1 text-sm text-zinc-400">CS2 execution keybind</label>
+          <input
+            type="text"
+            value={cfgKeybind}
+            onChange={(e) => setCfgKeybindState(e.target.value.toLowerCase())}
+            placeholder="f8"
+            className="w-28 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-200 text-sm focus:outline-none focus:border-zinc-500"
+          />
+          <p className="text-xs text-zinc-600 mt-1.5 mb-2">
+            The key you want to press in CS2 to execute the command file.
+            Run the line below in CS2 console once to set it up.
+          </p>
+          <div className="flex items-center gap-2 px-3 py-2 bg-zinc-800/60 border border-zinc-700/50 rounded text-xs font-mono">
+            <span className="text-emerald-400 flex-1 select-all">
+              bind {cfgKeybind.trim() || 'f8'} exec annotation_manager
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                void navigator.clipboard.writeText(`bind ${cfgKeybind.trim() || 'f8'} exec annotation_manager`)
+                setBindCopied(true)
+                setTimeout(() => setBindCopied(false), 1500)
+              }}
+              className="shrink-0 px-2 py-0.5 bg-zinc-700 hover:bg-zinc-600 rounded text-zinc-300 transition-colors"
+            >
+              {bindCopied ? '✓ Copied' : 'Copy'}
+            </button>
+          </div>
         </div>
       )}
 
