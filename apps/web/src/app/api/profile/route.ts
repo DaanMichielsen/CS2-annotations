@@ -21,7 +21,7 @@ export async function PATCH(req: Request) {
   const bio = typeof body.bio === 'string' ? body.bio.slice(0, 300) : undefined
   const socialLinks = body.socialLinks && typeof body.socialLinks === 'object' ? body.socialLinks : undefined
 
-  const allowed = ['steam', 'youtube', 'twitch', 'kick', 'discord']
+  const allowed = ['steam', 'youtube', 'twitch', 'kick', 'discord', 'faceit', 'leetify', 'esportal', 'esea']
   const cleanLinks: Record<string, string> = {}
   if (socialLinks) {
     for (const key of allowed) {

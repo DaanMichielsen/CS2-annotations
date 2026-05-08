@@ -3,16 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-
-type SocialLinks = { steam?: string; youtube?: string; twitch?: string; kick?: string; discord?: string }
-
-const PLATFORMS = [
-  { key: 'steam',   label: 'Steam',   placeholder: 'steamcommunity.com/id/yourname or username' },
-  { key: 'youtube', label: 'YouTube', placeholder: '@yourchannel or full URL' },
-  { key: 'twitch',  label: 'Twitch',  placeholder: 'your Twitch username' },
-  { key: 'kick',    label: 'Kick',    placeholder: 'your Kick username' },
-  { key: 'discord', label: 'Discord', placeholder: 'your Discord username' },
-]
+import { SOCIAL_PLATFORMS, type SocialLinks } from '@/components/SocialIcons'
 
 export default function EditProfilePage() {
   const router = useRouter()
@@ -92,19 +83,28 @@ export default function EditProfilePage() {
         {/* Social links */}
         <div className="mb-8">
           <label className="block text-xs font-data text-zinc-500 uppercase tracking-widest mb-3">Social Links</label>
-          <div className="space-y-3">
-            {PLATFORMS.map(({ key, label, placeholder }) => (
-              <div key={key} className="flex items-center gap-3">
-                <span className="w-16 text-xs font-data text-zinc-500 shrink-0">{label}</span>
-                <input
-                  type="text"
-                  value={links[key as keyof SocialLinks] ?? ''}
-                  onChange={(e) => setLinks((prev) => ({ ...prev, [key]: e.target.value }))}
-                  placeholder={placeholder}
-                  className="flex-1 px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-sm text-zinc-200 placeholder-zinc-700 focus:outline-none focus:border-zinc-600"
-                />
-              </div>
-            ))}
+          <div className="space-y-2.5">
+            {(Object.keys(SOCIAL_PLATFORMS) as (keyof SocialLinks)[]).map((key) => {
+              const def = SOCIAL_PLATFORMS[key]
+              return (
+                <div key={key} className="flex items-center gap-3">
+                  <span
+                    className="w-7 h-7 flex items-center justify-center rounded bg-zinc-900 border border-zinc-800 shrink-0"
+                    style={{ color: def.color }}
+                    title={def.label}
+                  >
+                    {def.icon}
+                  </span>
+                  <input
+                    type="text"
+                    value={links[key] ?? ''}
+                    onChange={(e) => setLinks((prev) => ({ ...prev, [key]: e.target.value }))}
+                    placeholder={def.placeholder}
+                    className="flex-1 px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-sm text-zinc-200 placeholder-zinc-700 focus:outline-none focus:border-zinc-600"
+                  />
+                </div>
+              )
+            })}
           </div>
         </div>
 
