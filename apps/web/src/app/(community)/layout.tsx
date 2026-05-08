@@ -24,29 +24,40 @@ export default async function CommunityLayout({ children }: { children: React.Re
           </Link>
 
           {session && (
-            <Link
-              href="/my-guides"
-              className="text-sm text-zinc-400 hover:text-white transition-colors font-medium"
-            >
-              My Guides
-            </Link>
+            <>
+              <Link
+                href="/for-you"
+                className="text-sm text-zinc-400 hover:text-white transition-colors font-medium"
+              >
+                For You
+              </Link>
+              <Link
+                href="/my-guides"
+                className="text-sm text-zinc-400 hover:text-white transition-colors font-medium"
+              >
+                My Guides
+              </Link>
+            </>
           )}
 
           <div className="flex items-center gap-3 ml-auto">
             {session ? (
               <>
-                {session.user?.image && (
-                  <Image
-                    src={session.user.image}
-                    alt="avatar"
-                    width={28}
-                    height={28}
-                    className="rounded-full ring-1 ring-zinc-700"
-                  />
-                )}
-                <span className="text-sm text-zinc-300 hidden sm:block">
-                  {session.user?.name}
-                </span>
+                <Link href={`/users/${session.user?.id}`} className="flex items-center gap-2 group">
+                  {session.user?.image && (
+                    <Image
+                      src={session.user.image}
+                      alt="avatar"
+                      width={28}
+                      height={28}
+                      className="rounded-full ring-1 ring-zinc-700 group-hover:ring-zinc-500 transition-all"
+                      unoptimized
+                    />
+                  )}
+                  <span className="text-sm text-zinc-400 group-hover:text-zinc-200 hidden sm:block transition-colors">
+                    {session.user?.name}
+                  </span>
+                </Link>
                 <Link
                   href="/my-guides"
                   className="text-xs px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded transition-colors border border-zinc-700"

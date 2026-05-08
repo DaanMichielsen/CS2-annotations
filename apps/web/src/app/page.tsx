@@ -87,6 +87,26 @@ export default async function HomePage() {
           style={{ background: 'radial-gradient(ellipse at left center, #8b5cf6 0%, transparent 70%)' }}
         />
 
+        {/* Agent skin — character drops in from the right */}
+        <div className="absolute right-0 bottom-0 h-full pointer-events-none select-none hidden lg:block" aria-hidden="true">
+          <div className="relative" style={{ height: '115%' }}>
+            <Image
+              src="/agents/bloody_darryl_the_strapped.webp"
+              alt=""
+              width={340}
+              height={560}
+              className="h-full w-auto object-contain object-bottom"
+              style={{ filter: 'drop-shadow(-8px 0 48px rgba(139,92,246,0.18))' }}
+              unoptimized
+              priority
+            />
+            {/* fade top */}
+            <div className="absolute inset-x-0 top-0 h-32 bg-linear-to-b from-zinc-950 to-transparent pointer-events-none" />
+            {/* fade left edge toward text */}
+            <div className="absolute inset-y-0 left-0 w-24 bg-linear-to-r from-zinc-950/60 to-transparent pointer-events-none" />
+          </div>
+        </div>
+
         <div className="relative max-w-7xl mx-auto px-6 py-24 sm:py-32">
           <div className="max-w-2xl">
             <p className="font-data text-violet-400 text-xs uppercase tracking-[0.25em] mb-4">

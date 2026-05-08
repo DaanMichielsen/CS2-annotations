@@ -17,13 +17,29 @@ model User {
   steamId       String?   @unique
   username      String?
   avatar        String?
+  bio           String?
+  socialLinks   Json      @default("{}")
   createdAt     DateTime  @default(now())
 
-  accounts  Account[]
-  sessions  Session[]
-  guides    Guide[]
-  ratings   GuideRating[]
-  comments  GuideComment[]
+  accounts   Account[]
+  sessions   Session[]
+  guides     Guide[]
+  ratings    GuideRating[]
+  comments   GuideComment[]
+  following  Follow[]      @relation("Follower")
+  followers  Follow[]      @relation("Following")
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("Follower",  fields: [followerId],  references: [id], onDelete: Cascade)
+  following User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
 }
 
 model Guide {
