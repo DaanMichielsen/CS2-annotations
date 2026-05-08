@@ -87,62 +87,60 @@ export default async function HomePage() {
           style={{ background: 'radial-gradient(ellipse at left center, #8b5cf6 0%, transparent 70%)' }}
         />
 
-        {/* Agent skin — character drops in from the right */}
-        <div className="absolute right-0 bottom-0 h-full pointer-events-none select-none hidden lg:block" aria-hidden="true">
-          <div className="relative" style={{ height: '115%' }}>
-            <Image
-              src="/agents/bloody_darryl_the_strapped.webp"
-              alt=""
-              width={340}
-              height={560}
-              className="h-full w-auto object-contain object-bottom"
-              style={{ filter: 'drop-shadow(-8px 0 48px rgba(139,92,246,0.18))' }}
-              unoptimized
-              priority
-            />
-            {/* fade top */}
-            <div className="absolute inset-x-0 top-0 h-32 bg-linear-to-b from-zinc-950 to-transparent pointer-events-none" />
-            {/* fade left edge toward text */}
-            <div className="absolute inset-y-0 left-0 w-24 bg-linear-to-r from-zinc-950/60 to-transparent pointer-events-none" />
-          </div>
-        </div>
+        <div className="relative max-w-7xl mx-auto px-6">
+          <div className="flex justify-between gap-8">
+            <div className="max-w-2xl py-24 sm:py-32">
+              <p className="font-data text-violet-400 text-xs uppercase tracking-[0.25em] mb-4">
+                Community · Precision · Knowledge
+              </p>
+              <h1 className="font-display font-bold text-5xl sm:text-6xl text-white leading-[0.95] tracking-tight mb-6">
+                KNOW EVERY<br />
+                <span className="text-violet-400">ANGLE.</span>
+              </h1>
+              <p className="text-zinc-400 text-lg leading-relaxed mb-8 max-w-lg">
+                Annotated nade guides built in-game and shared with the community.
+                Study lineups, discover new spots, master every map.
+              </p>
+              <div className="flex gap-3 flex-wrap">
+                <Link
+                  href="/guides"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-lg transition-colors text-sm"
+                >
+                  Browse Guides
+                </Link>
+                {!user && (
+                  <Link
+                    href="/auth/signin"
+                    className="px-6 py-3 border border-zinc-700 hover:border-zinc-500 text-zinc-300 hover:text-white font-semibold rounded-lg transition-colors text-sm"
+                  >
+                    Sign in with Steam
+                  </Link>
+                )}
+                {user && (
+                  <Link
+                    href="/my-guides"
+                    className="px-6 py-3 border border-zinc-700 hover:border-violet-600/50 text-zinc-300 hover:text-violet-300 font-semibold rounded-lg transition-colors text-sm"
+                  >
+                    My Guides →
+                  </Link>
+                )}
+              </div>
+            </div>
 
-        <div className="relative max-w-7xl mx-auto px-6 py-24 sm:py-32">
-          <div className="max-w-2xl">
-            <p className="font-data text-violet-400 text-xs uppercase tracking-[0.25em] mb-4">
-              Community · Precision · Knowledge
-            </p>
-            <h1 className="font-display font-bold text-5xl sm:text-6xl text-white leading-[0.95] tracking-tight mb-6">
-              KNOW EVERY<br />
-              <span className="text-violet-400">ANGLE.</span>
-            </h1>
-            <p className="text-zinc-400 text-lg leading-relaxed mb-8 max-w-lg">
-              Annotated nade guides built in-game and shared with the community.
-              Study lineups, discover new spots, master every map.
-            </p>
-            <div className="flex gap-3 flex-wrap">
-              <Link
-                href="/guides"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-lg transition-colors text-sm"
-              >
-                Browse Guides
-              </Link>
-              {!user && (
-                <Link
-                  href="/auth/signin"
-                  className="px-6 py-3 border border-zinc-700 hover:border-zinc-500 text-zinc-300 hover:text-white font-semibold rounded-lg transition-colors text-sm"
-                >
-                  Sign in with Steam
-                </Link>
-              )}
-              {user && (
-                <Link
-                  href="/my-guides"
-                  className="px-6 py-3 border border-zinc-700 hover:border-violet-600/50 text-zinc-300 hover:text-violet-300 font-semibold rounded-lg transition-colors text-sm"
-                >
-                  My Guides →
-                </Link>
-              )}
+            {/* Agent skin — stretches to hero height, image fills 4/5 from bottom */}
+            <div className="hidden lg:block shrink-0 pointer-events-none select-none" aria-hidden="true">
+              <div className="h-full flex items-end">
+                <Image
+                  src="/agents/bloody_darryl_the_strapped.webp"
+                  alt=""
+                  width={260}
+                  height={430}
+                  className="h-4/5 w-auto object-contain object-bottom"
+                  style={{ filter: 'drop-shadow(-8px 0 48px rgba(139,92,246,0.35))' }}
+                  unoptimized
+                  priority
+                />
+              </div>
             </div>
           </div>
         </div>
