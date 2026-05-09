@@ -54,10 +54,9 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
   const links = (user.socialLinks ?? {}) as SocialLinks
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      {/* Profile header — dossier card */}
+    <>
+      {/* Profile header */}
       <div className="relative overflow-hidden border-b border-zinc-800/60">
-        {/* Background texture */}
         <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-zinc-950 to-zinc-950" />
         <div
           className="absolute inset-0 opacity-[0.03] pointer-events-none"
@@ -85,18 +84,15 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
                   <span className="font-display text-2xl text-zinc-500">{displayName[0]?.toUpperCase()}</span>
                 </div>
               )}
-              {/* Online indicator placeholder */}
               <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-zinc-950" />
             </div>
 
             {/* Name + bio + links */}
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
-                <div>
-                  <h1 className="font-display font-bold text-3xl text-white leading-tight tracking-tight">
-                    {displayName}
-                  </h1>
-                </div>
+                <h1 className="font-display font-bold text-3xl text-white leading-tight tracking-tight">
+                  {displayName}
+                </h1>
                 <div className="flex items-center gap-2">
                   {isOwnProfile ? (
                     <Link
@@ -156,7 +152,7 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
                 </div>
               )}
 
-              {/* Stats row */}
+              {/* Stats */}
               <div className="flex flex-wrap gap-6">
                 {[
                   { label: 'Guides', value: guides.length },
@@ -182,7 +178,6 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
           </div>
         ) : (
           <>
-            {/* Top guides */}
             {topGuides.length > 0 && (
               <section className="mb-12">
                 <h2 className="font-display font-semibold text-lg text-white mb-4 tracking-tight flex items-center gap-2">
@@ -190,22 +185,12 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {topGuides.map((g) => (
-                    <GuideCard
-                      key={g.id}
-                      id={g.id}
-                      title={g.title}
-                      map={g.map}
-                      nodeCount={g.nodeCount}
-                      score={g.score}
-                      authorName={displayName}
-                      authorAvatar={user.avatar}
-                    />
+                    <GuideCard key={g.id} id={g.id} title={g.title} map={g.map} nodeCount={g.nodeCount} score={g.score} authorName={displayName} authorAvatar={user.avatar} />
                   ))}
                 </div>
               </section>
             )}
 
-            {/* All guides */}
             <section>
               <h2 className="font-display font-semibold text-lg text-white mb-4 tracking-tight">
                 All Guides
@@ -213,22 +198,13 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {guidesWithScore.map((g) => (
-                  <GuideCard
-                    key={g.id}
-                    id={g.id}
-                    title={g.title}
-                    map={g.map}
-                    nodeCount={g.nodeCount}
-                    score={g.score}
-                    authorName={displayName}
-                    authorAvatar={user.avatar}
-                  />
+                  <GuideCard key={g.id} id={g.id} title={g.title} map={g.map} nodeCount={g.nodeCount} score={g.score} authorName={displayName} authorAvatar={user.avatar} />
                 ))}
               </div>
             </section>
           </>
         )}
       </div>
-    </div>
+    </>
   )
 }

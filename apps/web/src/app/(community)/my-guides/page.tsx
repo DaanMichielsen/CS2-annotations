@@ -4,7 +4,6 @@ import { db } from '@/lib/db'
 import { deleteGuideBlob } from '@/lib/blob'
 import { revalidatePath } from 'next/cache'
 import Link from 'next/link'
-import Image from 'next/image'
 import { getMapColor, getMapLabel } from '@/lib/mapColors'
 
 async function deleteGuide(id: string) {
@@ -38,26 +37,7 @@ export default async function MyGuidesPage() {
   })
 
   return (
-    <div className="min-h-screen bg-zinc-950">
-      <nav className="sticky top-0 z-50 border-b border-zinc-800/60 bg-zinc-950/80 backdrop-blur-md">
-        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center gap-6">
-          <Link href="/" className="shrink-0 hover:opacity-80 transition-opacity">
-            <span className="font-display font-bold text-white">CS2</span>
-            <span className="font-display font-semibold text-violet-400"> Annotations</span>
-          </Link>
-          <div className="h-4 w-px bg-zinc-800" />
-          <Link href="/guides" className="text-sm text-zinc-400 hover:text-white transition-colors">Browse</Link>
-          <span className="text-sm text-white font-medium">My Guides</span>
-          <div className="ml-auto flex items-center gap-3">
-            {session.user?.image && (
-              <Image src={session.user.image} alt="avatar" width={28} height={28} className="rounded-full ring-1 ring-zinc-700" />
-            )}
-            <span className="text-sm text-zinc-400 hidden sm:block">{session.user?.name}</span>
-          </div>
-        </div>
-      </nav>
-
-      <main className="max-w-5xl mx-auto px-6 py-10">
+    <div className="max-w-5xl mx-auto px-6 py-10">
         <div className="flex items-end justify-between mb-8">
           <div>
             <h1 className="font-display font-bold text-3xl text-white tracking-tight mb-1">My Guides</h1>
@@ -153,7 +133,6 @@ export default async function MyGuidesPage() {
             })}
           </div>
         )}
-      </main>
     </div>
   )
 }

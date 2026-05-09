@@ -58,12 +58,6 @@ export default async function CommunityLayout({ children }: { children: React.Re
                     {session.user?.name}
                   </span>
                 </Link>
-                <Link
-                  href="/my-guides"
-                  className="text-xs px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded transition-colors border border-zinc-700"
-                >
-                  Dashboard
-                </Link>
               </>
             ) : (
               <Link

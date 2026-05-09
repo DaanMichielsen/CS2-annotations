@@ -55,8 +55,7 @@ export default function EditProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      <div className="max-w-xl mx-auto px-6 py-12">
+    <div className="max-w-xl mx-auto px-6 py-12 text-zinc-100">
         {/* Header */}
         <div className="flex items-center gap-4 mb-10">
           {avatar ? (
@@ -149,7 +148,6 @@ export default function EditProfilePage() {
             <span className="text-xs font-data text-emerald-400">✓ Saved</span>
           )}
         </div>
-      </div>
     </div>
   )
 }

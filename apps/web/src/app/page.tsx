@@ -57,10 +57,12 @@ export default async function HomePage() {
           <div className="ml-auto flex items-center gap-3">
             {user ? (
               <>
-                {user.image && (
-                  <Image src={user.image} alt={user.name ?? 'avatar'} width={28} height={28} className="rounded-full ring-1 ring-zinc-700" unoptimized />
-                )}
-                <span className="text-sm text-zinc-300 hidden sm:block">{user.name}</span>
+                <Link href={`/users/${user.id}`} className="flex items-center gap-2 group">
+                  {user.image && (
+                    <Image src={user.image} alt={user.name ?? 'avatar'} width={28} height={28} className="rounded-full ring-1 ring-zinc-700 group-hover:ring-zinc-500 transition-all" unoptimized />
+                  )}
+                  <span className="text-sm text-zinc-300 group-hover:text-zinc-100 hidden sm:block transition-colors">{user.name}</span>
+                </Link>
                 <form action={handleSignOut}>
                   <button type="submit" className="text-xs px-3 py-1.5 text-zinc-400 hover:text-zinc-200 border border-zinc-700 hover:border-zinc-500 rounded transition-colors">
                     Sign out
