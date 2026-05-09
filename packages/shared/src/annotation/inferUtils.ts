@@ -68,27 +68,41 @@ export type ThrowType =
 export function inferThrowType(node: AnnotationNode): ThrowType {
   const raw = ((node.Desc?.Text ?? '') + ' ' + (node.Title?.Text ?? '')).toLowerCase()
 
-  // M2 variants (most specific first)
-  if (/m1[+\s]m2/.test(raw)) return 'm1m2_jump'
-  if (/m2.{0,8}jump|jump.{0,8}m2/.test(raw)) return 'm2_jump'
-  if (/\bm2\b/.test(raw)) return 'm2'
+  // M1+M2 (always treated as jumpthrow in CS2; check before M2-only patterns)
+  if (/m1[+\s]m2|m1m2|\blmb[+\s]rmb\b|left[+\s]right\s*click|both\s+clicks|both\s+mouse/.test(raw))
+    return 'm1m2_jump'
 
-  // W-Jumpthrow
-  if (/w[-+\s]jump/.test(raw)) return 'w_jump'
+  // M2 + jump (before plain M2 so "m2 jump" doesn't match \bm2\b first)
+  if (/m2\s*jump|m2\s*jt\b|jump.{0,10}m2|\brmb\s+jump|\brmb\s*jt\b|right\s*click\s*jump/.test(raw))
+    return 'm2_jump'
 
-  // Crouched variants
-  if (/crouch/.test(raw)) return 'crouch_jump'
+  // M2 only
+  if (/\bm2\b|\brmb\b|right\s*click|\brclick\b|right\s*mouse/.test(raw))
+    return 'm2'
 
-  // Jumpthrow with movement modifier
-  if (/run.{0,12}jump|jump.{0,12}run/.test(raw)) return 'run_jump'
+  // W-Jumpthrow (check before plain jump so "w-jt" doesn't fall to stand_jump via \bjt\b)
+  if (/w[-+\s]jump|w[-+\s]jt\b|\bwjump\b|\bwjt\b|w[+\s]space|w\s+jumpthrow|w-jumpthrow/.test(raw))
+    return 'w_jump'
 
-  // Plain jumpthrow (standing or unqualified)
-  if (/jump/.test(raw)) return 'stand_jump'
+  // Crouched jumpthrow
+  if (/crouch|\bduck\b|\bcjt\b/.test(raw))
+    return 'crouch_jump'
 
-  // Non-jump throws
-  if (/run/.test(raw)) return 'run'
-  if (/walk/.test(raw)) return 'walk'
-  if (/stand|static/.test(raw)) return 'stand'
+  // Running jumpthrow (check before plain jump AND before plain run)
+  if (/run\s*jt\b|run.{0,12}jump|jump.{0,12}run|\brunjump\b|run-jump|\brjt\b|running\s+jump/.test(raw))
+    return 'run_jump'
+
+  // Standing jumpthrow (\bjt\b is safe here — w_jump, m2_jump, run_jump are all caught above)
+  if (/jumpthrow|\bjthrow\b|j-throw|\bj\s+throw\b|\bjt\b|jump\s+throw|jump-throw|standing\s+jump|stand\s+jt/.test(raw))
+    return 'stand_jump'
+
+  // Ground movement (no jump)
+  if (/\brun\b|running|\brunthrow\b|run\s+throw|run-throw/.test(raw)) return 'run'
+  if (/\bwalk\b|walking|\bwalkthrow\b|walk\s+throw|walk-throw/.test(raw)) return 'walk'
+
+  // Explicit stand / left-click — lmb with no other modifier is a standing throw
+  if (/\bstand\b|standing|static|regular|normal|\blmb\b|left\s*click|\blclick\b|left\s*mouse/.test(raw))
+    return 'stand'
 
   return 'other'
 }
