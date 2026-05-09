@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { SOCIAL_PLATFORMS, SocialIcon, type SocialLinks } from '@/components/SocialIcons'
+import { SOCIAL_PLATFORMS, STEAM_PLATFORM, SocialIcon, type SocialLinks } from '@/components/SocialIcons'
 
 export default function EditProfilePage() {
   const router = useRouter()
   const [bio, setBio] = useState('')
   const [links, setLinks] = useState<SocialLinks>({})
+  const [steamId, setSteamId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -21,6 +22,7 @@ export default function EditProfilePage() {
       .then((data) => {
         setBio(data.bio ?? '')
         setLinks(data.socialLinks ?? {})
+        setSteamId(data.steamId ?? null)
         setAvatar(data.avatar ?? null)
         setName(data.username ?? data.name ?? '')
         setLoading(false)
@@ -41,6 +43,8 @@ export default function EditProfilePage() {
     }
     setSaving(false)
   }
+
+  const editablePlatforms = Object.keys(SOCIAL_PLATFORMS)
 
   if (loading) {
     return (
@@ -80,18 +84,36 @@ export default function EditProfilePage() {
           <p className="text-xs text-zinc-700 font-data mt-1 text-right">{bio.length}/300</p>
         </div>
 
-        {/* Social links */}
+        {/* Linked accounts */}
         <div className="mb-8">
-          <label className="block text-xs font-data text-zinc-500 uppercase tracking-widest mb-3">Social Links</label>
+          <label className="block text-xs font-data text-zinc-500 uppercase tracking-widest mb-3">Linked Accounts</label>
           <div className="space-y-2.5">
-            {(Object.keys(SOCIAL_PLATFORMS) as (keyof SocialLinks)[]).map((key) => {
+
+            {/* Steam — always shown, locked to authenticated account */}
+            <div className="flex items-center gap-3">
+              <span className="w-7 h-7 flex items-center justify-center rounded bg-zinc-900 border border-zinc-800 shrink-0" title="Steam">
+                <SocialIcon def={STEAM_PLATFORM} />
+              </span>
+              <div className="flex-1 flex items-center gap-2 px-3 py-2 bg-zinc-900/50 border border-zinc-800 rounded text-sm text-zinc-500 select-none">
+                {steamId
+                  ? <span className="truncate">{STEAM_PLATFORM.href(steamId)}</span>
+                  : <span className="text-zinc-700">No Steam account linked</span>
+                }
+              </div>
+              <span className="flex items-center gap-1 text-[10px] font-data text-emerald-600 shrink-0">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25z" />
+                </svg>
+                Verified
+              </span>
+            </div>
+
+            {/* Editable platforms — currently empty pending OAuth integrations */}
+            {editablePlatforms.map((key) => {
               const def = SOCIAL_PLATFORMS[key]
               return (
                 <div key={key} className="flex items-center gap-3">
-                  <span
-                    className="w-7 h-7 flex items-center justify-center rounded bg-zinc-900 border border-zinc-800 shrink-0"
-                    title={def.label}
-                  >
+                  <span className="w-7 h-7 flex items-center justify-center rounded bg-zinc-900 border border-zinc-800 shrink-0" title={def.label}>
                     <SocialIcon def={def} />
                   </span>
                   <input
@@ -104,6 +126,7 @@ export default function EditProfilePage() {
                 </div>
               )
             })}
+
           </div>
         </div>
 

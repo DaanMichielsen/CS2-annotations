@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import GuideCard from '@/components/GuideCard'
 import FollowButton from '@/components/FollowButton'
-import { SOCIAL_PLATFORMS, SocialIcon, type SocialLinks } from '@/components/SocialIcons'
+import { SOCIAL_PLATFORMS, STEAM_PLATFORM, SocialIcon, type SocialLinks } from '@/components/SocialIcons'
 
 export default async function UserProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -96,9 +96,6 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
                   <h1 className="font-display font-bold text-3xl text-white leading-tight tracking-tight">
                     {displayName}
                   </h1>
-                  {user.steamId && (
-                    <p className="text-xs font-data text-zinc-600 mt-0.5">Steam · {user.steamId}</p>
-                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   {isOwnProfile ? (
@@ -125,10 +122,21 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
                 <p className="text-sm text-zinc-400 leading-relaxed mb-3 max-w-xl">{user.bio}</p>
               )}
 
-              {/* Social links */}
-              {Object.keys(links).some((k) => links[k as keyof SocialLinks]) && (
+              {/* Social links — Steam always shown if available; others from socialLinks */}
+              {(user.steamId || Object.keys(links).some((k) => links[k])) && (
                 <div className="flex flex-wrap gap-2 mb-3">
-                  {(Object.keys(SOCIAL_PLATFORMS) as (keyof SocialLinks)[]).map((key) => {
+                  {user.steamId && (
+                    <a
+                      href={STEAM_PLATFORM.href(user.steamId)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded border border-zinc-800 bg-zinc-900/60 hover:border-zinc-600 transition-colors text-xs text-zinc-400 hover:text-zinc-200"
+                    >
+                      <SocialIcon def={STEAM_PLATFORM} />
+                      Steam
+                    </a>
+                  )}
+                  {Object.keys(SOCIAL_PLATFORMS).map((key) => {
                     const val = links[key]
                     const def = SOCIAL_PLATFORMS[key]
                     if (!val) return null
