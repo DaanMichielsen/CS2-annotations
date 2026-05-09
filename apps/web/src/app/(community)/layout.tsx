@@ -1,9 +1,14 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { auth } from '@/lib/auth'
+import { auth, signOut } from '@/lib/auth'
 
 export default async function CommunityLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
+
+  async function handleSignOut() {
+    'use server'
+    await signOut({ redirectTo: '/' })
+  }
 
   return (
     <div className="min-h-screen bg-zinc-950">
@@ -58,6 +63,11 @@ export default async function CommunityLayout({ children }: { children: React.Re
                     {session.user?.name}
                   </span>
                 </Link>
+                <form action={handleSignOut}>
+                  <button type="submit" className="text-xs px-3 py-1.5 text-zinc-400 hover:text-zinc-200 border border-zinc-700 hover:border-zinc-500 rounded transition-colors">
+                    Sign out
+                  </button>
+                </form>
               </>
             ) : (
               <Link

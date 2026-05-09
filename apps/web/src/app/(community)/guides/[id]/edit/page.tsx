@@ -1,8 +1,11 @@
-// Browser editing is not yet available — the GuideEditor component requires Vite
-// (import.meta.glob) and cannot run in Next.js. Use the desktop app to edit guides.
+import { auth } from '@/lib/auth'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
-export default function EditGuidePage() {
+export default async function EditGuidePage() {
+  const session = await auth()
+  if (!session?.user?.id) redirect('/auth/signin')
+
   return (
     <div className="max-w-xl mx-auto px-4 py-20 text-center">
       <h1 className="text-xl font-semibold text-zinc-100 mb-3">Browser editor coming soon</h1>
