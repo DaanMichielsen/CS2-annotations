@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import GuideCard from '@/components/GuideCard'
 import FollowButton from '@/components/FollowButton'
-import { SOCIAL_PLATFORMS, type SocialLinks } from '@/components/SocialIcons'
+import { SOCIAL_PLATFORMS, SocialIcon, type SocialLinks } from '@/components/SocialIcons'
 
 export default async function UserProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -140,7 +140,7 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
                         rel="noopener noreferrer"
                         className="flex items-center gap-1.5 px-2.5 py-1 rounded border border-zinc-800 bg-zinc-900/60 hover:border-zinc-600 transition-colors text-xs text-zinc-400 hover:text-zinc-200"
                       >
-                        <span style={{ color: def.color }}>{def.icon}</span>
+                        <SocialIcon def={def} />
                         {def.label}
                       </a>
                     )

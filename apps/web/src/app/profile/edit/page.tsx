@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { SOCIAL_PLATFORMS, type SocialLinks } from '@/components/SocialIcons'
+import { SOCIAL_PLATFORMS, SocialIcon, type SocialLinks } from '@/components/SocialIcons'
 
 export default function EditProfilePage() {
   const router = useRouter()
@@ -90,10 +90,9 @@ export default function EditProfilePage() {
                 <div key={key} className="flex items-center gap-3">
                   <span
                     className="w-7 h-7 flex items-center justify-center rounded bg-zinc-900 border border-zinc-800 shrink-0"
-                    style={{ color: def.color }}
                     title={def.label}
                   >
-                    {def.icon}
+                    <SocialIcon def={def} />
                   </span>
                   <input
                     type="text"
