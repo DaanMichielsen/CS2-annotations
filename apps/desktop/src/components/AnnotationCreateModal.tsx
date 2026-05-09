@@ -331,6 +331,41 @@ export default function AnnotationCreateModal({ onClose, onSendCreate, onSaveCre
                 <input type="text" className={inputCls} placeholder='e.g. "standing W-Jumpthrow"'
                   value={aimText} onChange={(e) => setAimText(e.target.value)} />
               </div>
+              <details className="group">
+                <summary className="text-[0.68rem] text-zinc-500 cursor-pointer hover:text-zinc-300 select-none list-none flex items-center gap-1">
+                  <span className="group-open:rotate-90 transition-transform inline-block">▶</span>
+                  ⓘ Throw type keywords
+                </summary>
+                <div className="mt-2 border border-zinc-800 rounded-lg p-3 text-[0.67rem] text-zinc-400">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="text-zinc-600 text-left border-b border-zinc-800">
+                        <th className="pb-1 pr-3 font-medium">Type</th>
+                        <th className="pb-1 font-medium">Example keywords</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        ['Stand (default)', 'stand, standing, regular, normal, lmb, left click'],
+                        ['Walk throw',      'walk, walkthrow, walk throw'],
+                        ['Run throw',       'run, runthrow, run throw'],
+                        ['Jumpthrow',       'jumpthrow, jthrow, jt, jump throw, j-throw'],
+                        ['W-Jumpthrow',     'w-jump, w+jump, wjump, wjt, w-jt, w+space'],
+                        ['Crouch JT',       'crouch, duck, cjt, crouch jump'],
+                        ['Run JT',          'run jump, runjump, run jt, rjt'],
+                        ['M2 throw',        'm2, rmb, right click, rclick'],
+                        ['M2 Jumpthrow',    'm2 jump, m2jt, m2 jt, rmb jump'],
+                        ['M1+M2 JT',        'm1+m2, m1m2, lmb+rmb, both clicks'],
+                      ].map(([type, keywords]) => (
+                        <tr key={type} className="border-b border-zinc-800/50 last:border-0">
+                          <td className="py-0.5 pr-3 text-zinc-300 whitespace-nowrap">{type}</td>
+                          <td className="py-0.5 text-zinc-500">{keywords}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
               <ColorPicker />
             </div>
           )}
