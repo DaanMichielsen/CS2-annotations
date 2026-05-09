@@ -81,7 +81,7 @@ export function inferThrowType(node: AnnotationNode): ThrowType {
     return 'm2'
 
   // W-Jumpthrow (check before plain jump so "w-jt" doesn't fall to stand_jump via \bjt\b)
-  if (/w[-+\s]jump|w[-+\s]jt\b|\bwjump\b|\bwjt\b|w[+\s]space|w\s+jumpthrow|w-jumpthrow/.test(raw))
+  if (/\bw[-+\s]jump|\bw[-+\s]jt\b|\bwjump\b|\bwjt\b|\bw[+\s]space|\bw\s+jumpthrow|\bw-jumpthrow/.test(raw))
     return 'w_jump'
 
   // Crouched jumpthrow
@@ -93,7 +93,7 @@ export function inferThrowType(node: AnnotationNode): ThrowType {
     return 'run_jump'
 
   // Standing jumpthrow (\bjt\b is safe here — w_jump, m2_jump, run_jump are all caught above)
-  if (/jumpthrow|\bjthrow\b|j-throw|\bj\s+throw\b|\bjt\b|jump\s+throw|jump-throw|standing\s+jump|stand\s+jt/.test(raw))
+  if (/jumpthrow|\bjthrow\b|j-throw|\bj\s+throw\b|\bjt\b|jump\s+throw|jump-throw|standing\s+jump|stand\s+jt|\bjump\b/.test(raw))
     return 'stand_jump'
 
   // Ground movement (no jump)

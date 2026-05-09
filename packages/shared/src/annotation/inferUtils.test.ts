@@ -110,5 +110,11 @@ describe('inferThrowType', () => {
       expect(inferThrowType(node('m2 jt'))).toBe('m2_jump'))
     it('crouch_jump: "crouch jt" does not bleed into stand_jump', () =>
       expect(inferThrowType(node('crouch jt'))).toBe('crouch_jump'))
+    it('w_jump: "throw jump" must not bleed into w_jump', () =>
+      expect(inferThrowType(node('throw jump'))).toBe('stand_jump'))
+    it('stand_jump: bare "jump" is a stand_jump', () =>
+      expect(inferThrowType(node('jump'))).toBe('stand_jump'))
+    it('stand_jump: "normal jump" is stand_jump not stand', () =>
+      expect(inferThrowType(node('normal jump'))).toBe('stand_jump'))
   })
 })
