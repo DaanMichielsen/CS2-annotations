@@ -42,6 +42,7 @@ export interface OpenGuideInfo {
 interface GuidesProps {
   onGuideChange?: (guide: OpenGuideInfo | null) => void
   cloudStatuses?: Record<string, GuideSyncState>
+  onCloudRefresh?: () => void
 }
 
 const btn =
@@ -83,7 +84,7 @@ function MapChip({ mapName }: { mapName?: string }) {
   )
 }
 
-export default function Guides({ onGuideChange, cloudStatuses = {} }: GuidesProps = {}) {
+export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefresh }: GuidesProps = {}) {
   const adapter = useGuideAdapter()
   const [guides, setGuides] = useState<GuideItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -171,6 +172,28 @@ export default function Guides({ onGuideChange, cloudStatuses = {} }: GuidesProp
     void navigator.clipboard.writeText(`annotation_load ${name}`)
   }
 
+  async function handleCloudPush() {
+    if (!openGuide) return
+    const state = cloudStatuses[openGuide.filePath]
+    await (window.electronAPI as any).cloudPushGuide({
+      filePath: openGuide.filePath,
+      title: openGuide.name,
+      map: (openGuide.root['MapName'] as string | undefined) ?? openGuide.mapName ?? '',
+      nodeCount: openGuide.nodes.length,
+      cloudId: state?.cloudId,
+      cloudVersion: state?.cloudVersion,
+    })
+    onCloudRefresh?.()
+  }
+
+  async function handleCloudPull() {
+    if (!openGuide) return
+    const state = cloudStatuses[openGuide.filePath]
+    if (!state?.cloudId) return
+    await (window.electronAPI as any).cloudPullGuide({ cloudId: state.cloudId, filePath: openGuide.filePath })
+    onCloudRefresh?.()
+  }
+
   if (openGuide) {
     const isWorkshop = openGuide.source === 'workshop'
     return (
@@ -203,6 +226,9 @@ export default function Guides({ onGuideChange, cloudStatuses = {} }: GuidesProp
             : undefined}
           onBack={() => setOpenGuide(null)}
           onDeleted={async () => { await loadGuides() }}
+          cloudStatus={openGuide.source === 'local' ? cloudStatuses[openGuide.filePath] : undefined}
+          onCloudPush={openGuide.source === 'local' ? () => void handleCloudPush() : undefined}
+          onCloudPull={openGuide.source === 'local' ? () => void handleCloudPull() : undefined}
         />
       </div>
     )

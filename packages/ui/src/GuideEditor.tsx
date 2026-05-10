@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
+import { Upload, Download, CheckCircle, RefreshCw } from 'lucide-react'
 import type { AnnotationNode, NodeType, GrenadeType, TextDescObject } from '@cs2ann/shared'
+import type { GuideSyncState } from '@cs2ann/shared'
 import { GRENADE_TYPES, defaultTextDesc, defaultPosition, defaultAngles, generateId } from '@cs2ann/shared'
 
 // Nade-type icons bundled by Vite
@@ -56,6 +58,9 @@ interface GuideEditorProps {
   ) => Promise<{ error?: string; path?: string; loadName?: string }>
   onBack: () => void
   onDeleted?: () => void
+  cloudStatus?: GuideSyncState
+  onCloudPush?: () => void
+  onCloudPull?: () => void
 }
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -81,6 +86,50 @@ function createGrenadeSet(grenadeType: GrenadeType): AnnotationNode[] {
   ]
 }
 
+function CloudSyncButton({ status, onPush, onPull }: {
+  status: GuideSyncState
+  onPush?: () => void
+  onPull?: () => void
+}) {
+  if (status.status === 'loading') {
+    return (
+      <span className="p-1.5 text-zinc-600" title="Checking cloud status…">
+        <RefreshCw size={14} className="animate-spin" />
+      </span>
+    )
+  }
+  if (status.status === 'synced') {
+    return (
+      <span className="p-1.5 text-emerald-600" title="Synced with cloud">
+        <CheckCircle size={14} />
+      </span>
+    )
+  }
+  if (status.status === 'cloud_ahead') {
+    return (
+      <button
+        type="button"
+        className="flex items-center gap-1 px-2 py-1 bg-yellow-900/40 border border-yellow-700 hover:bg-yellow-900/70 text-yellow-300 rounded text-xs transition-colors"
+        title="Cloud has a newer version — pull to update"
+        onClick={onPull}
+      >
+        <Download size={12} /> Pull
+      </button>
+    )
+  }
+  return (
+    <button
+      type="button"
+      className="flex items-center gap-1 px-2 py-1 rounded text-white text-xs transition-opacity hover:opacity-90"
+      style={{ backgroundColor: 'var(--color-brand)' }}
+      title={status.status === 'not_in_cloud' ? 'Back up to cloud' : 'Push local changes to cloud'}
+      onClick={onPush}
+    >
+      <Upload size={12} /> Push
+    </button>
+  )
+}
+
 // ─── component ────────────────────────────────────────────────────────────────
 export default function GuideEditor({
   guideName,
@@ -94,6 +143,9 @@ export default function GuideEditor({
   onSaveAsLocalGuide,
   onBack,
   onDeleted,
+  cloudStatus,
+  onCloudPush,
+  onCloudPull,
 }: GuideEditorProps) {
   const adapter = useGuideAdapter()
   const [cfgKey, setCfgKey] = useState('F8')
@@ -687,6 +739,9 @@ export default function GuideEditor({
           <button type="button" className={btnPrimary} onClick={handleSave} disabled={saveStatus === 'saving'}>
             {saveStatus === 'saving' ? 'Saving…' : 'Save'}
           </button>
+          {cloudStatus && !isWorkshop && (
+            <CloudSyncButton status={cloudStatus} onPush={onCloudPush} onPull={onCloudPull} />
+          )}
           {canDelete && filePath && (
             <button type="button" className={btnDanger} onClick={handleDeleteGuideFile} disabled={deleteStatus === 'deleting'}>
               {deleteStatus === 'deleting' ? 'Deleting…' : 'Delete file'}

@@ -29,6 +29,7 @@ function AppInner() {
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden p-4">
           <Guides
             cloudStatuses={cloudStatus.statuses}
+            onCloudRefresh={cloudStatus.refresh}
           />
         </div>
 
