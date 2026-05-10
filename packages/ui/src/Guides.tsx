@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { FolderInput } from 'lucide-react'
 import type { AnnotationNode } from '@cs2ann/shared'
-import { getMapColor } from '@cs2ann/shared'
+import { getMapColor, KNOWN_MAPS } from '@cs2ann/shared'
 import type { GuideSyncState } from '@cs2ann/shared'
 import GuideEditor from './GuideEditor'
 import { useGuideAdapter } from './GuideAdapterContext'
@@ -94,6 +94,8 @@ export default function Guides({ onGuideChange, cloudStatuses = {} }: GuidesProp
   const [newMapName, setNewMapName] = useState('')
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState('')
+  const [nameFilter, setNameFilter] = useState('')
+  const [mapFilter, setMapFilter] = useState<string | null>(null)
 
   useEffect(() => { loadGuides() }, [])
 
@@ -209,6 +211,14 @@ export default function Guides({ onGuideChange, cloudStatuses = {} }: GuidesProp
   const featured = guides.filter((g) => g.source === 'workshop' && g.workshopId && FEATURED_IDS.has(g.workshopId))
   const yours = guides.filter((g) => !(g.source === 'workshop' && g.workshopId && FEATURED_IDS.has(g.workshopId)))
 
+  function matchesFilters(g: GuideItem): boolean {
+    const nameOk = !nameFilter || g.name.toLowerCase().includes(nameFilter.toLowerCase())
+    const mapOk = !mapFilter || g.mapName === mapFilter
+    return nameOk && mapOk
+  }
+  const filteredFeatured = featured.filter(matchesFilters)
+  const filteredYours = yours.filter(matchesFilters)
+
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
       <div className="flex items-center justify-between mb-4 shrink-0">
@@ -268,6 +278,48 @@ export default function Guides({ onGuideChange, cloudStatuses = {} }: GuidesProp
         </p>
       )}
 
+      {/* Filter controls */}
+      <div className="flex flex-col gap-1.5 mb-3 shrink-0">
+        <input
+          type="text"
+          value={nameFilter}
+          onChange={(e) => setNameFilter(e.target.value)}
+          placeholder="Search guides…"
+          className="w-full px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded text-zinc-200 text-sm focus:outline-none focus:border-zinc-600 placeholder:text-zinc-600"
+        />
+        <div className="flex flex-wrap gap-1">
+          <button
+            type="button"
+            className={`px-1.5 py-0.5 rounded text-[0.65rem] font-semibold uppercase tracking-wide border transition-colors ${
+              !mapFilter
+                ? 'bg-violet-700 text-white border-transparent'
+                : 'border-zinc-700 bg-zinc-800 text-zinc-400 hover:text-zinc-200'
+            }`}
+            onClick={() => setMapFilter(null)}
+          >
+            All
+          </button>
+          {KNOWN_MAPS.map((mapName) => {
+            const { label, accent, icon } = getMapColor(mapName)
+            const isActive = mapFilter === mapName
+            return (
+              <button
+                key={mapName}
+                type="button"
+                className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[0.65rem] font-semibold uppercase tracking-wide border transition-colors ${
+                  isActive ? 'border-transparent text-white' : 'border-zinc-700 bg-zinc-800 text-zinc-400 hover:text-zinc-200'
+                }`}
+                style={isActive ? { backgroundColor: accent } : undefined}
+                onClick={() => setMapFilter(isActive ? null : mapName)}
+              >
+                {icon && <img src={icon} alt="" width={10} height={10} className="shrink-0" />}
+                {label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       {/* Featured guides */}
       <div className="mb-1">
         <p
@@ -279,8 +331,11 @@ export default function Guides({ onGuideChange, cloudStatuses = {} }: GuidesProp
         {featured.length === 0 && (
           <p className="text-zinc-600 text-sm">No featured guides configured. Set Workshop content folder in Settings.</p>
         )}
+        {featured.length > 0 && filteredFeatured.length === 0 && (
+          <p className="text-zinc-600 text-sm">No featured guides match the filter.</p>
+        )}
         <ul className="list-none m-0 p-0 space-y-1">
-          {featured.map((g) => {
+          {filteredFeatured.map((g) => {
             const { accent } = getMapColor(g.mapName)
             return (
               <li key={g.workshopId}>
@@ -323,7 +378,7 @@ export default function Guides({ onGuideChange, cloudStatuses = {} }: GuidesProp
       </div>
 
       {/* Your guides */}
-      {yours.length > 0 && (
+      {filteredYours.length > 0 && (
         <div className="mt-4">
           <p
             className="m-0 mb-2 text-[0.7rem] text-zinc-500 uppercase tracking-wider font-semibold"
@@ -332,7 +387,7 @@ export default function Guides({ onGuideChange, cloudStatuses = {} }: GuidesProp
             Your guides
           </p>
           <ul className="list-none m-0 p-0 space-y-1">
-            {yours.map((g) => {
+            {filteredYours.map((g) => {
               const { accent } = getMapColor(g.mapName)
               const syncState = g.source === 'local' ? cloudStatuses[g.path] : undefined
               return (
