@@ -22,6 +22,45 @@ const btnIcon = 'p-1 rounded transition-colors disabled:opacity-40 disabled:curs
 const btnPrimary = `${btnIcon} text-violet-300 hover:bg-violet-900/40`
 const btnSecondary = `${btnIcon} text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200`
 
+interface GuideRowProps {
+  guide: GuideSummary
+  action: React.ReactNode
+  pushing: Set<string>
+  pulling: Set<string>
+  messages: Record<string, string>
+  errors: Record<string, string>
+  statuses: Record<string, GuideSyncState>
+}
+
+function GuideRow({ guide, action, pushing, pulling, messages, errors, statuses }: GuideRowProps) {
+  const { accent } = getMapColor(guide.mapName)
+  const isPushing = pushing.has(guide.id)
+  const isPulling = pulling.has(guide.id)
+  const msg = messages[guide.id]
+  const err = errors[guide.id]
+  const isNew = statuses[guide.id]?.status === 'not_in_cloud'
+  return (
+    <div
+      className="flex items-center gap-2 px-3 py-1.5 border-l-2"
+      style={{ borderLeftColor: accent }}
+    >
+      <span className="flex-1 text-xs text-zinc-300 overflow-hidden text-ellipsis whitespace-nowrap min-w-0">
+        {guide.name}
+        {isNew && (
+          <span className="ml-1.5 text-[0.6rem] px-1 py-0.5 bg-zinc-700 text-zinc-400 rounded">NEW</span>
+        )}
+      </span>
+      {err && <span className="text-[0.6rem] text-red-400 shrink-0">{err}</span>}
+      {msg && !err && <span className="text-[0.6rem] text-emerald-400 shrink-0">{msg}</span>}
+      <div className="shrink-0 flex items-center gap-1">
+        {(isPushing || isPulling) ? (
+          <RefreshCw size={13} className="text-zinc-500 animate-spin" />
+        ) : action}
+      </div>
+    </div>
+  )
+}
+
 function SectionHeader({
   label,
   count,
@@ -154,35 +193,6 @@ export default function CloudPanel({ guides, statuses, loading, onRefresh, onSta
   })
   const synced = localGuides.filter((g) => statuses[g.id]?.status === 'synced')
 
-  function GuideRow({ guide, action }: { guide: GuideSummary; action: React.ReactNode }) {
-    const { accent } = getMapColor(guide.mapName)
-    const isPushing = pushing.has(guide.id)
-    const isPulling = pulling.has(guide.id)
-    const msg = messages[guide.id]
-    const err = errors[guide.id]
-    const isNew = statuses[guide.id]?.status === 'not_in_cloud'
-    return (
-      <div
-        className="flex items-center gap-2 px-3 py-1.5 border-l-2"
-        style={{ borderLeftColor: accent }}
-      >
-        <span className="flex-1 text-xs text-zinc-300 overflow-hidden text-ellipsis whitespace-nowrap min-w-0">
-          {guide.name}
-          {isNew && (
-            <span className="ml-1.5 text-[0.6rem] px-1 py-0.5 bg-zinc-700 text-zinc-400 rounded">NEW</span>
-          )}
-        </span>
-        {err && <span className="text-[0.6rem] text-red-400 shrink-0">{err}</span>}
-        {msg && !err && <span className="text-[0.6rem] text-emerald-400 shrink-0">{msg}</span>}
-        <div className="shrink-0 flex items-center gap-1">
-          {(isPushing || isPulling) ? (
-            <RefreshCw size={13} className="text-zinc-500 animate-spin" />
-          ) : action}
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="flex flex-col gap-1 py-2">
       {/* Header */}
@@ -237,6 +247,11 @@ export default function CloudPanel({ guides, statuses, loading, onRefresh, onSta
                   <Download size={13} />
                 </button>
               }
+              pushing={pushing}
+              pulling={pulling}
+              messages={messages}
+              errors={errors}
+              statuses={statuses}
             />
           ))}
         </div>
@@ -275,6 +290,11 @@ export default function CloudPanel({ guides, statuses, loading, onRefresh, onSta
                   <Upload size={13} />
                 </button>
               }
+              pushing={pushing}
+              pulling={pulling}
+              messages={messages}
+              errors={errors}
+              statuses={statuses}
             />
           ))}
         </div>
@@ -295,7 +315,16 @@ export default function CloudPanel({ guides, statuses, loading, onRefresh, onSta
             />
           </button>
           {!syncedCollapsed && synced.map((g) => (
-            <GuideRow key={g.id} guide={g} action={null} />
+            <GuideRow
+              key={g.id}
+              guide={g}
+              action={null}
+              pushing={pushing}
+              pulling={pulling}
+              messages={messages}
+              errors={errors}
+              statuses={statuses}
+            />
           ))}
         </div>
       )}
