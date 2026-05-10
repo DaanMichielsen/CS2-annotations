@@ -4,6 +4,11 @@ export * from './annotation/types'
 export * from './annotation/kv3Mapping'
 export * from './annotation/inferUtils'
 export * from './annotation/groupUtils'
+export {
+  THROW_TYPE_LABEL,
+  THROW_TYPE_SHORT,
+  type ThrowType,
+} from './annotation/inferUtils'
 export type {
   GuideAdapter,
   GuideSummary,
