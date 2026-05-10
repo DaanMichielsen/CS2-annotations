@@ -194,6 +194,14 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
     onCloudRefresh?.()
   }
 
+  const mapCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const g of guides) {
+      if (g.mapName) counts[g.mapName] = (counts[g.mapName] ?? 0) + 1
+    }
+    return counts
+  }, [guides])
+
   if (openGuide) {
     const isWorkshop = openGuide.source === 'workshop'
     return (
@@ -244,14 +252,6 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
   }
   const filteredFeatured = featured.filter(matchesFilters)
   const filteredYours = yours.filter(matchesFilters)
-
-  const mapCounts = useMemo(() => {
-    const counts: Record<string, number> = {}
-    for (const g of guides) {
-      if (g.mapName) counts[g.mapName] = (counts[g.mapName] ?? 0) + 1
-    }
-    return counts
-  }, [guides])
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
