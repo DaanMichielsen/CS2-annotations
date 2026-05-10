@@ -28,6 +28,13 @@ export default async function CommunityLayout({ children }: { children: React.Re
             Browse
           </Link>
 
+          <Link
+            href="/library"
+            className="text-sm text-zinc-400 hover:text-white transition-colors font-medium"
+          >
+            Library
+          </Link>
+
           {session && (
             <>
               <Link
