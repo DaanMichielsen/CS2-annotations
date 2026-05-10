@@ -12,7 +12,8 @@
     "react-dom": "^18.2.0"
   },
   "dependencies": {
-    "@cs2ann/shared": "workspace:*"
+    "@cs2ann/shared": "workspace:*",
+    "lucide-react": "^1.14.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.45",

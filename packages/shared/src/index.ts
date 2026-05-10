@@ -1,3 +1,5 @@
+export * from './mapColors'
+export * from './cloudStatus'
 export * from './annotation/index'
 export * from './annotation/types'
 export * from './annotation/mapData'
