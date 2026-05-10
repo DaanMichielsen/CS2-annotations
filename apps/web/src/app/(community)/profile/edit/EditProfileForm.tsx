@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import { SOCIAL_PLATFORMS, STEAM_PLATFORM, SocialIcon, type SocialLinks } from '@/components/SocialIcons'
 
-export default function EditProfileForm() {
+export default function EditProfileForm({ isAdmin }: { isAdmin?: boolean }) {
   const router = useRouter()
   const [bio, setBio] = useState('')
   const [links, setLinks] = useState<SocialLinks>({})
@@ -146,6 +147,14 @@ export default function EditProfileForm() {
           </button>
           {saved && (
             <span className="text-xs font-data text-emerald-400">✓ Saved</span>
+          )}
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="ml-auto text-xs text-violet-400 hover:text-violet-300 transition-colors"
+            >
+              Admin panel →
+            </Link>
           )}
         </div>
     </div>

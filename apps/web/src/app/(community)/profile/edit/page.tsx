@@ -5,5 +5,6 @@ import EditProfileForm from './EditProfileForm'
 export default async function EditProfilePage() {
   const session = await auth()
   if (!session?.user?.id) redirect('/auth/signin')
-  return <EditProfileForm />
+  const isAdmin = session.user.roles?.includes('admin') ?? false
+  return <EditProfileForm isAdmin={isAdmin} />
 }
