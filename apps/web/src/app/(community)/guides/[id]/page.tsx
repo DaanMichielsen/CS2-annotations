@@ -11,6 +11,7 @@ import { getMapColor, getMapLabel } from '@/lib/mapColors'
 import { getGuideBlobUrl } from '@/lib/blob'
 import { parseKv3Text, kv3ToNodes, extractNodesKey } from '@cs2ann/shared/web'
 import type { Kv3Object, AnnotationNode, GrenadeType } from '@cs2ann/shared/web'
+import { CreditChip } from '@/components/CreditChip'
 
 const GRENADE_ORDER: GrenadeType[] = ['smoke', 'flash', 'he', 'molotov', 'decoy']
 const GRENADE_ICON_FILES: Record<GrenadeType, string> = {
@@ -41,6 +42,7 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
         include: { user: { select: { username: true, avatar: true, name: true } } },
         orderBy: { createdAt: 'asc' },
       },
+      credits: { orderBy: { position: 'asc' } },
     },
   })
 
@@ -158,6 +160,15 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
               <span className="text-zinc-700 text-xs font-data mx-1">·</span>
               <span className="text-xs font-data text-zinc-600">v{guide.version}</span>
             </div>
+
+            {guide.credits.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <span className="text-xs text-zinc-600">Credits:</span>
+                {guide.credits.map((c) => (
+                  <CreditChip key={c.id} handle={c.handle} label={c.label} />
+                ))}
+              </div>
+            )}
 
             {/* Grenade type summary */}
             {Object.keys(grenadeCounts).length > 0 && (
