@@ -92,10 +92,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth((request) => ({
     async session({ session, user }) {
       if (session.user) {
         session.user.id = user.id
-        const dbUser = await db.user.findUnique({ where: { id: user.id } })
+        const dbUser = await db.user.findUnique({
+          where: { id: user.id },
+          include: { roles: true },
+        })
         session.user.steamId = dbUser?.steamId ?? ''
         session.user.image   = dbUser?.avatar   ?? session.user.image
         session.user.name    = dbUser?.username  ?? session.user.name
+        session.user.roles   = dbUser?.roles.map((r) => r.role) ?? []
       }
       return session
     },

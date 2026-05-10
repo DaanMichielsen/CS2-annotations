@@ -5,6 +5,7 @@ declare module 'next-auth' {
     user: {
       id: string
       steamId: string
+      roles: string[]
     } & DefaultSession['user']
   }
 }
