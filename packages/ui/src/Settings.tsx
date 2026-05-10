@@ -177,7 +177,7 @@ export default function Settings() {
           {status === 'detecting' ? 'Detecting…' : 'Detect from Steam'}
         </button>
         <button type="button" className={btn} onClick={handleSave}>
-          Save paths
+          Save
         </button>
       </div>
 
@@ -187,11 +187,7 @@ export default function Settings() {
             type="checkbox"
             id="auto-copy-load"
             checked={autoCopyLoadCommandsOnOpen}
-            onChange={async (e) => {
-              const v = e.target.checked
-              setAutoCopyLoadCommandsOnOpen(v)
-              await adapter.setAutoCopyLoadCommandsOnOpen?.(v)
-            }}
+            onChange={(e) => setAutoCopyLoadCommandsOnOpen(e.target.checked)}
             className="w-4 h-4 accent-zinc-500 cursor-pointer"
           />
           <label htmlFor="auto-copy-load" className="text-sm text-zinc-300 cursor-pointer">
