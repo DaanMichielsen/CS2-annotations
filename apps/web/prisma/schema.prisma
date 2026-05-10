@@ -21,13 +21,15 @@ model User {
   socialLinks   Json      @default("{}")
   createdAt     DateTime  @default(now())
 
-  accounts   Account[]
-  sessions   Session[]
-  guides     Guide[]
-  ratings    GuideRating[]
-  comments   GuideComment[]
-  following  Follow[]      @relation("Follower")
-  followers  Follow[]      @relation("Following")
+  accounts     Account[]
+  sessions     Session[]
+  guides       Guide[]
+  ratings      GuideRating[]
+  comments     GuideComment[]
+  following    Follow[]      @relation("Follower")
+  followers    Follow[]      @relation("Following")
+  roles        UserRole[]    @relation("UserRoles")
+  rolesGranted UserRole[]    @relation("GrantedRoles")
 }
 
 model Follow {
@@ -61,6 +63,8 @@ model Guide {
   ratings        GuideRating[]
   comments       GuideComment[]
   grenadeEntries GrenadeEntry[]
+  featuredGuide  FeaturedGuide?
+  credits        GuideCredit[]
 }
 
 model GuideRating {
@@ -145,4 +149,41 @@ model CronState {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
+}
+
+model UserRole {
+  id          String   @id @default(cuid())
+  userId      String
+  role        String
+  grantedAt   DateTime @default(now())
+  grantedById String?
+
+  user      User  @relation("UserRoles",   fields: [userId],      references: [id], onDelete: Cascade)
+  grantedBy User? @relation("GrantedRoles", fields: [grantedById], references: [id], onDelete: SetNull)
+
+  @@unique([userId, role])
+  @@index([userId])
+}
+
+model FeaturedGuide {
+  id       String   @id @default(cuid())
+  guideId  String   @unique
+  position Int
+  addedAt  DateTime @default(now())
+
+  guide Guide @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@index([position])
+}
+
+model GuideCredit {
+  id       String  @id @default(cuid())
+  guideId  String
+  handle   String
+  label    String?
+  position Int
+
+  guide Guide @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@index([guideId])
 }
