@@ -615,8 +615,8 @@ export default function GuideEditor({
           type="button"
           title={label}
           onClick={() => setSelectedIndex(i)}
-          className={`flex-1 min-w-0 px-2 py-1.5 text-left text-sm rounded border-none cursor-pointer transition-colors flex items-center gap-1.5
-            ${selectedIndex === i ? 'bg-zinc-700 text-zinc-100 ring-1 ring-zinc-500' : 'bg-transparent text-zinc-300 hover:bg-zinc-700/60'}
+          className={`flex-1 min-w-0 px-2 py-1.5 text-left text-sm rounded cursor-pointer transition-colors flex items-center gap-1.5
+            ${selectedIndex === i ? 'bg-zinc-700 text-zinc-100 ring-1 ring-zinc-500 border border-transparent' : 'bg-zinc-800/60 text-zinc-300 hover:bg-zinc-700/60 border border-zinc-700/50'}
             ${!isEnabled ? 'opacity-50 italic' : ''}`}
         >
           {n.Color && <span className="shrink-0 w-2 h-2 rounded-full" style={{ backgroundColor: rgbToHex(n.Color) }} />}
@@ -674,8 +674,8 @@ export default function GuideEditor({
           type="button"
           title={tooltipText}
           onClick={() => setSelectedIndex(group.indices[0])}
-          className={`flex-1 min-w-0 px-2 py-1.5 text-left text-sm rounded border-none cursor-pointer transition-colors
-            ${active ? 'bg-zinc-700 text-zinc-100 ring-1 ring-zinc-500' : 'bg-transparent text-zinc-300 hover:bg-zinc-700/60'}
+          className={`flex-1 min-w-0 px-2 py-1.5 text-left text-sm rounded cursor-pointer transition-colors
+            ${active ? 'bg-zinc-700 text-zinc-100 ring-1 ring-zinc-500 border border-transparent' : 'bg-zinc-800/60 text-zinc-300 hover:bg-zinc-700/60 border border-zinc-700/50'}
             ${!allEnabled ? 'opacity-50 italic' : ''}`}
         >
           <div className="flex items-center gap-1.5 leading-none mb-0.5">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { FolderInput } from 'lucide-react'
 import type { AnnotationNode } from '@cs2ann/shared'
 import { getMapColor, KNOWN_MAPS } from '@cs2ann/shared'
@@ -245,6 +245,14 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
   const filteredFeatured = featured.filter(matchesFilters)
   const filteredYours = yours.filter(matchesFilters)
 
+  const mapCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const g of guides) {
+      if (g.mapName) counts[g.mapName] = (counts[g.mapName] ?? 0) + 1
+    }
+    return counts
+  }, [guides])
+
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
       <div className="flex items-center justify-between mb-4 shrink-0">
@@ -280,7 +288,7 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
           />
           <button
             type="button"
-            className="px-4 py-2 rounded text-white text-sm font-semibold cursor-pointer disabled:opacity-40 transition-opacity"
+            className="px-4 py-2 rounded text-white text-sm font-semibold cursor-pointer disabled:opacity-40 transition-opacity border border-violet-600/60"
             style={{ backgroundColor: 'var(--color-brand)' }}
             onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.backgroundColor = 'var(--color-brand-hover)' }}
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-brand)')}
@@ -328,6 +336,8 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
           {KNOWN_MAPS.map((mapName) => {
             const { label, accent, icon } = getMapColor(mapName)
             const isActive = mapFilter === mapName
+            const count = mapCounts[mapName] ?? 0
+            if (count === 0) return null
             return (
               <button
                 key={mapName}
@@ -340,6 +350,7 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
               >
                 {icon && <img src={icon} alt="" width={10} height={10} className="shrink-0" />}
                 {label}
+                <span className={`opacity-60 font-normal normal-case tracking-normal ${isActive ? '' : 'text-zinc-500'}`}>{count}</span>
               </button>
             )
           })}
@@ -348,12 +359,15 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
 
       {/* Featured guides */}
       <div className="mb-1">
-        <p
-          className="m-0 mb-2 text-[0.7rem] text-zinc-500 uppercase tracking-wider font-semibold"
-          style={{ fontFamily: 'var(--font-display)' }}
-        >
-          Featured map guides
-        </p>
+        <div className="flex items-center gap-2 mb-2">
+          <p
+            className="m-0 text-[0.7rem] uppercase tracking-wider font-semibold"
+            style={{ fontFamily: 'var(--font-display)', color: 'var(--color-brand)' }}
+          >
+            Featured map guides
+          </p>
+          <span className="text-[0.6rem] px-1 py-0.5 bg-zinc-800 text-zinc-500 rounded-full">{featured.length}</span>
+        </div>
         {featured.length === 0 && (
           <p className="text-zinc-600 text-sm">No featured guides configured. Set Workshop content folder in Settings.</p>
         )}
@@ -368,7 +382,7 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
                 {g.installed ? (
                   <button
                     type="button"
-                    className="w-full flex items-center justify-between gap-2 min-w-0 px-3 py-2.5 text-left bg-zinc-800/60 hover:bg-zinc-800 rounded text-zinc-200 cursor-pointer text-[0.9rem] transition-colors border-l-[3px]"
+                    className="w-full flex items-center justify-between gap-2 min-w-0 px-3 py-2.5 text-left bg-zinc-800/60 hover:bg-zinc-800 rounded text-zinc-200 cursor-pointer text-[0.9rem] transition-colors border border-zinc-700/50 border-l-[3px]"
                     style={{ borderLeftColor: accent }}
                     onClick={() => openGuideByPath(g.name, g.path, g.source)}
                   >
@@ -385,7 +399,7 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
                   </button>
                 ) : (
                   <div
-                    className="flex items-center justify-between gap-2 min-w-0 px-3 py-2.5 bg-zinc-800/30 border-l-[3px] rounded text-zinc-500 text-[0.9rem]"
+                    className="flex items-center justify-between gap-2 min-w-0 px-3 py-2.5 bg-zinc-800/30 border border-zinc-700/50 border-l-[3px] rounded text-zinc-500 text-[0.9rem]"
                     style={{ borderLeftColor: accent }}
                   >
                     <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{g.name}</span>
@@ -406,12 +420,15 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
       {/* Your guides */}
       {filteredYours.length > 0 && (
         <div className="mt-4">
-          <p
-            className="m-0 mb-2 text-[0.7rem] text-zinc-500 uppercase tracking-wider font-semibold"
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
-            Your guides
-          </p>
+          <div className="flex items-center gap-2 mb-2">
+            <p
+              className="m-0 text-[0.7rem] uppercase tracking-wider font-semibold"
+              style={{ fontFamily: 'var(--font-display)', color: 'var(--color-brand)' }}
+            >
+              Your guides
+            </p>
+            <span className="text-[0.6rem] px-1 py-0.5 bg-zinc-800 text-zinc-500 rounded-full">{yours.length}</span>
+          </div>
           <ul className="list-none m-0 p-0 space-y-1">
             {filteredYours.map((g) => {
               const { accent } = getMapColor(g.mapName)
@@ -420,10 +437,8 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
                 <li key={g.path} className="flex items-center gap-1.5">
                   <button
                     type="button"
-                    className="flex-1 flex items-center gap-2.5 min-w-0 px-3 py-2.5 text-left rounded text-zinc-200 cursor-pointer text-[0.9rem] transition-colors border-l-[3px]"
+                    className="flex-1 flex items-center gap-2.5 min-w-0 px-3 py-2.5 text-left rounded text-zinc-200 cursor-pointer text-[0.9rem] transition-colors border border-zinc-700/50 border-l-[3px] bg-zinc-800/40 hover:bg-zinc-800"
                     style={{ borderLeftColor: accent }}
-                    onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.85')}
-                    onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                     onClick={() => openGuideByPath(g.name, g.path, g.source)}
                   >
                     {g.source === 'local' && (

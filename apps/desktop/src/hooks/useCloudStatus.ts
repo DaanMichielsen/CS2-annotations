@@ -24,7 +24,14 @@ export function useCloudStatus(): CloudStatusResult {
     setLoading(true)
     try {
       const list = await window.electronAPI.listGuides()
-      const allGuides = list as GuideSummary[]
+      const allGuides = (list as Array<{ path: string; name: string; mapName?: string; source: string; installed?: boolean; workshopId?: string }>).map((g) => ({
+        id: g.path,
+        name: g.name,
+        mapName: g.mapName,
+        source: g.source as GuideSummary['source'],
+        installed: g.installed,
+        workshopId: g.workshopId,
+      }))
       setGuides(allGuides)
 
       const localGuides = allGuides.filter((g) => g.source === 'local')
