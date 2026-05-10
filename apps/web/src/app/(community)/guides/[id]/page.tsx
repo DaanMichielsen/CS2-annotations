@@ -6,6 +6,7 @@ import Image from 'next/image'
 import RatingButtons from '@/components/RatingButtons'
 import CommentThread from '@/components/CommentThread'
 import GuideAnnotationPreview from '@/components/GuideAnnotationPreview'
+import { GuideNodeFilter } from '@/components/GuideNodeFilter'
 import { getMapColor, getMapLabel } from '@/lib/mapColors'
 import { getGuideBlobUrl } from '@/lib/blob'
 import { parseKv3Text, kv3ToNodes, extractNodesKey } from '@cs2ann/shared/web'
@@ -209,7 +210,7 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
         <h2 className="font-display font-semibold text-lg text-white mb-4 tracking-tight">
           Annotations
         </h2>
-        <GuideAnnotationPreview nodes={nodes} mapName={guide.map} />
+        <GuideNodeFilter nodes={nodes} mapName={guide.map} />
       </section>
 
       {/* Comments */}
