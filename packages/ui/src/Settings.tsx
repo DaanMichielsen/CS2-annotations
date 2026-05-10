@@ -139,7 +139,7 @@ export default function Settings() {
       await adapter.setCfgKeybind(key)
     }
     setStatus('saved')
-    setMessage('Paths saved.')
+    setMessage('Settings saved.')
   }
 
   return (
@@ -172,12 +172,9 @@ export default function Settings() {
         />
       </div>
 
-      <div className="flex gap-2 mb-4">
+      <div className="mb-4">
         <button type="button" className={btn} onClick={handleDetect} disabled={status === 'detecting'}>
           {status === 'detecting' ? 'Detecting…' : 'Detect from Steam'}
-        </button>
-        <button type="button" className={btn} onClick={handleSave}>
-          Save
         </button>
       </div>
 
@@ -244,9 +241,14 @@ export default function Settings() {
         </div>
       )}
 
-      {message && (
-        <p className={`text-sm ${status === 'error' ? 'text-red-400' : 'text-zinc-400'}`}>{message}</p>
-      )}
+      <div className="pt-2 border-t border-zinc-800 flex items-center gap-3">
+        <button type="button" className={`${btn} bg-violet-700 hover:bg-violet-600`} onClick={handleSave}>
+          Save
+        </button>
+        {message && (
+          <p className={`text-sm m-0 ${status === 'error' ? 'text-red-400' : 'text-zinc-400'}`}>{message}</p>
+        )}
+      </div>
     </div>
   )
 }
