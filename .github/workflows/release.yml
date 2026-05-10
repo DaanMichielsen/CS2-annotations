@@ -26,7 +26,10 @@ jobs:
       - name: Build shared package
         run: pnpm --filter @cs2ann/shared build --if-present
 
-      - name: Build and package desktop app
-        run: pnpm --filter @cs2ann/desktop dist:release
+      - name: Build desktop app
+        run: pnpm --filter @cs2ann/desktop build
+
+      - name: Publish release
+        run: pnpm --filter @cs2ann/desktop electron-builder --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
