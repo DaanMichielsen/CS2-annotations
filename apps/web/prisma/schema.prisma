@@ -57,9 +57,10 @@ model Guide {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  ratings  GuideRating[]
-  comments GuideComment[]
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ratings        GuideRating[]
+  comments       GuideComment[]
+  grenadeEntries GrenadeEntry[]
 }
 
 model GuideRating {
@@ -118,4 +119,30 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model GrenadeEntry {
+  id          String   @id @default(cuid())
+  guideId     String
+  nodeId      String
+  map         String
+  grenadeType String
+  throwType   String
+  posLabel    String?
+  aimLabel    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  guide Guide @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@unique([guideId, nodeId])
+  @@index([map])
+  @@index([throwType])
+  @@index([grenadeType])
+}
+
+model CronState {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }
