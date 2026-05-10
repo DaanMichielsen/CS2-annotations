@@ -1,6 +1,6 @@
 {
   "name": "@cs2ann/desktop",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "CS2 Annotations Manager desktop app",
   "main": "out/main/index.js",
