@@ -17,10 +17,6 @@ interface GuideItem {
   installed: boolean
 }
 
-const FEATURED_IDS = new Set([
-  '3387810001', '3387870747', '3388581972', '3388611848',
-  '3388638091', '3388681214', '3388737112', '3388761697',
-])
 
 interface OpenGuide {
   name: string
@@ -39,10 +35,20 @@ export interface OpenGuideInfo {
   nodeCount?: number
 }
 
+interface FeaturedGuide {
+  id: string
+  title: string
+  map: string | null
+  nodeCount: number
+  credits: Array<{ handle: string; label: string | null }>
+}
+
 interface GuidesProps {
   onGuideChange?: (guide: OpenGuideInfo | null) => void
   cloudStatuses?: Record<string, GuideSyncState>
   onCloudRefresh?: () => void
+  featuredGuides?: FeaturedGuide[]
+  onFeaturedFork?: (guideId: string, title: string) => void | Promise<void>
 }
 
 const btn =
@@ -84,7 +90,7 @@ function MapChip({ mapName }: { mapName?: string }) {
   )
 }
 
-export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefresh }: GuidesProps = {}) {
+export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefresh, featuredGuides = [], onFeaturedFork }: GuidesProps = {}) {
   const adapter = useGuideAdapter()
   const [guides, setGuides] = useState<GuideItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -202,6 +208,14 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
     return counts
   }, [guides])
 
+  const installedCloudIds = useMemo(() => {
+    return new Set(
+      Object.values(cloudStatuses)
+        .map((s) => s.cloudId)
+        .filter((id): id is string => !!id)
+    )
+  }, [cloudStatuses])
+
   if (openGuide) {
     const isWorkshop = openGuide.source === 'workshop'
     return (
@@ -242,15 +256,13 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
     )
   }
 
-  const featured = guides.filter((g) => g.source === 'workshop' && g.workshopId && FEATURED_IDS.has(g.workshopId))
-  const yours = guides.filter((g) => !(g.source === 'workshop' && g.workshopId && FEATURED_IDS.has(g.workshopId)))
+  const yours = guides
 
   function matchesFilters(g: GuideItem): boolean {
     const nameOk = !nameFilter || g.name.toLowerCase().includes(nameFilter.toLowerCase())
     const mapOk = !mapFilter || g.mapName === mapFilter
     return nameOk && mapOk
   }
-  const filteredFeatured = featured.filter(matchesFilters)
   const filteredYours = yours.filter(matchesFilters)
 
   return (
@@ -357,65 +369,90 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
         </div>
       </div>
 
-      {/* Featured guides */}
-      <div className="mb-1">
-        <div className="flex items-center gap-2 mb-2">
-          <p
-            className="m-0 text-[0.7rem] uppercase tracking-wider font-semibold"
-            style={{ fontFamily: 'var(--font-display)', color: 'var(--color-brand)' }}
-          >
-            Featured map guides
-          </p>
-          <span className="text-[0.6rem] px-1 py-0.5 bg-zinc-800 text-zinc-500 rounded-full">{featured.length}</span>
-        </div>
-        {featured.length === 0 && (
-          <p className="text-zinc-600 text-sm">No featured guides configured. Set Workshop content folder in Settings.</p>
-        )}
-        {featured.length > 0 && filteredFeatured.length === 0 && (
-          <p className="text-zinc-600 text-sm">No featured guides match the filter.</p>
-        )}
-        <ul className="list-none m-0 p-0 space-y-1">
-          {filteredFeatured.map((g) => {
-            const { accent } = getMapColor(g.mapName)
-            return (
-              <li key={g.workshopId}>
-                {g.installed ? (
-                  <button
-                    type="button"
-                    className="w-full flex items-center justify-between gap-2 min-w-0 px-3 py-2.5 text-left bg-zinc-800/60 hover:bg-zinc-800 rounded text-zinc-200 cursor-pointer text-[0.9rem] transition-colors border border-zinc-700/50 border-l-[3px]"
-                    style={{ borderLeftColor: accent }}
-                    onClick={() => openGuideByPath(g.name, g.path, g.source)}
-                  >
-                    <span
-                      className="flex-1 text-left overflow-hidden text-ellipsis whitespace-nowrap font-semibold"
-                      style={{ fontFamily: 'var(--font-display)' }}
+      {/* Featured guides from API */}
+      {featuredGuides.length > 0 && (
+        <div className="mb-1">
+          <div className="flex items-center gap-2 mb-2">
+            <p
+              className="m-0 text-[0.7rem] uppercase tracking-wider font-semibold"
+              style={{ fontFamily: 'var(--font-display)', color: 'var(--color-brand)' }}
+            >
+              Featured map guides
+            </p>
+            <span className="text-[0.6rem] px-1 py-0.5 bg-zinc-800 text-zinc-500 rounded-full">
+              {featuredGuides.length}
+            </span>
+          </div>
+          <ul className="list-none m-0 p-0 space-y-1">
+            {featuredGuides.map((fg) => {
+              const { accent } = getMapColor(fg.map)
+              const isInstalled = installedCloudIds.has(fg.id)
+              const creditLine = fg.credits.map((c) => c.label || c.handle).join(', ')
+
+              if (isInstalled) {
+                const localGuide = guides.find(
+                  (g) => g.source === 'local' && cloudStatuses[g.path]?.cloudId === fg.id
+                )
+                return (
+                  <li key={fg.id}>
+                    <button
+                      type="button"
+                      className="w-full flex items-center justify-between gap-2 min-w-0 px-3 py-2.5 text-left bg-zinc-800/60 hover:bg-zinc-800 rounded text-zinc-200 cursor-pointer text-[0.9rem] transition-colors border border-zinc-700/50 border-l-[3px]"
+                      style={{ borderLeftColor: accent }}
+                      onClick={() => localGuide && openGuideByPath(localGuide.name, localGuide.path, 'local')}
+                      disabled={!localGuide}
                     >
-                      {g.name}
-                    </span>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <MapChip mapName={g.mapName} />
-                      <span className="text-[0.65rem] px-1.5 py-0.5 bg-indigo-900/60 text-indigo-300 rounded">Workshop</span>
-                    </div>
-                  </button>
-                ) : (
+                      <span className="flex flex-col min-w-0">
+                        <span
+                          className="text-left overflow-hidden text-ellipsis whitespace-nowrap font-semibold"
+                          style={{ fontFamily: 'var(--font-display)' }}
+                        >
+                          {fg.title}
+                        </span>
+                        {creditLine && (
+                          <span className="text-[0.65rem] text-zinc-500 mt-0.5">{creditLine}</span>
+                        )}
+                      </span>
+                      <MapChip mapName={fg.map ?? undefined} />
+                    </button>
+                  </li>
+                )
+              }
+
+              return (
+                <li key={fg.id}>
                   <div
                     className="flex items-center justify-between gap-2 min-w-0 px-3 py-2.5 bg-zinc-800/30 border border-zinc-700/50 border-l-[3px] rounded text-zinc-500 text-[0.9rem]"
                     style={{ borderLeftColor: accent }}
                   >
-                    <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{g.name}</span>
-                    <a
-                      href={`steam://url/CommunityFilePage/${g.workshopId}`}
-                      className="shrink-0 text-[0.7rem] px-2 py-0.5 bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded cursor-pointer no-underline transition-colors"
-                    >
-                      Subscribe
-                    </a>
+                    <span className="flex flex-col min-w-0">
+                      <span className="overflow-hidden text-ellipsis whitespace-nowrap">{fg.title}</span>
+                      {creditLine && (
+                        <span className="text-[0.65rem] text-zinc-600 mt-0.5">{creditLine}</span>
+                      )}
+                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <MapChip mapName={fg.map ?? undefined} />
+                      {onFeaturedFork && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await onFeaturedFork(fg.id, fg.title)
+                            await loadGuides()
+                          }}
+                          className="text-[0.7rem] px-2 py-0.5 bg-violet-700 hover:bg-violet-600 text-white rounded cursor-pointer transition-colors"
+                        >
+                          Fork
+                        </button>
+                      )}
+                    </div>
                   </div>
-                )}
-              </li>
-            )
-          })}
-        </ul>
-      </div>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
 
       {/* Your guides */}
       {filteredYours.length > 0 && (

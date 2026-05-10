@@ -4,6 +4,7 @@ import { createLocalAdapter } from './adapters/LocalAdapter'
 import AuthButton from './components/AuthButton'
 import CloudPanel from './components/CloudPanel'
 import { useCloudStatus } from './hooks/useCloudStatus'
+import { useFeaturedGuides } from './hooks/useFeaturedGuides'
 
 const adapter = createLocalAdapter()
 
@@ -14,6 +15,7 @@ function AppInner() {
   const [syncStatusText, setSyncStatusText] = useState('')
 
   const cloudStatus = useCloudStatus()
+  const featuredGuides = useFeaturedGuides()
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -30,6 +32,11 @@ function AppInner() {
           <Guides
             cloudStatuses={cloudStatus.statuses}
             onCloudRefresh={cloudStatus.refresh}
+            featuredGuides={featuredGuides.guides}
+            onFeaturedFork={async (guideId, title) => {
+              await (window.electronAPI as any).featuredFork(guideId, title)
+              cloudStatus.refresh()
+            }}
           />
         </div>
 

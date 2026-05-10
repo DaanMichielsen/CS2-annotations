@@ -825,6 +825,31 @@ ipcMain.handle('openCommunity', () => {
   shell.openExternal('https://cs2annotations.com/guides')
 })
 
+ipcMain.handle('featuredFork', async (_event, guideId: string, title: string) => {
+  try {
+    const annotationsRoot = store.get('annotationsRoot', '') as string
+    if (!annotationsRoot) return { error: 'Annotations folder not configured. Set it in Settings first.' }
+
+    const res = await fetch(`${WEB_API}/featured-guides/${guideId}/blob`, { redirect: 'follow' })
+    if (!res.ok) return { error: `Failed to fetch guide content (${res.status})` }
+    const content = await res.text()
+
+    const safeName = title.trim().replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || 'featured_guide'
+    const guideDir = path.join(annotationsRoot, safeName)
+    const filePath = path.join(guideDir, safeName + '.txt')
+
+    fs.mkdirSync(guideDir, { recursive: true })
+    fs.writeFileSync(filePath, content, 'utf-8')
+
+    store.set(`cloudId:${filePath}`, guideId)
+    store.set(`cloudVersion:${filePath}`, 1)
+
+    return { ok: true, filePath }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) }
+  }
+})
+
 // ── CS2 console ─────────────────────────────────────────────────────────────
 
 ipcMain.handle(
