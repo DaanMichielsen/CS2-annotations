@@ -244,9 +244,9 @@ export default function Guides({ onGuideChange, cloudStatuses = {} }: GuidesProp
           />
           <button
             type="button"
-            className="px-4 py-2 rounded text-white text-sm cursor-pointer disabled:opacity-60 transition-colors"
+            className="px-4 py-2 rounded text-white text-sm font-semibold cursor-pointer disabled:opacity-40 transition-opacity"
             style={{ backgroundColor: 'var(--color-brand)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-brand-hover)')}
+            onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.backgroundColor = 'var(--color-brand-hover)' }}
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-brand)')}
             onClick={createAndOpenGuide}
             disabled={creating || !newGuideName.trim()}
@@ -281,14 +281,14 @@ export default function Guides({ onGuideChange, cloudStatuses = {} }: GuidesProp
         )}
         <ul className="list-none m-0 p-0 space-y-1">
           {featured.map((g) => {
-            const { accent, dim } = getMapColor(g.mapName)
+            const { accent } = getMapColor(g.mapName)
             return (
               <li key={g.workshopId}>
                 {g.installed ? (
                   <button
                     type="button"
                     className="w-full flex items-center justify-between gap-2 min-w-0 px-3 py-2.5 text-left bg-zinc-800/60 hover:bg-zinc-800 rounded text-zinc-200 cursor-pointer text-[0.9rem] transition-colors border-l-[3px]"
-                    style={{ borderLeftColor: accent, backgroundColor: dim }}
+                    style={{ borderLeftColor: accent }}
                     onClick={() => openGuideByPath(g.name, g.path, g.source)}
                   >
                     <span
@@ -333,14 +333,14 @@ export default function Guides({ onGuideChange, cloudStatuses = {} }: GuidesProp
           </p>
           <ul className="list-none m-0 p-0 space-y-1">
             {yours.map((g) => {
-              const { accent, dim } = getMapColor(g.mapName)
+              const { accent } = getMapColor(g.mapName)
               const syncState = g.source === 'local' ? cloudStatuses[g.path] : undefined
               return (
                 <li key={g.path} className="flex items-center gap-1.5">
                   <button
                     type="button"
                     className="flex-1 flex items-center gap-2.5 min-w-0 px-3 py-2.5 text-left rounded text-zinc-200 cursor-pointer text-[0.9rem] transition-colors border-l-[3px]"
-                    style={{ borderLeftColor: accent, backgroundColor: dim }}
+                    style={{ borderLeftColor: accent }}
                     onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.85')}
                     onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                     onClick={() => openGuideByPath(g.name, g.path, g.source)}
