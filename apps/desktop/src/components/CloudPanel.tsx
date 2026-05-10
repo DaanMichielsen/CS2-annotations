@@ -1,66 +1,61 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { OpenGuideInfo } from '@cs2ann/ui'
+import { Upload, Download, RefreshCw, CloudOff } from 'lucide-react'
+import type { GuideSummary } from '@cs2ann/shared'
+import type { GuideSyncState } from '@cs2ann/shared'
+import { getMapColor } from '@cs2ann/shared'
 
-function syncDotColor(state: SyncState | null): string {
-  if (!state) return 'bg-zinc-600'
-  if (state.synced) return 'bg-emerald-500'
-  if (state.behind) return 'bg-yellow-500'
-  if (state.cloudId) return 'bg-orange-500'
-  return 'bg-zinc-600'
-}
-
-function syncStatusText(state: SyncState | null): string {
-  if (!state) return 'Checking…'
-  if (state.synced) return 'Up to date'
-  if (state.behind) return 'Cloud has newer version'
-  if (state.cloudId) return 'Local changes not pushed'
-  return 'Not backed up yet'
-}
-
-interface SyncState {
-  synced: boolean
-  cloudId?: string
-  localVersion?: number
-  cloudVersion?: number
-  behind?: boolean
-}
-
-interface CloudGuide {
-  id: string
-  title: string
-  map: string
-  version: number
+interface AuthState {
+  token: string | null
+  name: string
+  avatar: string
 }
 
 interface Props {
-  guide: OpenGuideInfo
+  guides: GuideSummary[]
+  statuses: Record<string, GuideSyncState>
+  loading: boolean
+  onRefresh: () => void
   onStatusChange?: (dotColor: string, statusText: string) => void
 }
 
-const btn = 'px-3 py-1.5 rounded text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
-const btnPrimary = `${btn} bg-indigo-700 hover:bg-indigo-600 text-white`
-const btnSecondary = `${btn} bg-zinc-700 hover:bg-zinc-600 text-zinc-200`
+const btnIcon = 'p-1 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed'
+const btnPrimary = `${btnIcon} text-violet-300 hover:bg-violet-900/40`
+const btnSecondary = `${btnIcon} text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200`
 
-export default function CloudPanel({ guide, onStatusChange }: Props) {
-  const [authState, setAuthState] = useState<{ token: string | null; name: string; avatar: string } | null>(null)
-  const [syncState, setSyncState] = useState<SyncState | null>(null)
-  const [cloudGuides, setCloudGuides] = useState<CloudGuide[]>([])
-  const [loadingSync, setLoadingSync] = useState(false)
-  const [pushing, setPushing] = useState(false)
-  const [pulling, setPulling] = useState(false)
-  const [statusMsg, setStatusMsg] = useState('')
-  const [error, setError] = useState('')
+function SectionHeader({
+  label,
+  count,
+  color,
+  action,
+}: {
+  label: string
+  count: number
+  color: string
+  action?: React.ReactNode
+}) {
+  return (
+    <div className="flex items-center justify-between px-3 py-1.5">
+      <div className="flex items-center gap-2">
+        <span
+          className="text-[0.65rem] font-bold uppercase tracking-wider"
+          style={{ color, fontFamily: 'var(--font-display)' }}
+        >
+          {label}
+        </span>
+        <span className="text-[0.6rem] px-1 py-0.5 bg-zinc-800 text-zinc-500 rounded-full">{count}</span>
+      </div>
+      {action}
+    </div>
+  )
+}
 
-  const loadSyncState = useCallback(async () => {
-    if (!guide.filePath) return
-    setLoadingSync(true)
-    try {
-      const state = await window.electronAPI.cloudGetSyncState(guide.filePath)
-      setSyncState(state)
-    } finally {
-      setLoadingSync(false)
-    }
-  }, [guide.filePath])
+export default function CloudPanel({ guides, statuses, loading, onRefresh, onStatusChange }: Props) {
+  const [authState, setAuthState] = useState<AuthState | null>(null)
+  const [pushing, setPushing] = useState<Set<string>>(new Set())
+  const [pulling, setPulling] = useState<Set<string>>(new Set())
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [messages, setMessages] = useState<Record<string, string>>({})
+  const [syncedCollapsed, setSyncedCollapsed] = useState(true)
 
   useEffect(() => {
     window.electronAPI.getAuthState().then(setAuthState)
@@ -69,164 +64,253 @@ export default function CloudPanel({ guide, onStatusChange }: Props) {
   }, [])
 
   useEffect(() => {
-    setSyncState(null)
-    setStatusMsg('')
-    setError('')
-    if (authState?.token) {
-      void loadSyncState()
-      void window.electronAPI.cloudListGuides().then((r) => {
-        if (r.guides) setCloudGuides(r.guides)
-      })
+    const vals = Object.values(statuses).map((s) => s.status)
+    if (vals.some((s) => s === 'cloud_ahead')) {
+      onStatusChange?.('bg-yellow-500', 'Some guides need pulling')
+    } else if (vals.some((s) => s === 'local_ahead' || s === 'not_in_cloud')) {
+      onStatusChange?.('bg-orange-500', 'Some guides not pushed')
+    } else if (vals.length > 0 && vals.every((s) => s === 'synced')) {
+      onStatusChange?.('bg-emerald-500', 'All guides synced')
+    } else {
+      onStatusChange?.('bg-zinc-600', loading ? 'Checking…' : 'Cloud sync')
     }
-  }, [guide.filePath, authState?.token, loadSyncState])
+  }, [statuses, loading, onStatusChange])
 
-  useEffect(() => {
-    onStatusChange?.(syncDotColor(syncState), syncStatusText(syncState))
-  }, [syncState, onStatusChange])
-
-  async function handlePush() {
-    setPushing(true)
-    setError('')
-    setStatusMsg('')
+  const handlePush = useCallback(async (guide: GuideSummary) => {
+    const state = statuses[guide.id]
+    setPushing((prev) => new Set(prev).add(guide.id))
+    setErrors((prev) => { const n = { ...prev }; delete n[guide.id]; return n })
+    setMessages((prev) => { const n = { ...prev }; delete n[guide.id]; return n })
     try {
       const res = await window.electronAPI.cloudPushGuide({
-        filePath: guide.filePath,
+        filePath: guide.id,
         title: guide.name,
         map: guide.mapName ?? '',
-        nodeCount: guide.nodeCount,
-        cloudId: syncState?.cloudId,
-        cloudVersion: syncState?.cloudVersion,
+        nodeCount: 0,
+        cloudId: state?.cloudId,
+        cloudVersion: state?.cloudVersion,
       })
-      if (res.conflict) {
-        setError(`Conflict: cloud is at version ${res.cloudVersion}. Pull first then push again.`)
-      } else if (res.error) {
-        setError(res.error)
+      if ((res as { conflict?: boolean }).conflict) {
+        setErrors((prev) => ({ ...prev, [guide.id]: 'Conflict — pull first' }))
+      } else if ((res as { error?: string }).error) {
+        setErrors((prev) => ({ ...prev, [guide.id]: (res as { error: string }).error }))
       } else {
-        setStatusMsg('Pushed successfully')
-        await loadSyncState()
+        setMessages((prev) => ({ ...prev, [guide.id]: '✓ Pushed' }))
+        onRefresh()
       }
     } finally {
-      setPushing(false)
+      setPushing((prev) => { const n = new Set(prev); n.delete(guide.id); return n })
     }
-  }
+  }, [statuses, onRefresh])
 
-  async function handlePull() {
-    if (!syncState?.cloudId) return
-    setPulling(true)
-    setError('')
-    setStatusMsg('')
+  const handlePull = useCallback(async (guide: GuideSummary) => {
+    const state = statuses[guide.id]
+    if (!state?.cloudId) return
+    setPulling((prev) => new Set(prev).add(guide.id))
+    setErrors((prev) => { const n = { ...prev }; delete n[guide.id]; return n })
+    setMessages((prev) => { const n = { ...prev }; delete n[guide.id]; return n })
     try {
-      const res = await window.electronAPI.cloudPullGuide({
-        cloudId: syncState.cloudId,
-        filePath: guide.filePath,
-      })
-      if (res.error) {
-        setError(res.error)
+      const res = await window.electronAPI.cloudPullGuide({ cloudId: state.cloudId, filePath: guide.id })
+      if ((res as { error?: string }).error) {
+        setErrors((prev) => ({ ...prev, [guide.id]: (res as { error: string }).error }))
       } else {
-        setStatusMsg('Pulled successfully — reload guide to see changes')
-        await loadSyncState()
+        setMessages((prev) => ({ ...prev, [guide.id]: '✓ Pulled' }))
+        onRefresh()
       }
     } finally {
-      setPulling(false)
+      setPulling((prev) => { const n = new Set(prev); n.delete(guide.id); return n })
     }
-  }
+  }, [statuses, onRefresh])
+
+  const pushAll = useCallback(async (guideList: GuideSummary[]) => {
+    for (const g of guideList) await handlePush(g)
+  }, [handlePush])
+
+  const pullAll = useCallback(async (guideList: GuideSummary[]) => {
+    for (const g of guideList) await handlePull(g)
+  }, [handlePull])
 
   if (!authState) return null
 
   if (!authState.token) {
     return (
-      <div className="p-4 text-zinc-500 text-xs">
-        <p className="m-0 mb-1 font-semibold text-zinc-400">Cloud backup</p>
-        <p className="m-0">Sign in to enable cloud backup for this guide.</p>
+      <div className="p-4 flex flex-col gap-2">
+        <p
+          className="m-0 text-[0.7rem] text-zinc-500 uppercase tracking-wider font-semibold"
+          style={{ fontFamily: 'var(--font-display)' }}
+        >
+          Cloud sync
+        </p>
+        <p className="m-0 text-xs text-zinc-500">Sign in to enable cloud sync.</p>
       </div>
     )
   }
 
-  const isSynced = syncState?.synced
-  const isBehind = syncState?.behind
-  const hasCloudCopy = !!syncState?.cloudId
+  const localGuides = guides.filter((g) => g.source === 'local')
+  const behind = localGuides.filter((g) => statuses[g.id]?.status === 'cloud_ahead')
+  const notPushed = localGuides.filter((g) => {
+    const s = statuses[g.id]?.status
+    return s === 'not_in_cloud' || s === 'local_ahead'
+  })
+  const synced = localGuides.filter((g) => statuses[g.id]?.status === 'synced')
+
+  function GuideRow({ guide, action }: { guide: GuideSummary; action: React.ReactNode }) {
+    const { accent } = getMapColor(guide.mapName)
+    const isPushing = pushing.has(guide.id)
+    const isPulling = pulling.has(guide.id)
+    const msg = messages[guide.id]
+    const err = errors[guide.id]
+    const isNew = statuses[guide.id]?.status === 'not_in_cloud'
+    return (
+      <div
+        className="flex items-center gap-2 px-3 py-1.5 border-l-2"
+        style={{ borderLeftColor: accent }}
+      >
+        <span className="flex-1 text-xs text-zinc-300 overflow-hidden text-ellipsis whitespace-nowrap min-w-0">
+          {guide.name}
+          {isNew && (
+            <span className="ml-1.5 text-[0.6rem] px-1 py-0.5 bg-zinc-700 text-zinc-400 rounded">NEW</span>
+          )}
+        </span>
+        {err && <span className="text-[0.6rem] text-red-400 shrink-0">{err}</span>}
+        {msg && !err && <span className="text-[0.6rem] text-emerald-400 shrink-0">{msg}</span>}
+        <div className="shrink-0 flex items-center gap-1">
+          {(isPushing || isPulling) ? (
+            <RefreshCw size={13} className="text-zinc-500 animate-spin" />
+          ) : action}
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="p-4 flex flex-col gap-3">
-      <p className="m-0 text-[0.7rem] text-zinc-500 uppercase tracking-wider font-semibold">Cloud backup</p>
-
-      <div className="text-xs text-zinc-400 truncate" title={guide.name}>
-        {guide.name}
-        {guide.mapName && <span className="ml-1 text-zinc-600">({guide.mapName})</span>}
-      </div>
-
-      {loadingSync && <p className="m-0 text-xs text-zinc-600">Checking sync…</p>}
-
-      {!loadingSync && syncState && (
-        <div className="flex items-center gap-2">
-          <span
-            className={`w-2 h-2 rounded-full shrink-0 ${isSynced ? 'bg-emerald-500' : isBehind ? 'bg-yellow-500' : hasCloudCopy ? 'bg-orange-500' : 'bg-zinc-600'}`}
-          />
-          <span className="text-xs text-zinc-400">
-            {isSynced
-              ? 'Up to date'
-              : isBehind
-              ? 'Cloud has newer version'
-              : hasCloudCopy
-              ? 'Local changes not pushed'
-              : 'Not backed up yet'}
-          </span>
-        </div>
-      )}
-
-      {error && <p className="m-0 text-xs text-red-400">{error}</p>}
-      {statusMsg && <p className="m-0 text-xs text-emerald-400">{statusMsg}</p>}
-
-      <div className="flex gap-2">
-        <button
-          type="button"
-          className={btnPrimary}
-          onClick={handlePush}
-          disabled={pushing || pulling}
-          title="Upload local guide to cloud"
+    <div className="flex flex-col gap-1 py-2">
+      {/* Header */}
+      <div className="flex items-center justify-between px-3 pb-1 border-b border-zinc-800 mb-1">
+        <span
+          className="text-[0.7rem] text-zinc-500 uppercase tracking-wider font-semibold"
+          style={{ fontFamily: 'var(--font-display)' }}
         >
-          {pushing ? 'Pushing…' : 'Push'}
-        </button>
-        {hasCloudCopy && (
-          <button
-            type="button"
-            className={btnSecondary}
-            onClick={handlePull}
-            disabled={pulling || pushing}
-            title="Download cloud guide to local file (creates .bak backup)"
-          >
-            {pulling ? 'Pulling…' : 'Pull'}
-          </button>
-        )}
+          Cloud sync
+        </span>
         <button
           type="button"
-          className={btnSecondary}
-          onClick={loadSyncState}
-          disabled={loadingSync || pushing || pulling}
+          className={`${btnSecondary}`}
+          onClick={onRefresh}
+          disabled={loading}
           title="Refresh sync status"
         >
-          ↻
+          <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
         </button>
       </div>
 
-      {cloudGuides.length > 0 && (
-        <div className="mt-2">
-          <p className="m-0 mb-1.5 text-[0.65rem] text-zinc-600 uppercase tracking-wider">All cloud guides</p>
-          <ul className="list-none m-0 p-0 space-y-1">
-            {cloudGuides.map((g) => (
-              <li
-                key={g.id}
-                className={`text-xs px-2 py-1 rounded truncate ${g.id === syncState?.cloudId ? 'bg-zinc-700 text-zinc-200' : 'text-zinc-500'}`}
-                title={g.title}
+      {/* BEHIND section */}
+      {behind.length > 0 && (
+        <div>
+          <SectionHeader
+            label="Behind"
+            count={behind.length}
+            color="#eab308"
+            action={
+              <button
+                type="button"
+                className="text-[0.6rem] text-yellow-600 hover:text-yellow-400 transition-colors"
+                onClick={() => void pullAll(behind)}
+                disabled={pulling.size > 0}
               >
-                {g.title}
-                {g.map && <span className="ml-1 text-zinc-600">({g.map})</span>}
-              </li>
-            ))}
-          </ul>
+                Pull all
+              </button>
+            }
+          />
+          {behind.map((g) => (
+            <GuideRow
+              key={g.id}
+              guide={g}
+              action={
+                <button
+                  type="button"
+                  className={btnSecondary}
+                  title="Pull from cloud"
+                  onClick={() => void handlePull(g)}
+                  disabled={pulling.has(g.id) || pushing.has(g.id)}
+                >
+                  <Download size={13} />
+                </button>
+              }
+            />
+          ))}
         </div>
       )}
 
+      {/* NOT PUSHED section */}
+      {notPushed.length > 0 && (
+        <div>
+          <SectionHeader
+            label="Not pushed"
+            count={notPushed.length}
+            color="#f97316"
+            action={
+              <button
+                type="button"
+                className="text-[0.6rem] text-orange-600 hover:text-orange-400 transition-colors"
+                onClick={() => void pushAll(notPushed)}
+                disabled={pushing.size > 0}
+              >
+                Push all
+              </button>
+            }
+          />
+          {notPushed.map((g) => (
+            <GuideRow
+              key={g.id}
+              guide={g}
+              action={
+                <button
+                  type="button"
+                  className={btnPrimary}
+                  title="Push to cloud"
+                  onClick={() => void handlePush(g)}
+                  disabled={pushing.has(g.id) || pulling.has(g.id)}
+                >
+                  <Upload size={13} />
+                </button>
+              }
+            />
+          ))}
+        </div>
+      )}
+
+      {/* SYNCED section (collapsed by default) */}
+      {synced.length > 0 && (
+        <div>
+          <button
+            type="button"
+            className="w-full text-left"
+            onClick={() => setSyncedCollapsed((v) => !v)}
+          >
+            <SectionHeader
+              label={syncedCollapsed ? `Synced ▸` : `Synced ▾`}
+              count={synced.length}
+              color="#22c55e"
+            />
+          </button>
+          {!syncedCollapsed && synced.map((g) => (
+            <GuideRow key={g.id} guide={g} action={null} />
+          ))}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {localGuides.length === 0 && !loading && (
+        <div className="px-3 py-4 flex flex-col items-center gap-2 text-zinc-600">
+          <CloudOff size={20} />
+          <p className="m-0 text-xs text-center">No local guides to sync.</p>
+        </div>
+      )}
+
+      {loading && localGuides.length === 0 && (
+        <div className="px-3 py-2 text-xs text-zinc-600">Checking…</div>
+      )}
     </div>
   )
 }
