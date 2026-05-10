@@ -706,6 +706,7 @@ ipcMain.handle('cloudPushGuide', async (_event, payload: {
       if (!res.ok) return { error: 'Push failed' }
       const { guide } = await res.json()
       store.set(`cloudVersion:${payload.filePath}`, guide.version)
+      store.set(`lastPushed:${payload.filePath}`, Date.now())
       store.set(`cloudId:${payload.filePath}`, guide.id)
       return { guide }
     }
@@ -734,6 +735,7 @@ ipcMain.handle('cloudPushGuide', async (_event, payload: {
       if (!res.ok) return { error: 'Push failed' }
       const { guide } = await res.json()
       store.set(`cloudVersion:${payload.filePath}`, guide.version)
+      store.set(`lastPushed:${payload.filePath}`, Date.now())
       store.set(`cloudId:${payload.filePath}`, guide.id)
       return { guide }
     } else {
@@ -775,6 +777,46 @@ ipcMain.handle('cloudGetSyncState', async (_event, filePath: string) => {
     return { synced: true, cloudId, localVersion, cloudVersion: guide.version, behind: guide.version > localVersion }
   } catch {
     return { synced: false, cloudId, localVersion }
+  }
+})
+
+ipcMain.handle('cloudGetAllSyncStates', async (_event, filePaths: string[]) => {
+  const token = store.get('authToken', null) as string | null
+  if (!token) return { states: {} }
+  try {
+    const res = await fetch(`${WEB_API}/guides`, { headers: cloudHeaders() })
+    if (!res.ok) return { states: {} }
+    const { guides } = await res.json() as { guides: Array<{ id: string; version: number }> }
+    const cloudById = new Map(guides.map((g: { id: string; version: number }) => [g.id, g]))
+    const states: Record<string, { status: string; cloudId?: string; cloudVersion?: number }> = {}
+    for (const filePath of filePaths) {
+      const cloudId = store.get(`cloudId:${filePath}`, null) as string | null
+      const localVersion = store.get(`cloudVersion:${filePath}`, 0) as number
+      const lastPushed = store.get(`lastPushed:${filePath}`, 0) as number
+      if (!cloudId) {
+        states[filePath] = { status: 'not_in_cloud' }
+        continue
+      }
+      const cloudGuide = cloudById.get(cloudId)
+      if (!cloudGuide) {
+        states[filePath] = { status: 'not_in_cloud' }
+        continue
+      }
+      if (cloudGuide.version > localVersion) {
+        states[filePath] = { status: 'cloud_ahead', cloudId, cloudVersion: cloudGuide.version }
+        continue
+      }
+      try {
+        const stat = fs.statSync(filePath)
+        const status = (lastPushed > 0 && stat.mtimeMs > lastPushed) ? 'local_ahead' : 'synced'
+        states[filePath] = { status, cloudId, cloudVersion: cloudGuide.version }
+      } catch {
+        states[filePath] = { status: 'synced', cloudId, cloudVersion: cloudGuide.version }
+      }
+    }
+    return { states }
+  } catch (err) {
+    return { states: {}, error: err instanceof Error ? err.message : String(err) }
   }
 })
 

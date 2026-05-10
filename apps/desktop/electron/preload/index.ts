@@ -57,5 +57,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('cloudPullGuide', payload),
   cloudGetSyncState: (filePath: string) =>
     ipcRenderer.invoke('cloudGetSyncState', filePath),
+  cloudGetAllSyncStates: (filePaths: string[]) => ipcRenderer.invoke('cloudGetAllSyncStates', filePaths),
   openCommunity: () => ipcRenderer.invoke('openCommunity'),
 })
