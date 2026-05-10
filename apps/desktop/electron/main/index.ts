@@ -838,8 +838,13 @@ ipcMain.handle('featuredFork', async (_event, guideId: string, title: string) =>
     const guideDir = path.join(annotationsRoot, safeName)
     const filePath = path.join(guideDir, safeName + '.txt')
 
+    if (fs.existsSync(filePath)) {
+      return { error: `A guide named "${safeName}" already exists in your annotations folder.` }
+    }
+
     fs.mkdirSync(guideDir, { recursive: true })
-    fs.writeFileSync(filePath, content, 'utf-8')
+    const cleanContent = content.startsWith('﻿') ? content.slice(1) : content
+    writeAnnotationFile(filePath, cleanContent)
 
     store.set(`cloudId:${filePath}`, guideId)
     store.set(`cloudVersion:${filePath}`, 1)
