@@ -1,3 +1,5 @@
+/// <reference path="../vite-env.d.ts" />
+
 /**
  * CS2 overview map coordinate data.
  *
