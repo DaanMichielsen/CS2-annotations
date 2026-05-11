@@ -1,5 +1,5 @@
 export { GuideAdapterProvider, useGuideAdapter } from './GuideAdapterContext'
-export { getMapImageUrl, getMapIconUrl } from './mapImages'
+export { getMapOverviewUrl, getMapIconUrl } from './mapImages'
 export { default as GuideEditor } from './GuideEditor'
 export { default as MapOverlay } from './MapOverlay'
 export { default as Guides } from './Guides'

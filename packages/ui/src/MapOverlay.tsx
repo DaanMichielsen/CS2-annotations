@@ -1,6 +1,6 @@
 import { useRef, useEffect, useCallback } from 'react'
 import { MAP_DATA, worldToPixel } from '@cs2ann/shared'
-import { getMapImageUrl } from './mapImages'
+import { getMapOverviewUrl } from './mapImages'
 
 // The map images are 800×800. We render them into a smaller canvas.
 const CANVAS_PX = 380
@@ -166,7 +166,7 @@ export default function MapOverlay({ mapName, markers, onCopySetpos }: Props) {
   // Load image once per map, then redraw on marker changes
   useEffect(() => {
     if (!mapData) return
-    const url = getMapImageUrl(mapData.file)
+    const url = getMapOverviewUrl(mapData.file)
     if (!url) return
 
     const img = new Image()

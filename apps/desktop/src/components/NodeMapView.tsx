@@ -13,7 +13,7 @@
 import { useState, useRef, useEffect, useMemo, useLayoutEffect, useCallback } from 'react'
 import type { AnnotationNode, GrenadeType } from '@cs2ann/shared'
 import { MAP_DATA, worldToPixel } from '@cs2ann/shared'
-import { getMapImageUrl } from '@cs2ann/ui'
+import { getMapOverviewUrl } from '@cs2ann/ui'
 
 // ── nade icons (same glob pattern as GuideEditor) ─────────────────────────────
 const _nadeIconModules = import.meta.glob<string>(
@@ -118,7 +118,7 @@ export default function NodeMapView({
   const dragLast   = useRef({ x: 0, y: 0 })
 
   const mapData  = MAP_DATA[mapName]
-  const imageUrl = mapData ? getMapImageUrl(mapData.file) : null
+  const imageUrl = mapData ? getMapOverviewUrl(mapData.file) : null
 
   // ── fit-to-container on mount ────────────────────────────────────────────
   useLayoutEffect(() => {
