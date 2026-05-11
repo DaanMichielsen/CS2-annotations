@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { FolderInput } from 'lucide-react'
+import { FolderInput, Info } from 'lucide-react'
 import type { AnnotationNode } from '@cs2ann/shared'
 import { getMapColor, KNOWN_MAPS } from '@cs2ann/shared'
 import { getMapIconUrl } from './mapImages'
@@ -259,14 +259,16 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
     )
   }
 
-  const yours = guides
+  const localGuides = guides.filter((g) => g.source === 'local')
+  const workshopGuides = guides.filter((g) => g.source === 'workshop')
 
   function matchesFilters(g: GuideItem): boolean {
     const nameOk = !nameFilter || g.name.toLowerCase().includes(nameFilter.toLowerCase())
     const mapOk = !mapFilter || g.mapName === mapFilter
     return nameOk && mapOk
   }
-  const filteredYours = yours.filter(matchesFilters)
+  const filteredLocal = localGuides.filter(matchesFilters)
+  const filteredWorkshop = workshopGuides.filter(matchesFilters)
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
@@ -465,56 +467,91 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
         </div>
       )}
 
-      {/* Your guides */}
-      {filteredYours.length > 0 && (
+      {/* My guides */}
+      {filteredLocal.length > 0 && (
         <div className="mt-4">
           <div className="flex items-center gap-2 mb-2">
             <p
               className="m-0 text-[0.7rem] uppercase tracking-wider font-semibold"
               style={{ fontFamily: 'var(--font-display)', color: 'var(--color-brand)' }}
             >
-              Your guides
+              My guides
             </p>
-            <span className="text-[0.6rem] px-1 py-0.5 bg-zinc-800 text-zinc-500 rounded-full">{yours.length}</span>
+            <span className="text-[0.6rem] px-1 py-0.5 bg-zinc-800 text-zinc-500 rounded-full">{localGuides.length}</span>
           </div>
           <ul className="list-none m-0 p-0 space-y-1">
-            {filteredYours.map((g) => {
+            {filteredLocal.map((g) => {
               const { accent } = getMapColor(g.mapName)
-              const syncState = g.source === 'local' ? cloudStatuses[g.path] : undefined
+              const syncState = cloudStatuses[g.path]
               return (
                 <li key={g.path} className="flex items-center gap-1.5">
                   <button
                     type="button"
                     className="flex-1 flex items-center gap-2.5 min-w-0 px-3 py-2.5 text-left rounded text-zinc-200 cursor-pointer text-[0.9rem] transition-colors border border-zinc-700/50 border-l-[3px] bg-zinc-800/40 hover:bg-zinc-800"
                     style={{ borderLeftColor: accent }}
-                    onClick={() => openGuideByPath(g.name, g.path, g.source)}
+                    onClick={() => openGuideByPath(g.name, g.path, 'local')}
                   >
-                    {g.source === 'local' && (
-                      <StatusDot state={syncState} />
-                    )}
+                    <StatusDot state={syncState} />
                     <span
                       className="flex-1 text-left overflow-hidden text-ellipsis whitespace-nowrap font-semibold"
                       style={{ fontFamily: 'var(--font-display)' }}
                     >
                       {g.name}
                     </span>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <MapChip mapName={g.mapName} />
-                      {g.source === 'workshop' && (
-                        <span className="text-[0.65rem] px-1.5 py-0.5 bg-indigo-900/60 text-indigo-300 rounded">Workshop</span>
-                      )}
-                    </div>
+                    <MapChip mapName={g.mapName} />
                   </button>
-                  {g.source === 'local' && (
-                    <button
-                      type="button"
-                      title="Load guide"
-                      className="shrink-0 p-2 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 hover:text-zinc-200 rounded text-zinc-400 cursor-pointer transition-colors"
-                      onClick={(e) => loadGuideCommand(g.name, e)}
+                  <button
+                    type="button"
+                    title="Load guide"
+                    className="shrink-0 p-2 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 hover:text-zinc-200 rounded text-zinc-400 cursor-pointer transition-colors"
+                    onClick={(e) => loadGuideCommand(g.name, e)}
+                  >
+                    <FolderInput size={14} />
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
+
+      {/* Workshop guides */}
+      {filteredWorkshop.length > 0 && (
+        <div className="mt-4">
+          <div className="flex items-center gap-2 mb-2">
+            <p
+              className="m-0 text-[0.7rem] uppercase tracking-wider font-semibold"
+              style={{ fontFamily: 'var(--font-display)', color: 'var(--color-brand)' }}
+            >
+              Workshop guides
+            </p>
+            <span className="text-[0.6rem] px-1 py-0.5 bg-zinc-800 text-zinc-500 rounded-full">{workshopGuides.length}</span>
+            <div className="relative group ml-0.5">
+              <Info size={11} className="text-zinc-600 cursor-help" />
+              <div className="absolute left-0 top-full mt-1 z-10 w-60 p-2 bg-zinc-900 border border-zinc-700 rounded text-[0.65rem] text-zinc-400 leading-relaxed hidden group-hover:block pointer-events-none shadow-lg">
+                Workshop guides are read-only. Open one and use &quot;Save as local guide&quot; to create a fork you can edit and sync to cloud.
+              </div>
+            </div>
+          </div>
+          <ul className="list-none m-0 p-0 space-y-1">
+            {filteredWorkshop.map((g) => {
+              const { accent } = getMapColor(g.mapName)
+              return (
+                <li key={g.path}>
+                  <button
+                    type="button"
+                    className="w-full flex items-center gap-2.5 min-w-0 px-3 py-2.5 text-left rounded text-zinc-200 cursor-pointer text-[0.9rem] transition-colors border border-zinc-700/50 border-l-[3px] bg-zinc-800/40 hover:bg-zinc-800"
+                    style={{ borderLeftColor: accent }}
+                    onClick={() => openGuideByPath(g.name, g.path, 'workshop')}
+                  >
+                    <span
+                      className="flex-1 text-left overflow-hidden text-ellipsis whitespace-nowrap font-semibold"
+                      style={{ fontFamily: 'var(--font-display)' }}
                     >
-                      <FolderInput size={14} />
-                    </button>
-                  )}
+                      {g.name}
+                    </span>
+                    <MapChip mapName={g.mapName} />
+                  </button>
                 </li>
               )
             })}

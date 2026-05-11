@@ -696,6 +696,12 @@ ipcMain.handle('cloudPushGuide', async (_event, payload: {
 
     const jsonHeaders = { ...cloudHeaders(), 'Content-Type': 'application/json' }
 
+    const apiError = async (res: Response): Promise<string> => {
+      if (res.status === 401) return 'Not signed in — sign out and back in'
+      const body = await res.json().catch(() => ({})) as { error?: string }
+      return body.error ?? `Push failed (${res.status})`
+    }
+
     const createGuide = async () => {
       const body = JSON.stringify({
         title: payload.title,
@@ -706,7 +712,7 @@ ipcMain.handle('cloudPushGuide', async (_event, payload: {
       const res = await fetch(`${WEB_API}/guides`, {
         method: 'POST', headers: jsonHeaders, body,
       })
-      if (!res.ok) return { error: 'Push failed' }
+      if (!res.ok) return { error: await apiError(res) }
       const { guide } = await res.json()
       store.set(`cloudVersion:${payload.filePath}`, guide.version)
       store.set(`lastPushed:${payload.filePath}`, Date.now())
@@ -735,7 +741,7 @@ ipcMain.handle('cloudPushGuide', async (_event, payload: {
         store.delete(`cloudVersion:${payload.filePath}` as never)
         return createGuide()
       }
-      if (!res.ok) return { error: 'Push failed' }
+      if (!res.ok) return { error: await apiError(res) }
       const { guide } = await res.json()
       store.set(`cloudVersion:${payload.filePath}`, guide.version)
       store.set(`lastPushed:${payload.filePath}`, Date.now())
@@ -788,15 +794,16 @@ ipcMain.handle('cloudGetAllSyncStates', async (_event, filePaths: string[]) => {
   if (!token) return { states: {} }
 
   // Build local-store states first — visible even when the API is unreachable.
-  // Guides without a stored cloudId are definitely not in cloud.
-  // Guides with a stored cloudId are assumed synced until the API says otherwise.
+  // Guides without a cloudId are not_in_cloud. Guides with a cloudId use local_ahead
+  // so they appear in "Not pushed" rather than silently hiding in "Synced" when we
+  // cannot confirm the cloud state (API failure, stale auth, etc.).
   const localStates: Record<string, { status: string; cloudId?: string; cloudVersion?: number }> = {}
   for (const filePath of filePaths) {
     const cloudId = store.get(`cloudId:${filePath}`, null) as string | null
     if (!cloudId) {
       localStates[filePath] = { status: 'not_in_cloud' }
     } else {
-      localStates[filePath] = { status: 'synced', cloudId, cloudVersion: store.get(`cloudVersion:${filePath}`, 0) as number }
+      localStates[filePath] = { status: 'local_ahead', cloudId, cloudVersion: store.get(`cloudVersion:${filePath}`, 0) as number }
     }
   }
 
