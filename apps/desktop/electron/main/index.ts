@@ -786,9 +786,23 @@ ipcMain.handle('cloudGetSyncState', async (_event, filePath: string) => {
 ipcMain.handle('cloudGetAllSyncStates', async (_event, filePaths: string[]) => {
   const token = store.get('authToken', null) as string | null
   if (!token) return { states: {} }
+
+  // Build local-store states first — visible even when the API is unreachable.
+  // Guides without a stored cloudId are definitely not in cloud.
+  // Guides with a stored cloudId are assumed synced until the API says otherwise.
+  const localStates: Record<string, { status: string; cloudId?: string; cloudVersion?: number }> = {}
+  for (const filePath of filePaths) {
+    const cloudId = store.get(`cloudId:${filePath}`, null) as string | null
+    if (!cloudId) {
+      localStates[filePath] = { status: 'not_in_cloud' }
+    } else {
+      localStates[filePath] = { status: 'synced', cloudId, cloudVersion: store.get(`cloudVersion:${filePath}`, 0) as number }
+    }
+  }
+
   try {
     const res = await fetch(`${WEB_API}/guides`, { headers: cloudHeaders() })
-    if (!res.ok) return { states: {} }
+    if (!res.ok) return { states: localStates }
     const { guides } = await res.json() as { guides: Array<{ id: string; version: number }> }
     const cloudById = new Map(guides.map((g: { id: string; version: number }) => [g.id, g]))
     const states: Record<string, { status: string; cloudId?: string; cloudVersion?: number }> = {}
@@ -818,8 +832,8 @@ ipcMain.handle('cloudGetAllSyncStates', async (_event, filePaths: string[]) => {
       }
     }
     return { states }
-  } catch (err) {
-    return { states: {}, error: err instanceof Error ? err.message : String(err) }
+  } catch {
+    return { states: localStates }
   }
 })
 
