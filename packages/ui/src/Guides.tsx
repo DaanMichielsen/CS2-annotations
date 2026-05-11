@@ -269,7 +269,7 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
   const filteredYours = yours.filter(matchesFilters)
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <div className="flex items-center justify-between mb-4 shrink-0">
         <h1
           className="m-0 text-2xl font-bold"
@@ -321,13 +321,6 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
       {error && <p className="text-red-400 mb-3 text-sm">{error}</p>}
       {forkError && <p className="text-red-400 mb-3 text-sm">{forkError}</p>}
 
-      {!loading && !error && guides.length === 0 && (
-        <p className="text-zinc-400">
-          No guides found. Set the annotations folder and/or Workshop content folder (730) in
-          Settings, or create a guide above.
-        </p>
-      )}
-
       {/* Filter controls */}
       <div className="flex flex-col gap-1.5 mb-3 shrink-0">
         <input
@@ -374,7 +367,15 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
         </div>
       </div>
 
-      {/* Featured guides from API */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        {!loading && !error && guides.length === 0 && (
+          <p className="text-zinc-400 mt-2">
+            No guides found. Set the annotations folder and/or Workshop content folder (730) in
+            Settings, or create a guide above.
+          </p>
+        )}
+
+        {/* Featured guides from API */}
       {featuredGuides.length > 0 && (
         <div className="mb-1">
           <div className="flex items-center gap-2 mb-2">
@@ -520,6 +521,7 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
           </ul>
         </div>
       )}
+      </div>
     </div>
   )
 }

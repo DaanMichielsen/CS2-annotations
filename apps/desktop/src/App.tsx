@@ -42,7 +42,7 @@ function AppInner() {
         </div>
 
         {sidebarOpen && (
-          <div className="w-72 shrink-0 border-l border-zinc-800 flex flex-col overflow-y-auto">
+          <div className="w-72 shrink-0 border-l border-zinc-800 flex flex-col overflow-hidden">
             <CloudPanel
               guides={cloudStatus.guides}
               statuses={cloudStatus.statuses}
@@ -50,7 +50,7 @@ function AppInner() {
               onRefresh={cloudStatus.refresh}
               onStatusChange={(color, text) => { setSyncDotColor(color); setSyncStatusText(text) }}
             />
-            <div className="mt-auto p-3 border-t border-zinc-800">
+            <div className="mt-auto shrink-0 p-3 border-t border-zinc-800">
               <button
                 type="button"
                 onClick={() => void window.electronAPI.openCommunity()}
