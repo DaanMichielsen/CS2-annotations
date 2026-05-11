@@ -12,7 +12,8 @@
  */
 import { useState, useRef, useEffect, useMemo, useLayoutEffect, useCallback } from 'react'
 import type { AnnotationNode, GrenadeType } from '@cs2ann/shared'
-import { MAP_DATA, worldToPixel, getMapImageUrl } from '@cs2ann/shared'
+import { MAP_DATA, worldToPixel } from '@cs2ann/shared'
+import { getMapImageUrl } from './mapImages'
 
 // ── nade icons (same glob pattern as GuideEditor) ─────────────────────────────
 const _nadeIconModules = import.meta.glob<string>(

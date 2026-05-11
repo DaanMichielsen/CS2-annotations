@@ -1,5 +1,3 @@
-/// <reference path="../vite-env.d.ts" />
-
 /**
  * CS2 overview map coordinate data.
  *
@@ -37,23 +35,6 @@ export const MAP_DATA: Record<string, MapOverviewData> = {
   de_train:    { file: 'train.png',    posX: -2477, posY:  2401, scale: 6.016  },
 }
 
-// Vite bundles and hashes these at build time; support both old and monorepo paths.
-const imageModules = {
-  ...(import.meta.glob('../../resources/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>),
-  ...(import.meta.glob('../../resources/maps/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>),
-  ...(import.meta.glob('../../../../apps/desktop/resources/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>),
-  ...(import.meta.glob('../../../../apps/desktop/resources/maps/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>),
-}
-
-export function getMapImageUrl(fileName: string): string | null {
-  return (
-    imageModules[`../../resources/${fileName}`] ??
-    imageModules[`../../resources/maps/${fileName}`] ??
-    imageModules[`../../../../apps/desktop/resources/${fileName}`] ??
-    imageModules[`../../../../apps/desktop/resources/maps/${fileName}`] ??
-    null
-  )
-}
 
 /** Convert in-game world coordinates to pixel coordinates within an 800×800 overview image. */
 export function worldToPixel(

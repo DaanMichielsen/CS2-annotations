@@ -1,5 +1,6 @@
 import { useRef, useEffect, useCallback } from 'react'
-import { MAP_DATA, getMapImageUrl, worldToPixel } from '@cs2ann/shared'
+import { MAP_DATA, worldToPixel } from '@cs2ann/shared'
+import { getMapImageUrl } from './mapImages'
 
 // The map images are 800×800. We render them into a smaller canvas.
 const CANVAS_PX = 380
