@@ -45,15 +45,33 @@ export default async function HomePage() {
             <span className="font-display font-bold text-white">CS2</span>
             <span className="font-display font-semibold text-violet-400"> Annotations</span>
           </Link>
+
           <div className="h-4 w-px bg-zinc-800" />
-          <Link href="/guides" className="text-sm text-zinc-400 hover:text-white transition-colors">
+
+          <Link href="/guides" className="text-sm text-zinc-400 hover:text-white transition-colors font-medium">
             Browse
           </Link>
+
+          <Link href="/library" className="text-sm text-zinc-400 hover:text-white transition-colors font-medium">
+            Library
+          </Link>
+
           {user && (
-            <Link href="/my-guides" className="text-sm text-zinc-400 hover:text-white transition-colors">
-              My Guides
-            </Link>
+            <>
+              <Link href="/for-you" className="text-sm text-zinc-400 hover:text-white transition-colors font-medium">
+                For You
+              </Link>
+              <Link href="/my-guides" className="text-sm text-zinc-400 hover:text-white transition-colors font-medium">
+                My Guides
+              </Link>
+              {session?.user?.roles?.includes('admin') && (
+                <Link href="/admin" className="text-sm text-violet-400 hover:text-violet-300 transition-colors font-medium">
+                  Admin
+                </Link>
+              )}
+            </>
           )}
+
           <div className="ml-auto flex items-center gap-3">
             {user ? (
               <>
@@ -61,7 +79,7 @@ export default async function HomePage() {
                   {user.image && (
                     <Image src={user.image} alt={user.name ?? 'avatar'} width={28} height={28} className="rounded-full ring-1 ring-zinc-700 group-hover:ring-zinc-500 transition-all" unoptimized />
                   )}
-                  <span className="text-sm text-zinc-300 group-hover:text-zinc-100 hidden sm:block transition-colors">{user.name}</span>
+                  <span className="text-sm text-zinc-400 group-hover:text-zinc-200 hidden sm:block transition-colors">{user.name}</span>
                 </Link>
                 <form action={handleSignOut}>
                   <button type="submit" className="text-xs px-3 py-1.5 text-zinc-400 hover:text-zinc-200 border border-zinc-700 hover:border-zinc-500 rounded transition-colors">

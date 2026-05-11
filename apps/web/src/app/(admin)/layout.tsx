@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth'
 import { requireRole } from '@/lib/roles'
 import Image from 'next/image'
+import Link from 'next/link'
 import AdminTabs from './admin/AdminTabs'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -10,10 +11,19 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       <header className="border-b border-zinc-800 bg-zinc-950 px-6 h-14 flex items-center justify-between">
-        <span className="font-display font-bold text-white text-lg">
-          CS2 <span className="text-violet-400">Annotations</span>
-          <span className="text-zinc-600 text-sm font-normal ml-3">Admin</span>
-        </span>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/"
+            className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+          >
+            ← Back to app
+          </Link>
+          <div className="h-4 w-px bg-zinc-800" />
+          <span className="font-display font-bold text-white text-lg">
+            CS2 <span className="text-violet-400">Annotations</span>
+            <span className="text-zinc-600 text-sm font-normal ml-3">Admin</span>
+          </span>
+        </div>
         <div className="flex items-center gap-3">
           {session?.user?.image && (
             <Image

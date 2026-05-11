@@ -15,11 +15,16 @@ export function useFeaturedGuides(): { guides: FeaturedGuide[]; loading: boolean
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`${WEB_API}/featured-guides`)
-      .then((r) => r.json() as Promise<{ guides: FeaturedGuide[] }>)
-      .then((data) => setGuides(data.guides))
-      .catch(() => { /* network unavailable — show no featured guides */ })
-      .finally(() => setLoading(false))
+    const fetchGuides = () => {
+      fetch(`${WEB_API}/featured-guides`)
+        .then((r) => r.json() as Promise<{ guides: FeaturedGuide[] }>)
+        .then((data) => setGuides(data.guides))
+        .catch(() => {})
+        .finally(() => setLoading(false))
+    }
+    fetchGuides()
+    const interval = setInterval(fetchGuides, 5 * 60 * 1000)
+    return () => clearInterval(interval)
   }, [])
 
   return { guides, loading }

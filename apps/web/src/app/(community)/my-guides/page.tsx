@@ -79,7 +79,7 @@ export default async function MyGuidesPage({ searchParams }: { searchParams: Pro
   const searchOtherParams: Record<string, string> = { ...(map ? { map } : {}) }
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-10">
+    <div className="max-w-7xl mx-auto px-6 py-10">
       <div className="flex items-end justify-between mb-6">
         <div>
           <h1 className="font-display font-bold text-3xl text-white tracking-tight mb-1">My Guides</h1>

@@ -49,6 +49,7 @@ interface GuidesProps {
   cloudStatuses?: Record<string, GuideSyncState>
   onCloudRefresh?: () => void
   featuredGuides?: FeaturedGuide[]
+  featuredGuidesLoading?: boolean
   onFeaturedFork?: (guideId: string, title: string) => Promise<{ error?: string } | void>
 }
 
@@ -92,7 +93,7 @@ function MapChip({ mapName }: { mapName?: string }) {
   )
 }
 
-export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefresh, featuredGuides = [], onFeaturedFork }: GuidesProps = {}) {
+export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefresh, featuredGuides = [], featuredGuidesLoading = false, onFeaturedFork }: GuidesProps = {}) {
   const adapter = useGuideAdapter()
   const [guides, setGuides] = useState<GuideItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -106,6 +107,7 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
   const [nameFilter, setNameFilter] = useState('')
   const [mapFilter, setMapFilter] = useState<string | null>(null)
   const [forkError, setForkError] = useState('')
+  const [featuredCollapsed, setFeaturedCollapsed] = useState(true)
 
   useEffect(() => { loadGuides() }, [])
 
@@ -377,20 +379,37 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
           </p>
         )}
 
-        {/* Featured guides from API */}
-      {featuredGuides.length > 0 && (
+        {/* Featured guides from API — always visible, collapsible */}
         <div className="mb-1">
-          <div className="flex items-center gap-2 mb-2">
+          <button
+            type="button"
+            className="w-full text-left flex items-center gap-2 mb-2 group"
+            onClick={() => setFeaturedCollapsed((v) => !v)}
+          >
             <p
               className="m-0 text-[0.7rem] uppercase tracking-wider font-semibold"
               style={{ fontFamily: 'var(--font-display)', color: 'var(--color-brand)' }}
             >
-              Featured map guides
+              Featured guides
             </p>
-            <span className="text-[0.6rem] px-1 py-0.5 bg-zinc-800 text-zinc-500 rounded-full">
-              {featuredGuides.length}
+            {featuredGuides.length > 0 && (
+              <span className="text-[0.6rem] px-1 py-0.5 bg-zinc-800 text-zinc-500 rounded-full">
+                {featuredGuides.length}
+              </span>
+            )}
+            <span className="ml-auto text-[0.65rem] text-zinc-600 group-hover:text-zinc-400 transition-colors">
+              {featuredCollapsed ? '▸' : '▾'}
             </span>
-          </div>
+          </button>
+          {!featuredCollapsed && (
+            <>
+              {featuredGuidesLoading && (
+                <p className="text-xs text-zinc-600 px-1 mb-2">Loading…</p>
+              )}
+              {!featuredGuidesLoading && featuredGuides.length === 0 && (
+                <p className="text-xs text-zinc-600 px-1 mb-2">No featured guides yet.</p>
+              )}
+              {!featuredGuidesLoading && featuredGuides.length > 0 && (
           <ul className="list-none m-0 p-0 space-y-1">
             {featuredGuides.map((fg) => {
               const { accent } = getMapColor(fg.map)
@@ -464,8 +483,10 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
               )
             })}
           </ul>
+              )}
+            </>
+          )}
         </div>
-      )}
 
       {/* My guides */}
       {filteredLocal.length > 0 && (
