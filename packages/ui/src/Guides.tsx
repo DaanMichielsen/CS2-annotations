@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { FolderInput } from 'lucide-react'
 import type { AnnotationNode } from '@cs2ann/shared'
 import { getMapColor, KNOWN_MAPS } from '@cs2ann/shared'
+import { getMapIconUrl } from './mapImages'
 import type { GuideSyncState } from '@cs2ann/shared'
 import GuideEditor from './GuideEditor'
 import { useGuideAdapter } from './GuideAdapterContext'
@@ -77,14 +78,15 @@ function StatusDot({ state }: { state: GuideSyncState | undefined }) {
 
 function MapChip({ mapName }: { mapName?: string }) {
   if (!mapName) return null
-  const { accent, dim, label, icon } = getMapColor(mapName)
+  const { accent, dim, label } = getMapColor(mapName)
   if (!label) return null
+  const iconUrl = getMapIconUrl(mapName)
   return (
     <span
       className="shrink-0 flex items-center gap-1 text-[0.65rem] px-1.5 py-0.5 rounded font-semibold uppercase tracking-wide"
       style={{ color: accent, backgroundColor: dim }}
     >
-      {icon && <img src={icon} alt="" width={12} height={12} className="shrink-0" />}
+      {iconUrl && <img src={iconUrl} alt="" width={12} height={12} className="shrink-0" />}
       {label}
     </span>
   )
@@ -348,7 +350,8 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
             All
           </button>
           {KNOWN_MAPS.map((mapName) => {
-            const { label, accent, icon } = getMapColor(mapName)
+            const { label, accent } = getMapColor(mapName)
+            const iconUrl = getMapIconUrl(mapName)
             const isActive = mapFilter === mapName
             const count = mapCounts[mapName] ?? 0
             if (count === 0) return null
@@ -362,7 +365,7 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
                 style={isActive ? { backgroundColor: accent } : undefined}
                 onClick={() => setMapFilter(isActive ? null : mapName)}
               >
-                {icon && <img src={icon} alt="" width={10} height={10} className="shrink-0" />}
+                {iconUrl && <img src={iconUrl} alt="" width={10} height={10} className="shrink-0" />}
                 {label}
                 <span className={`opacity-60 font-normal normal-case tracking-normal ${isActive ? '' : 'text-zinc-500'}`}>{count}</span>
               </button>
