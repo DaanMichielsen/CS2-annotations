@@ -5,7 +5,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import RatingButtons from '@/components/RatingButtons'
 import CommentThread from '@/components/CommentThread'
-import GuideAnnotationPreview from '@/components/GuideAnnotationPreview'
+import SaveButton from '@/components/SaveButton'
+import DownloadButton from '@/components/DownloadButton'
 import { GuideNodeFilter } from '@/components/GuideNodeFilter'
 import { getMapColor, getMapLabel } from '@/lib/mapColors'
 import { getGuideBlobUrl } from '@/lib/blob'
@@ -36,24 +37,28 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
   const guide = await db.guide.findUnique({
     where: { id },
     include: {
-      user: { select: { username: true, avatar: true, name: true } },
+      user: { select: { id: true, username: true, avatar: true, name: true } },
       ratings: { select: { value: true, userId: true } },
       comments: {
         include: { user: { select: { username: true, avatar: true, name: true } } },
         orderBy: { createdAt: 'asc' },
       },
       credits: { orderBy: { position: 'asc' } },
+      savedBy: session?.user?.id
+        ? { where: { userId: session.user.id }, select: { id: true } }
+        : false,
     },
   })
 
   if (!guide) notFound()
   if (!guide.isPublic && guide.userId !== session?.user?.id) notFound()
 
-  // Fetch and parse annotation nodes from blob for preview
+  // Fetch and parse annotation nodes for preview
   let nodes: AnnotationNode[] = []
+  let blobUrl: string | null = null
   if (guide.blobKey) {
     try {
-      const blobUrl = await getGuideBlobUrl(guide.blobKey)
+      blobUrl = await getGuideBlobUrl(guide.blobKey)
       if (blobUrl) {
         const kv3Res = await fetch(blobUrl, { next: { revalidate: 300 } })
         if (kv3Res.ok) {
@@ -65,11 +70,10 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
         }
       }
     } catch {
-      // blob unavailable — render preview with empty nodes
+      // blob unavailable
     }
   }
 
-  // Grenade type summary from parsed nodes
   const mainGrenadeNodes = nodes.filter(
     (n) => n.Type === 'grenade' && n.SubType !== 'aim_target' && n.SubType !== 'destination'
   )
@@ -88,6 +92,7 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
     : null
 
   const isOwner = session?.user?.id === guide.userId
+  const initialSaved = Array.isArray(guide.savedBy) && guide.savedBy.length > 0
   const authorName = guide.user.username ?? guide.user.name ?? 'Anonymous'
   const { accent, dim, icon: mapIcon } = getMapColor(guide.map)
   const mapLabel = getMapLabel(guide.map)
@@ -100,104 +105,153 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-10">
+    <div className="max-w-7xl mx-auto px-6 py-8">
       {/* Back nav */}
-      <Link href="/guides" className="inline-flex items-center gap-2 text-xs text-zinc-600 hover:text-zinc-400 transition-colors mb-8">
+      <Link
+        href="/guides"
+        className="inline-flex items-center gap-1.5 text-xs text-zinc-600 hover:text-zinc-400 transition-colors mb-6"
+      >
         ← Back to guides
       </Link>
 
-      {/* Header */}
-      <div
-        className="rounded-xl p-6 mb-8 border border-zinc-800"
-        style={{ background: `linear-gradient(135deg, ${dim} 0%, transparent 60%)` }}
-      >
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-3">
-              <div
-                className="flex items-center gap-1.5 text-[0.65rem] font-data uppercase tracking-widest px-2 py-0.5 rounded font-semibold"
-                style={{ backgroundColor: dim, color: accent }}
-              >
-                {mapIcon && (
-                  <Image src={mapIcon} alt={mapLabel} width={14} height={14} className="opacity-80" unoptimized />
-                )}
-                {mapLabel}
-              </div>
-              {guide.forkOf && (
-                <span className="text-[0.65rem] text-zinc-600 font-data">forked</span>
+      {/* Two-column layout */}
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
+
+        {/* ── LEFT: main content ── */}
+        <div className="flex-1 min-w-0">
+
+          {/* Map badge + status tags */}
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <div
+              className="flex items-center gap-1.5 text-[0.65rem] font-data uppercase tracking-widest px-2 py-0.5 rounded font-semibold"
+              style={{ backgroundColor: dim, color: accent }}
+            >
+              {mapIcon && (
+                <Image src={mapIcon} alt={mapLabel} width={14} height={14} className="opacity-80" unoptimized />
               )}
-              {!guide.isPublic && (
-                <span className="text-[0.65rem] px-2 py-0.5 bg-zinc-800 text-zinc-500 rounded font-data">
-                  private
-                </span>
-              )}
+              {mapLabel}
             </div>
-
-            <h1 className="font-display font-bold text-3xl text-white mb-3 leading-tight">
-              {guide.title}
-            </h1>
-
-            {guide.description && (
-              <p className="text-zinc-400 text-sm mb-4 leading-relaxed">{guide.description}</p>
+            {guide.forkOf && (
+              <span className="text-[0.65rem] text-zinc-600 font-data">forked</span>
             )}
-
-            <div className="flex items-center gap-2">
-              {guide.user.avatar ? (
-                <div className="w-6 h-6 rounded-full overflow-hidden ring-1 ring-zinc-700 shrink-0">
-                  <Image
-                    src={guide.user.avatar}
-                    alt={authorName}
-                    width={24}
-                    height={24}
-                    className="w-full h-full object-cover"
-                    unoptimized
-                  />
-                </div>
-              ) : (
-                <div className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 shrink-0" />
-              )}
-              <span className="text-sm text-zinc-400">{authorName}</span>
-              <span className="text-zinc-700 text-xs font-data mx-1">·</span>
-              <span className="text-xs font-data text-zinc-600">v{guide.version}</span>
-            </div>
-
-            {guide.credits.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 mt-2">
-                <span className="text-xs text-zinc-600">Credits:</span>
-                {guide.credits.map((c) => (
-                  <CreditChip key={c.id} handle={c.handle} label={c.label} />
-                ))}
-              </div>
-            )}
-
-            {/* Grenade type summary */}
-            {Object.keys(grenadeCounts).length > 0 && (
-              <div className="flex flex-wrap items-center gap-1.5 mt-3">
-                {GRENADE_ORDER.filter((gt) => grenadeCounts[gt]).map((gt) => (
-                  <div
-                    key={gt}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded border border-zinc-800 bg-zinc-900/60"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={GRENADE_ICON_FILES[gt]} alt={gt} width={14} height={14} className="opacity-80" />
-                    <span className="text-xs font-data font-bold tabular-nums" style={{ color: GRENADE_COLORS[gt] }}>
-                      {grenadeCounts[gt]}
-                    </span>
-                  </div>
-                ))}
-              </div>
+            {!guide.isPublic && (
+              <span className="text-[0.65rem] px-2 py-0.5 bg-zinc-800 text-zinc-500 rounded font-data">
+                private
+              </span>
             )}
           </div>
 
-          {/* Actions */}
-          <div className="flex flex-col items-end gap-3">
+          {/* Title */}
+          <h1 className="font-display font-bold text-4xl text-white mb-3 leading-tight tracking-tight">
+            {guide.title}
+          </h1>
+
+          {/* Description */}
+          {guide.description && (
+            <p className="text-zinc-400 text-sm mb-4 leading-relaxed max-w-2xl">
+              {guide.description}
+            </p>
+          )}
+
+          {/* Credits */}
+          {guide.credits.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              <span className="text-xs text-zinc-600">Credits:</span>
+              {guide.credits.map((c) => (
+                <CreditChip key={c.id} handle={c.handle} label={c.label} />
+              ))}
+            </div>
+          )}
+
+          {/* Grenade type summary */}
+          {Object.keys(grenadeCounts).length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 mb-6">
+              {GRENADE_ORDER.filter((gt) => grenadeCounts[gt]).map((gt) => (
+                <div
+                  key={gt}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded border border-zinc-800 bg-zinc-900/60"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={GRENADE_ICON_FILES[gt]} alt={gt} width={14} height={14} className="opacity-80" />
+                  <span className="text-xs font-data font-bold tabular-nums" style={{ color: GRENADE_COLORS[gt] }}>
+                    {grenadeCounts[gt]}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Annotation preview */}
+          <section>
+            <h2 className="font-display font-semibold text-base text-zinc-400 mb-4 uppercase tracking-wider">
+              Annotations · {nodes.length} nodes
+            </h2>
+            <GuideNodeFilter nodes={nodes} mapName={guide.map} />
+          </section>
+        </div>
+
+        {/* ── RIGHT: sidebar ── */}
+        <div className="w-full lg:w-80 shrink-0 lg:sticky lg:top-20 flex flex-col gap-4">
+
+          {/* Author card */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+            <p className="text-[0.65rem] font-data uppercase tracking-wider text-zinc-600 mb-3">Created by</p>
+            <Link
+              href={`/users/${guide.user.id}`}
+              className="flex items-center gap-3 group"
+            >
+              {guide.user.avatar ? (
+                <Image
+                  src={guide.user.avatar}
+                  alt={authorName}
+                  width={40}
+                  height={40}
+                  className="rounded-full ring-1 ring-zinc-700 group-hover:ring-zinc-500 transition-all shrink-0"
+                  unoptimized
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 shrink-0" />
+              )}
+              <div className="min-w-0">
+                <p className="font-display font-semibold text-zinc-100 group-hover:text-white transition-colors truncate">
+                  {authorName}
+                </p>
+                <p className="text-xs text-zinc-600 font-data">
+                  v{guide.version} ·{' '}
+                  {new Date(guide.credits[0]?.position ?? 0).toLocaleDateString?.() ??
+                    mapLabel}
+                </p>
+              </div>
+            </Link>
+          </div>
+
+          {/* Rating */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+            <p className="text-[0.65rem] font-data uppercase tracking-wider text-zinc-600 mb-3">Rating</p>
             <RatingButtons guideId={guide.id} initialScore={score} userVote={userVote} />
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col gap-2">
+            <SaveButton
+              guideId={guide.id}
+              initialSaved={initialSaved}
+              isAuthenticated={!!session?.user?.id}
+            />
+
+            {blobUrl && (
+              <DownloadButton
+                downloadUrl={blobUrl}
+                guideTitle={guide.title}
+                mapName={guide.map ?? null}
+              />
+            )}
 
             {session && !isOwner && (
               <form action={forkGuide}>
                 <button
                   type="submit"
-                  className="text-xs px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 rounded transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-zinc-700 bg-zinc-800/60 text-zinc-300 hover:bg-zinc-800 hover:border-zinc-600 text-sm font-medium transition-colors"
                 >
                   Fork guide
                 </button>
@@ -206,34 +260,26 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
 
             {isOwner && (
               <Link
-                href={`/my-guides`}
-                className="text-xs px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 rounded transition-colors"
+                href="/my-guides"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-zinc-700 bg-zinc-800/60 text-zinc-300 hover:bg-zinc-800 hover:border-zinc-600 text-sm font-medium transition-colors"
               >
                 Manage →
               </Link>
             )}
           </div>
+
+          {/* Comments */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+            <CommentThread
+              guideId={guide.id}
+              initialComments={guide.comments.map((c) => ({
+                ...c,
+                createdAt: c.createdAt.toISOString(),
+              }))}
+              isAuthenticated={!!session?.user?.id}
+            />
+          </div>
         </div>
-      </div>
-
-      {/* Annotation preview */}
-      <section className="mb-10">
-        <h2 className="font-display font-semibold text-lg text-white mb-4 tracking-tight">
-          Annotations
-        </h2>
-        <GuideNodeFilter nodes={nodes} mapName={guide.map} />
-      </section>
-
-      {/* Comments */}
-      <div className="border-t border-zinc-800/60 pt-8">
-        <CommentThread
-          guideId={guide.id}
-          initialComments={guide.comments.map((c) => ({
-            ...c,
-            createdAt: c.createdAt.toISOString(),
-          }))}
-          isAuthenticated={!!session?.user?.id}
-        />
       </div>
     </div>
   )

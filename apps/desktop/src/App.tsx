@@ -5,6 +5,7 @@ import AuthButton from './components/AuthButton'
 import CloudPanel from './components/CloudPanel'
 import { useCloudStatus } from './hooks/useCloudStatus'
 import { useFeaturedGuides } from './hooks/useFeaturedGuides'
+import { useSavedGuides } from './hooks/useSavedGuides'
 
 const adapter = createLocalAdapter()
 
@@ -16,6 +17,7 @@ function AppInner() {
 
   const cloudStatus = useCloudStatus()
   const featuredGuides = useFeaturedGuides()
+  const savedGuides = useSavedGuides()
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -36,6 +38,18 @@ function AppInner() {
             featuredGuidesLoading={featuredGuides.loading}
             onFeaturedFork={async (guideId, title) => {
               const result = await (window.electronAPI as any).featuredFork(guideId, title)
+              if (result?.error) return { error: result.error }
+              cloudStatus.refresh()
+            }}
+            savedGuides={savedGuides.guides}
+            savedGuidesLoading={savedGuides.loading}
+            onSavedPull={async (guide) => {
+              if (!guide.downloadUrl) return { error: 'No download URL available' }
+              const result = await (window.electronAPI as any).savedPullGuide({
+                guideId: guide.id,
+                title: guide.title,
+                downloadUrl: guide.downloadUrl,
+              })
               if (result?.error) return { error: result.error }
               cloudStatus.refresh()
             }}

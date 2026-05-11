@@ -26,6 +26,7 @@ model User {
   guides       Guide[]
   ratings      GuideRating[]
   comments     GuideComment[]
+  savedGuides  SavedGuide[]
   following    Follow[]      @relation("Follower")
   followers    Follow[]      @relation("Following")
   roles        UserRole[]    @relation("UserRoles")
@@ -62,6 +63,7 @@ model Guide {
   user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   ratings        GuideRating[]
   comments       GuideComment[]
+  savedBy        SavedGuide[]
   grenadeEntries GrenadeEntry[]
   featuredGuide  FeaturedGuide?
   credits        GuideCredit[]
@@ -186,4 +188,17 @@ model GuideCredit {
   guide Guide @relation(fields: [guideId], references: [id], onDelete: Cascade)
 
   @@index([guideId])
+}
+
+model SavedGuide {
+  id      String   @id @default(cuid())
+  userId  String
+  guideId String
+  savedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guide Guide @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, guideId])
+  @@index([userId])
 }

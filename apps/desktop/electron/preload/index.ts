@@ -60,4 +60,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   cloudGetAllSyncStates: (filePaths: string[]) => ipcRenderer.invoke('cloudGetAllSyncStates', filePaths),
   openCommunity: () => ipcRenderer.invoke('openCommunity'),
   featuredFork: (guideId: string, title: string) => ipcRenderer.invoke('featuredFork', guideId, title),
+  savedPullGuide: (payload: { guideId: string; title: string; downloadUrl: string }) =>
+    ipcRenderer.invoke('savedPullGuide', payload),
 })

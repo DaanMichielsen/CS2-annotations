@@ -1,4 +1,4 @@
-import { auth, signIn, signOut } from '@/lib/auth'
+import { auth, signOut } from '@/lib/auth'
 import { db } from '@/lib/db'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -14,11 +14,6 @@ export default async function HomePage() {
   async function handleSignOut() {
     'use server'
     await signOut({ redirectTo: '/' })
-  }
-
-  async function handleSignIn() {
-    'use server'
-    await signIn('steam', { redirectTo: '/' })
   }
 
   const recentGuides = await db.guide.findMany({
@@ -63,6 +58,9 @@ export default async function HomePage() {
               </Link>
               <Link href="/my-guides" className="text-sm text-zinc-400 hover:text-white transition-colors font-medium">
                 My Guides
+              </Link>
+              <Link href="/saved" className="text-sm text-zinc-400 hover:text-white transition-colors font-medium">
+                Saved
               </Link>
               {session?.user?.roles?.includes('admin') && (
                 <Link href="/admin" className="text-sm text-violet-400 hover:text-violet-300 transition-colors font-medium">

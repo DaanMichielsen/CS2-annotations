@@ -49,6 +49,12 @@ export default async function CommunityLayout({ children }: { children: React.Re
               >
                 My Guides
               </Link>
+              <Link
+                href="/saved"
+                className="text-sm text-zinc-400 hover:text-white transition-colors font-medium"
+              >
+                Saved
+              </Link>
               {session.user?.roles?.includes('admin') && (
                 <Link
                   href="/admin"

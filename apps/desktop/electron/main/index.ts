@@ -878,6 +878,29 @@ ipcMain.handle('featuredFork', async (_event, guideId: string, title: string) =>
   }
 })
 
+ipcMain.handle('savedPullGuide', async (_event, payload: { guideId: string; title: string; downloadUrl: string }) => {
+  try {
+    const annotationsRoot = store.get('annotationsRoot', '') as string
+    if (!annotationsRoot) return { error: 'Annotations folder not configured. Set it in Settings first.' }
+
+    const res = await fetch(payload.downloadUrl, { redirect: 'follow' })
+    if (!res.ok) return { error: `Failed to fetch guide content (${res.status})` }
+    const content = await res.text()
+
+    const safeName = payload.title.trim().replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || 'saved_guide'
+    const guideDir = path.join(annotationsRoot, safeName)
+    const filePath = path.join(guideDir, safeName + '.txt')
+
+    fs.mkdirSync(guideDir, { recursive: true })
+    const cleanContent = content.startsWith('﻿') ? content.slice(1) : content
+    writeAnnotationFile(filePath, cleanContent)
+
+    return { ok: true, filePath }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) }
+  }
+})
+
 // ── CS2 console ─────────────────────────────────────────────────────────────
 
 ipcMain.handle(

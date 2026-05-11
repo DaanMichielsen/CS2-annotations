@@ -44,6 +44,16 @@ interface FeaturedGuide {
   credits: Array<{ handle: string; label: string | null }>
 }
 
+export interface SavedGuideItem {
+  savedId: string
+  id: string
+  title: string
+  map: string | null
+  nodeCount: number
+  version: number
+  downloadUrl: string | null
+}
+
 interface GuidesProps {
   onGuideChange?: (guide: OpenGuideInfo | null) => void
   cloudStatuses?: Record<string, GuideSyncState>
@@ -51,6 +61,9 @@ interface GuidesProps {
   featuredGuides?: FeaturedGuide[]
   featuredGuidesLoading?: boolean
   onFeaturedFork?: (guideId: string, title: string) => Promise<{ error?: string } | void>
+  savedGuides?: SavedGuideItem[]
+  savedGuidesLoading?: boolean
+  onSavedPull?: (guide: SavedGuideItem) => Promise<{ error?: string } | void>
 }
 
 const btn =
@@ -93,7 +106,7 @@ function MapChip({ mapName }: { mapName?: string }) {
   )
 }
 
-export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefresh, featuredGuides = [], featuredGuidesLoading = false, onFeaturedFork }: GuidesProps = {}) {
+export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefresh, featuredGuides = [], featuredGuidesLoading = false, onFeaturedFork, savedGuides = [], savedGuidesLoading = false, onSavedPull }: GuidesProps = {}) {
   const adapter = useGuideAdapter()
   const [guides, setGuides] = useState<GuideItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -108,6 +121,9 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
   const [mapFilter, setMapFilter] = useState<string | null>(null)
   const [forkError, setForkError] = useState('')
   const [featuredCollapsed, setFeaturedCollapsed] = useState(true)
+  const [savedCollapsed, setSavedCollapsed] = useState(false)
+  const [savedPulling, setSavedPulling] = useState<Set<string>>(new Set())
+  const [savedPullMessages, setSavedPullMessages] = useState<Record<string, string>>({})
 
   useEffect(() => { loadGuides() }, [])
 
@@ -579,6 +595,81 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
           </ul>
         </div>
       )}
+
+      {/* Saved guides (from web bookmarks) */}
+      <div className="mt-4">
+        <button
+          type="button"
+          className="w-full text-left flex items-center gap-2 mb-2 group"
+          onClick={() => setSavedCollapsed((v) => !v)}
+        >
+          <p
+            className="m-0 text-[0.7rem] uppercase tracking-wider font-semibold"
+            style={{ fontFamily: 'var(--font-display)', color: 'var(--color-brand)' }}
+          >
+            Saved guides
+          </p>
+          {savedGuides.length > 0 && (
+            <span className="text-[0.6rem] px-1 py-0.5 bg-zinc-800 text-zinc-500 rounded-full">
+              {savedGuides.length}
+            </span>
+          )}
+          <span className="ml-auto text-[0.65rem] text-zinc-600 group-hover:text-zinc-400 transition-colors">
+            {savedCollapsed ? '▸' : '▾'}
+          </span>
+        </button>
+        {!savedCollapsed && (
+          <>
+            {savedGuidesLoading && (
+              <p className="text-xs text-zinc-600 px-1 mb-2">Loading…</p>
+            )}
+            {!savedGuidesLoading && savedGuides.length === 0 && (
+              <p className="text-xs text-zinc-600 px-1 mb-2">
+                No saved guides yet. Browse the community site and save guides to pull them here.
+              </p>
+            )}
+            {!savedGuidesLoading && savedGuides.length > 0 && (
+              <ul className="list-none m-0 p-0 space-y-1">
+                {savedGuides.map((g) => {
+                  const { accent } = getMapColor(g.map)
+                  const isPulling = savedPulling.has(g.savedId)
+                  const msg = savedPullMessages[g.savedId]
+                  return (
+                    <li
+                      key={g.savedId}
+                      className="flex items-center gap-2 px-3 py-1.5 border-l-2"
+                      style={{ borderLeftColor: accent }}
+                    >
+                      <span className="flex-1 text-xs text-zinc-300 overflow-hidden text-ellipsis whitespace-nowrap min-w-0 font-semibold" style={{ fontFamily: 'var(--font-display)' }}>
+                        {g.title}
+                      </span>
+                      {msg && <span className="text-[0.6rem] text-emerald-400 shrink-0">{msg}</span>}
+                      <button
+                        type="button"
+                        disabled={isPulling || !g.downloadUrl}
+                        className="shrink-0 text-[0.6rem] px-2 py-0.5 bg-violet-900/40 hover:bg-violet-900/60 text-violet-300 border border-violet-800/60 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        onClick={async () => {
+                          if (!onSavedPull || !g.downloadUrl) return
+                          setSavedPulling((p) => new Set(p).add(g.savedId))
+                          setSavedPullMessages((m) => { const n = { ...m }; delete n[g.savedId]; return n })
+                          const res = await onSavedPull(g)
+                          setSavedPulling((p) => { const n = new Set(p); n.delete(g.savedId); return n })
+                          if (!res?.error) {
+                            setSavedPullMessages((m) => ({ ...m, [g.savedId]: '✓ Pulled' }))
+                            setTimeout(() => setSavedPullMessages((m) => { const n = { ...m }; delete n[g.savedId]; return n }), 4000)
+                          }
+                        }}
+                      >
+                        {isPulling ? 'Pulling…' : 'Pull'}
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </>
+        )}
+      </div>
       </div>
     </div>
   )
