@@ -48,7 +48,7 @@ interface GuidesProps {
   cloudStatuses?: Record<string, GuideSyncState>
   onCloudRefresh?: () => void
   featuredGuides?: FeaturedGuide[]
-  onFeaturedFork?: (guideId: string, title: string) => void | Promise<void>
+  onFeaturedFork?: (guideId: string, title: string) => Promise<{ error?: string } | void>
 }
 
 const btn =
@@ -103,6 +103,7 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
   const [createError, setCreateError] = useState('')
   const [nameFilter, setNameFilter] = useState('')
   const [mapFilter, setMapFilter] = useState<string | null>(null)
+  const [forkError, setForkError] = useState('')
 
   useEffect(() => { loadGuides() }, [])
 
@@ -316,6 +317,7 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
       {createError && <p className="text-red-400 mb-3 text-sm">{createError}</p>}
       {loadError && <p className="text-red-400 mb-3 text-sm">{loadError}</p>}
       {error && <p className="text-red-400 mb-3 text-sm">{error}</p>}
+      {forkError && <p className="text-red-400 mb-3 text-sm">{forkError}</p>}
 
       {!loading && !error && guides.length === 0 && (
         <p className="text-zinc-400">
@@ -437,8 +439,13 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
                         <button
                           type="button"
                           onClick={async () => {
-                            await onFeaturedFork(fg.id, fg.title)
-                            await loadGuides()
+                            setForkError('')
+                            const result = await onFeaturedFork(fg.id, fg.title)
+                            if (result && 'error' in result && result.error) {
+                              setForkError(result.error)
+                            } else {
+                              await loadGuides()
+                            }
                           }}
                           className="text-[0.7rem] px-2 py-0.5 bg-violet-700 hover:bg-violet-600 text-white rounded cursor-pointer transition-colors"
                         >

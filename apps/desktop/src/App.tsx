@@ -34,7 +34,8 @@ function AppInner() {
             onCloudRefresh={cloudStatus.refresh}
             featuredGuides={featuredGuides.guides}
             onFeaturedFork={async (guideId, title) => {
-              await (window.electronAPI as any).featuredFork(guideId, title)
+              const result = await (window.electronAPI as any).featuredFork(guideId, title)
+              if (result?.error) return { error: result.error }
               cloudStatus.refresh()
             }}
           />
