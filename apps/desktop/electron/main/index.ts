@@ -518,12 +518,16 @@ ipcMain.handle(
       if (relative.startsWith('..') || path.isAbsolute(relative))
         return { error: 'Can only delete local annotation files from the configured annotations folder.' }
       if (!fs.existsSync(fileAbs)) return { error: 'File not found.' }
+      if (currentFileWatcher) { currentFileWatcher.close(); currentFileWatcher = null }
       fs.unlinkSync(fileAbs)
       const dirPath = path.dirname(fileAbs)
       if (fs.existsSync(dirPath)) {
         const remaining = fs.readdirSync(dirPath)
         if (remaining.length === 0) fs.rmdirSync(dirPath)
       }
+      store.delete(`cloudId:${fileAbs}` as never)
+      store.delete(`cloudVersion:${fileAbs}` as never)
+      store.delete(`lastPushed:${fileAbs}` as never)
       return {}
     } catch (err) {
       return { error: err instanceof Error ? err.message : String(err) }
