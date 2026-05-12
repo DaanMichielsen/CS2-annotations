@@ -269,7 +269,7 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
             {isOwner && (
               <Link
                 href="/my-guides"
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-zinc-700 bg-zinc-800/60 text-zinc-300 hover:bg-zinc-800 hover:border-zinc-600 text-sm font-medium transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 px-2 py-2 rounded-lg border border-zinc-700 bg-zinc-800/60 text-zinc-300 hover:bg-zinc-800 hover:border-zinc-600 text-sm font-medium transition-colors"
               >
                 Manage →
               </Link>
