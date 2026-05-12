@@ -560,6 +560,27 @@ export default function GuideEditor({
     if (!filePath || !canDelete) return
     if (!window.confirm('Delete this annotation file from disk? This cannot be undone.')) return
     setDeleteStatus('deleting')
+
+    const electronAPI = (window as any).electronAPI
+    if (electronAPI && cloudStatus?.cloudId) {
+      try {
+        const [syncState, authState] = await Promise.all([
+          electronAPI.cloudGetSyncState(filePath),
+          electronAPI.getAuthState(),
+        ])
+        if (
+          syncState?.cloudAuthorId &&
+          authState?.token &&
+          syncState.cloudAuthorId === authState.token
+        ) {
+          if (window.confirm('This guide is also synced to the cloud. Remove it from there too? This cannot be undone.')) {
+            const cloudResult = await electronAPI.cloudDeleteGuide(cloudStatus.cloudId)
+            if (cloudResult?.error) setMsg(`Cloud delete failed: ${cloudResult.error}`, true)
+          }
+        }
+      } catch { /* non-critical — always proceed with local delete */ }
+    }
+
     const result = await adapter.deleteGuide(filePath)
     if (result.error) { setDeleteStatus('error'); setMsg(result.error, true) }
     else { onDeleted?.(); onBack() }
