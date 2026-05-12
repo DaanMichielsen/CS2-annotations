@@ -64,7 +64,8 @@ interface ElectronAPI {
   cloudPushGuide: (payload: { filePath: string; title: string; map: string; nodeCount?: number; cloudId?: string; cloudVersion?: number }) =>
     Promise<{ guide?: { id: string; version: number }; conflict?: boolean; cloudVersion?: number; error?: string }>
   cloudPullGuide: (payload: { cloudId: string; filePath: string }) => Promise<{ ok?: boolean; error?: string }>
-  cloudGetSyncState: (filePath: string) => Promise<{ synced: boolean; cloudId?: string; localVersion?: number; cloudVersion?: number; behind?: boolean }>
+  cloudDeleteGuide: (cloudId: string) => Promise<{ error?: string }>
+  cloudGetSyncState: (filePath: string) => Promise<{ synced: boolean; cloudId?: string; localVersion?: number; cloudVersion?: number; behind?: boolean; cloudAuthorId?: string | null }>
   openCommunity: () => Promise<void>
 }
 

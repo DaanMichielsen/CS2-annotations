@@ -575,7 +575,9 @@ export default function GuideEditor({
         ) {
           if (window.confirm('This guide is also synced to the cloud. Remove it from there too? This cannot be undone.')) {
             const cloudResult = await electronAPI.cloudDeleteGuide(cloudStatus.cloudId)
-            if (cloudResult?.error) setMsg(`Cloud delete failed: ${cloudResult.error}`, true)
+            if (cloudResult?.error) {
+              window.alert(`Could not remove from cloud: ${cloudResult.error}\n\nThe local file will still be deleted.`)
+            }
           }
         }
       } catch { /* non-critical — always proceed with local delete */ }
