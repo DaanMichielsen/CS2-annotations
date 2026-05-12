@@ -5,10 +5,12 @@ import { db } from '@/lib/db'
 import { deleteGuideBlob } from '@/lib/blob'
 import { revalidatePath } from 'next/cache'
 import Link from 'next/link'
+import Image from 'next/image'
 import { getMapColor, getMapLabel } from '@/lib/mapColors'
 import { MapFilterBar } from '@/components/MapFilterBar'
 import { PaginationFooter } from '@/components/PaginationFooter'
 import { SearchInput } from '@/components/SearchInput'
+import { CalendarDays } from 'lucide-react'
 
 interface SearchParams {
   map?: string
@@ -119,7 +121,7 @@ export default async function MyGuidesPage({ searchParams }: { searchParams: Pro
       ) : (
         <div className="flex flex-col gap-3">
           {guides.map((guide) => {
-            const { accent, dim } = getMapColor(guide.map)
+            const { accent, dim, icon } = getMapColor(guide.map)
             const mapLabel = getMapLabel(guide.map)
             return (
               <div
@@ -127,19 +129,36 @@ export default async function MyGuidesPage({ searchParams }: { searchParams: Pro
                 className="flex items-center gap-4 bg-zinc-900/50 border border-zinc-800 rounded-xl px-5 py-4 hover:border-zinc-700 transition-colors"
                 style={{ borderLeftColor: accent, borderLeftWidth: '3px' }}
               >
-                <span
-                  className="shrink-0 text-[0.6rem] font-data uppercase tracking-widest px-2 py-0.5 rounded hidden sm:block"
+                {/* Map icon chip with image */}
+                <div
+                  className="shrink-0 items-center gap-1.5 text-[0.6rem] font-data uppercase tracking-widest px-2 py-0.5 rounded hidden sm:flex"
                   style={{ backgroundColor: dim, color: accent }}
                 >
+                  {icon && (
+                    <Image
+                      src={icon}
+                      alt={mapLabel}
+                      width={12}
+                      height={12}
+                      className="opacity-80"
+                      unoptimized
+                    />
+                  )}
                   {mapLabel}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-display font-semibold text-zinc-100 truncate">{guide.title}</p>
-                  <p className="text-xs font-data text-zinc-600 mt-0.5">
-                    {guide.nodeCount} nodes · v{guide.version} ·{' '}
-                    {new Date(guide.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                  </p>
                 </div>
+
+                {/* Clickable content area — whole section is a link */}
+                <Link href={`/guides/${guide.id}`} className="flex-1 min-w-0 group">
+                  <p className="font-display font-semibold text-zinc-100 truncate group-hover:text-white transition-colors">
+                    {guide.title}
+                  </p>
+                  <p className="text-xs font-data text-zinc-600 mt-0.5 flex items-center gap-1">
+                    <CalendarDays size={10} className="shrink-0" />
+                    {new Date(guide.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </p>
+                </Link>
+
+                {/* Public/Private badge */}
                 <span
                   className={`shrink-0 text-[0.65rem] font-data uppercase tracking-wide px-2 py-0.5 rounded ${
                     guide.isPublic
@@ -149,15 +168,9 @@ export default async function MyGuidesPage({ searchParams }: { searchParams: Pro
                 >
                   {guide.isPublic ? 'Public' : 'Private'}
                 </span>
+
+                {/* Action buttons */}
                 <div className="flex gap-2 shrink-0">
-                  {guide.isPublic && (
-                    <Link
-                      href={`/guides/${guide.id}`}
-                      className="text-xs px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 rounded-lg transition-colors"
-                    >
-                      View
-                    </Link>
-                  )}
                   <form action={togglePublish.bind(null, guide.id, guide.isPublic)}>
                     <button
                       type="submit"
