@@ -909,6 +909,24 @@ ipcMain.handle('savedPullGuide', async (_event, payload: { guideId: string; titl
   }
 })
 
+ipcMain.handle('cloudDeleteGuide', async (_event, cloudId: string) => {
+  const token = store.get('authToken', null) as string | null
+  if (!token) return { error: 'Not signed in' }
+  try {
+    const res = await fetch(`${WEB_API}/guides/${cloudId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({})) as { error?: string }
+      return { error: body.error ?? `Cloud delete failed (${res.status})` }
+    }
+    return {}
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) }
+  }
+})
+
 // ── CS2 console ─────────────────────────────────────────────────────────────
 
 ipcMain.handle(
