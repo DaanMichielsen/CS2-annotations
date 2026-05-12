@@ -47,12 +47,21 @@ export async function POST(req: NextRequest) {
 
   if (!kv3Content || !title) return NextResponse.json({ error: 'Missing content or title' }, { status: 400 })
 
-  const guide = await db.guide.create({
-    data: { userId: user.id, title, map: map ?? '', nodeCount, blobKey: '' },
-  })
+  let guide
+  try {
+    guide = await db.guide.create({
+      data: { userId: user.id, title, map: map ?? '', nodeCount, blobKey: '' },
+    })
+  } catch {
+    return NextResponse.json({ error: 'Failed to create guide record' }, { status: 500 })
+  }
 
-  const blobKey = await uploadGuideBlob(guide.id, kv3Content)
-  const updated = await db.guide.update({ where: { id: guide.id }, data: { blobKey } })
-
-  return NextResponse.json({ guide: updated }, { status: 201 })
+  try {
+    const blobKey = await uploadGuideBlob(guide.id, kv3Content)
+    const updated = await db.guide.update({ where: { id: guide.id }, data: { blobKey } })
+    return NextResponse.json({ guide: updated }, { status: 201 })
+  } catch {
+    await db.guide.delete({ where: { id: guide.id } }).catch(() => {})
+    return NextResponse.json({ error: 'Failed to upload guide content — please try again' }, { status: 500 })
+  }
 }
