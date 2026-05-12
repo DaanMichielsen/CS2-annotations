@@ -528,6 +528,7 @@ ipcMain.handle(
       store.delete(`cloudId:${filePath}` as never)
       store.delete(`cloudVersion:${filePath}` as never)
       store.delete(`lastPushed:${filePath}` as never)
+      store.delete(`cloudAuthorId:${filePath}` as never)
       return {}
     } catch (err) {
       return { error: err instanceof Error ? err.message : String(err) }
@@ -721,6 +722,7 @@ ipcMain.handle('cloudPushGuide', async (_event, payload: {
       store.set(`cloudVersion:${payload.filePath}`, guide.version)
       store.set(`lastPushed:${payload.filePath}`, Date.now())
       store.set(`cloudId:${payload.filePath}`, guide.id)
+      store.set(`cloudAuthorId:${payload.filePath}`, store.get('authToken', null))
       return { guide }
     }
 
@@ -750,6 +752,7 @@ ipcMain.handle('cloudPushGuide', async (_event, payload: {
       store.set(`cloudVersion:${payload.filePath}`, guide.version)
       store.set(`lastPushed:${payload.filePath}`, Date.now())
       store.set(`cloudId:${payload.filePath}`, guide.id)
+      store.set(`cloudAuthorId:${payload.filePath}`, store.get('authToken', null))
       return { guide }
     } else {
       return createGuide()
@@ -782,14 +785,15 @@ ipcMain.handle('cloudPullGuide', async (_event, payload: { cloudId: string; file
 ipcMain.handle('cloudGetSyncState', async (_event, filePath: string) => {
   const cloudId = store.get(`cloudId:${filePath}`, null) as string | null
   const localVersion = store.get(`cloudVersion:${filePath}`, 0) as number
-  if (!cloudId) return { synced: false }
+  const cloudAuthorId = store.get(`cloudAuthorId:${filePath}`, null) as string | null
+  if (!cloudId) return { synced: false, cloudAuthorId }
   try {
     const res = await fetch(`${WEB_API}/guides/${cloudId}`, { headers: cloudHeaders() })
-    if (!res.ok) return { synced: false, cloudId, localVersion }
+    if (!res.ok) return { synced: false, cloudId, localVersion, cloudAuthorId }
     const { guide } = await res.json()
-    return { synced: true, cloudId, localVersion, cloudVersion: guide.version, behind: guide.version > localVersion }
+    return { synced: true, cloudId, localVersion, cloudVersion: guide.version, behind: guide.version > localVersion, cloudAuthorId }
   } catch {
-    return { synced: false, cloudId, localVersion }
+    return { synced: false, cloudId, localVersion, cloudAuthorId }
   }
 })
 
