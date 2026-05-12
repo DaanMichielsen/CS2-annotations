@@ -525,9 +525,9 @@ ipcMain.handle(
         const remaining = fs.readdirSync(dirPath)
         if (remaining.length === 0) fs.rmdirSync(dirPath)
       }
-      store.delete(`cloudId:${fileAbs}` as never)
-      store.delete(`cloudVersion:${fileAbs}` as never)
-      store.delete(`lastPushed:${fileAbs}` as never)
+      store.delete(`cloudId:${filePath}` as never)
+      store.delete(`cloudVersion:${filePath}` as never)
+      store.delete(`lastPushed:${filePath}` as never)
       return {}
     } catch (err) {
       return { error: err instanceof Error ? err.message : String(err) }
