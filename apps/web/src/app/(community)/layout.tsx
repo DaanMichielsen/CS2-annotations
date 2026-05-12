@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { auth, signOut } from '@/lib/auth'
+import { LeftNavLinks, RightNavLinks } from '@/components/NavLinks'
 
 export default async function CommunityLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
@@ -14,6 +15,7 @@ export default async function CommunityLayout({ children }: { children: React.Re
     <div className="min-h-screen bg-zinc-950">
       <nav className="sticky top-0 z-50 border-b border-zinc-800/60 bg-zinc-950/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center gap-6">
+          {/* Logo */}
           <Link href="/" className="shrink-0 hover:opacity-80 transition-opacity">
             <span className="font-display font-bold text-white">CS2</span>
             <span className="font-display font-semibold text-violet-400"> Annotations</span>
@@ -21,52 +23,20 @@ export default async function CommunityLayout({ children }: { children: React.Re
 
           <div className="h-4 w-px bg-zinc-700" />
 
-          <Link
-            href="/guides"
-            className="text-sm text-zinc-400 hover:text-white transition-colors font-medium"
-          >
-            Browse
-          </Link>
+          {/* Community links - left */}
+          <LeftNavLinks />
 
-          <Link
-            href="/library"
-            className="text-sm text-zinc-400 hover:text-white transition-colors font-medium"
-          >
-            Library
-          </Link>
+          {/* User links + profile - right */}
+          <div className="flex items-center gap-6 ml-auto">
+            <RightNavLinks
+              isAuthenticated={!!session}
+              isAdmin={!!session?.user?.roles?.includes('admin')}
+            />
 
-          {session && (
-            <>
-              <Link
-                href="/for-you"
-                className="text-sm text-zinc-400 hover:text-white transition-colors font-medium"
-              >
-                For You
-              </Link>
-              <Link
-                href="/my-guides"
-                className="text-sm text-zinc-400 hover:text-white transition-colors font-medium"
-              >
-                My Guides
-              </Link>
-              <Link
-                href="/saved"
-                className="text-sm text-zinc-400 hover:text-white transition-colors font-medium"
-              >
-                Saved
-              </Link>
-              {session.user?.roles?.includes('admin') && (
-                <Link
-                  href="/admin"
-                  className="text-sm text-violet-400 hover:text-violet-300 transition-colors font-medium"
-                >
-                  Admin
-                </Link>
-              )}
-            </>
-          )}
+            {/* Separator before profile */}
+            {session && <div className="h-4 w-px bg-zinc-700" />}
 
-          <div className="flex items-center gap-3 ml-auto">
+            {/* Profile / Sign in */}
             {session ? (
               <>
                 <Link href={`/users/${session.user?.id}`} className="flex items-center gap-2 group">
