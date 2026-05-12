@@ -1,5 +1,6 @@
 // apps/web/src/app/(community)/guides/page.tsx
 import { db } from '@/lib/db'
+import { auth } from '@/lib/auth'
 import GuideCard from '@/components/GuideCard'
 import { getMapLabel } from '@/lib/mapColors'
 import Link from 'next/link'
@@ -14,11 +15,10 @@ interface SearchParams {
   page?: string
 }
 
-export const revalidate = 60
-
 const PAGE_SIZE = 24
 
 export default async function BrowsePage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  const session = await auth()
   const { map, sort, q, page: pageParam } = await searchParams
   const page = Math.max(1, parseInt(pageParam ?? '1', 10))
   const skip = (page - 1) * PAGE_SIZE
@@ -50,6 +50,25 @@ export default async function BrowsePage({ searchParams }: { searchParams: Promi
     score: g.ratings.reduce((acc, r) => acc + r.value, 0),
   }))
   if (sort === 'top') withScores.sort((a, b) => b.score - a.score)
+
+  const guideIds = withScores.map((g) => g.id)
+  const userId = session?.user?.id
+
+  const [savedRows, featuredRows] = userId
+    ? await Promise.all([
+        db.savedGuide.findMany({
+          where: { userId, guideId: { in: guideIds } },
+          select: { guideId: true },
+        }),
+        db.featuredGuide.findMany({
+          where: { guideId: { in: guideIds } },
+          select: { guideId: true },
+        }),
+      ])
+    : [[], []]
+
+  const savedSet = new Set(savedRows.map((r) => r.guideId))
+  const featuredSet = new Set(featuredRows.map((r) => r.guideId))
 
   function buildMapHref(m: string | null) {
     const params = new URLSearchParams({
@@ -142,10 +161,12 @@ export default async function BrowsePage({ searchParams }: { searchParams: Promi
               id={g.id}
               title={g.title}
               map={g.map}
-              nodeCount={g.nodeCount}
               score={g.score}
               authorName={g.user.username ?? g.user.name}
               authorAvatar={g.user.avatar}
+              isSaved={userId ? savedSet.has(g.id) : undefined}
+              isAuthenticated={!!userId}
+              isFeatured={featuredSet.has(g.id)}
             />
           ))}
         </div>
