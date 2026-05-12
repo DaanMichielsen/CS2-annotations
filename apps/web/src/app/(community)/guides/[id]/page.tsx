@@ -13,6 +13,7 @@ import { getGuideBlobUrl } from '@/lib/blob'
 import { parseKv3Text, kv3ToNodes, extractNodesKey } from '@cs2ann/shared/web'
 import type { Kv3Object, AnnotationNode, GrenadeType } from '@cs2ann/shared/web'
 import { CreditChip } from '@/components/CreditChip'
+import AnnotationList from '@/components/AnnotationList'
 
 const GRENADE_ORDER: GrenadeType[] = ['smoke', 'flash', 'he', 'molotov', 'decoy']
 const GRENADE_ICON_FILES: Record<GrenadeType, string> = {
@@ -44,6 +45,7 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
         orderBy: { createdAt: 'asc' },
       },
       credits: { orderBy: { position: 'asc' } },
+      featuredGuide: { select: { id: true } },
       savedBy: session?.user?.id
         ? { where: { userId: session.user.id }, select: { id: true } }
         : false,
@@ -92,6 +94,7 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
     : null
 
   const isOwner = session?.user?.id === guide.userId
+  const isFeatured = !!guide.featuredGuide
   const initialSaved = Array.isArray(guide.savedBy) && guide.savedBy.length > 0
   const authorName = guide.user.username ?? guide.user.name ?? 'Anonymous'
   const { accent, dim, icon: mapIcon } = getMapColor(guide.map)
@@ -187,6 +190,7 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
               Annotations · {nodes.length} nodes
             </h2>
             <GuideNodeFilter nodes={nodes} mapName={guide.map} />
+            <AnnotationList nodes={nodes} />
           </section>
         </div>
 
@@ -232,23 +236,27 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
           </div>
 
           {/* Actions */}
-          <div className="flex flex-col gap-2">
-            <SaveButton
-              guideId={guide.id}
-              initialSaved={initialSaved}
-              isAuthenticated={!!session?.user?.id}
-            />
+          <div className="flex gap-2">
+            {!isFeatured && (
+              <SaveButton
+                guideId={guide.id}
+                initialSaved={initialSaved}
+                isAuthenticated={!!session?.user?.id}
+                className="flex-1"
+              />
+            )}
 
             {blobUrl && (
               <DownloadButton
                 downloadUrl={blobUrl}
                 guideTitle={guide.title}
                 mapName={guide.map ?? null}
+                className="flex-1"
               />
             )}
 
             {session && !isOwner && (
-              <form action={forkGuide}>
+              <form className="flex-1" action={forkGuide}>
                 <button
                   type="submit"
                   className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-zinc-700 bg-zinc-800/60 text-zinc-300 hover:bg-zinc-800 hover:border-zinc-600 text-sm font-medium transition-colors"
@@ -261,7 +269,7 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
             {isOwner && (
               <Link
                 href="/my-guides"
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-zinc-700 bg-zinc-800/60 text-zinc-300 hover:bg-zinc-800 hover:border-zinc-600 text-sm font-medium transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-zinc-700 bg-zinc-800/60 text-zinc-300 hover:bg-zinc-800 hover:border-zinc-600 text-sm font-medium transition-colors"
               >
                 Manage →
               </Link>

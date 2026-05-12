@@ -6,9 +6,10 @@ interface Props {
   guideId: string
   initialSaved: boolean
   isAuthenticated: boolean
+  className?: string
 }
 
-export default function SaveButton({ guideId, initialSaved, isAuthenticated }: Props) {
+export default function SaveButton({ guideId, initialSaved, isAuthenticated, className }: Props) {
   const [saved, setSaved] = useState(initialSaved)
   const [loading, setLoading] = useState(false)
 
@@ -34,7 +35,7 @@ export default function SaveButton({ guideId, initialSaved, isAuthenticated }: P
       type="button"
       onClick={toggle}
       disabled={loading}
-      className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors disabled:opacity-50 ${
+      className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors disabled:opacity-50 ${className ?? ''} ${
         saved
           ? 'bg-violet-950/60 border-violet-700 text-violet-300 hover:bg-violet-950 hover:border-violet-600'
           : 'bg-zinc-800/60 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:border-zinc-600'

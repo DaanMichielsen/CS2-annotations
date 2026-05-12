@@ -6,9 +6,10 @@ interface Props {
   downloadUrl: string
   guideTitle: string
   mapName: string | null
+  className?: string
 }
 
-export default function DownloadButton({ downloadUrl, guideTitle, mapName }: Props) {
+export default function DownloadButton({ downloadUrl, guideTitle, mapName, className }: Props) {
   const [showModal, setShowModal] = useState(false)
   const fileName = guideTitle.replace(/[^a-zA-Z0-9_\-]/g, '_') + '.txt'
   const folderName = mapName ? `${mapName}\\` : ''
@@ -26,7 +27,7 @@ export default function DownloadButton({ downloadUrl, guideTitle, mapName }: Pro
       <button
         type="button"
         onClick={handleDownload}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-zinc-700 bg-zinc-800/60 text-zinc-300 hover:bg-zinc-800 hover:border-zinc-600 text-sm font-medium transition-colors"
+        className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-zinc-700 bg-zinc-800/60 text-zinc-300 hover:bg-zinc-800 hover:border-zinc-600 text-sm font-medium transition-colors ${className ?? ''}`}
       >
         <Download size={15} className="text-zinc-400" />
         Download
