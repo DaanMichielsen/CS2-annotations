@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { FolderInput, Info } from 'lucide-react'
+import { FolderInput, Info, RefreshCw } from 'lucide-react'
 import type { AnnotationNode } from '@cs2ann/shared'
 import { getMapColor, KNOWN_MAPS } from '@cs2ann/shared'
 import { getMapIconUrl } from './mapImages'
@@ -64,6 +64,7 @@ interface GuidesProps {
   savedGuides?: SavedGuideItem[]
   savedGuidesLoading?: boolean
   onSavedPull?: (guide: SavedGuideItem) => Promise<{ error?: string } | void>
+  onSavedRefresh?: () => void
 }
 
 const btn =
@@ -106,7 +107,7 @@ function MapChip({ mapName }: { mapName?: string }) {
   )
 }
 
-export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefresh, featuredGuides = [], featuredGuidesLoading = false, onFeaturedFork, savedGuides = [], savedGuidesLoading = false, onSavedPull }: GuidesProps = {}) {
+export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefresh, featuredGuides = [], featuredGuidesLoading = false, onFeaturedFork, savedGuides = [], savedGuidesLoading = false, onSavedPull, onSavedRefresh }: GuidesProps = {}) {
   const adapter = useGuideAdapter()
   const [guides, setGuides] = useState<GuideItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -598,26 +599,39 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
 
       {/* Saved guides (from web bookmarks) */}
       <div className="mt-4">
-        <button
-          type="button"
-          className="w-full text-left flex items-center gap-2 mb-2 group"
-          onClick={() => setSavedCollapsed((v) => !v)}
-        >
-          <p
-            className="m-0 text-[0.7rem] uppercase tracking-wider font-semibold"
-            style={{ fontFamily: 'var(--font-display)', color: 'var(--color-brand)' }}
+        <div className="w-full flex items-center gap-2 mb-2">
+          <button
+            type="button"
+            className="flex-1 text-left flex items-center gap-2 group"
+            onClick={() => setSavedCollapsed((v) => !v)}
           >
-            Saved guides
-          </p>
-          {savedGuides.length > 0 && (
-            <span className="text-[0.6rem] px-1 py-0.5 bg-zinc-800 text-zinc-500 rounded-full">
-              {savedGuides.length}
+            <p
+              className="m-0 text-[0.7rem] uppercase tracking-wider font-semibold"
+              style={{ fontFamily: 'var(--font-display)', color: 'var(--color-brand)' }}
+            >
+              Saved guides
+            </p>
+            {savedGuides.length > 0 && (
+              <span className="text-[0.6rem] px-1 py-0.5 bg-zinc-800 text-zinc-500 rounded-full">
+                {savedGuides.length}
+              </span>
+            )}
+            <span className="ml-auto text-[0.65rem] text-zinc-600 group-hover:text-zinc-400 transition-colors">
+              {savedCollapsed ? '▸' : '▾'}
             </span>
+          </button>
+          {onSavedRefresh && (
+            <button
+              type="button"
+              title="Refresh saved guides"
+              className="shrink-0 p-1 text-zinc-600 hover:text-zinc-300 transition-colors"
+              onClick={onSavedRefresh}
+              disabled={savedGuidesLoading}
+            >
+              <RefreshCw size={11} className={savedGuidesLoading ? 'animate-spin' : ''} />
+            </button>
           )}
-          <span className="ml-auto text-[0.65rem] text-zinc-600 group-hover:text-zinc-400 transition-colors">
-            {savedCollapsed ? '▸' : '▾'}
-          </span>
-        </button>
+        </div>
         {!savedCollapsed && (
           <>
             {savedGuidesLoading && (

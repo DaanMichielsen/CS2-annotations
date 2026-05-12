@@ -43,6 +43,7 @@ function AppInner() {
             }}
             savedGuides={savedGuides.guides}
             savedGuidesLoading={savedGuides.loading}
+            onSavedRefresh={savedGuides.refresh}
             onSavedPull={async (guide) => {
               if (!guide.downloadUrl) return { error: 'No download URL available' }
               const result = await (window.electronAPI as any).savedPullGuide({
