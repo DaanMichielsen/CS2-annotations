@@ -116,7 +116,6 @@ export default async function ForYouPage() {
                         id={g.id}
                         title={g.title}
                         map={g.map}
-                        nodeCount={g.nodeCount}
                         score={g.score}
                         authorName={authorName}
                         authorAvatar={author.avatar}

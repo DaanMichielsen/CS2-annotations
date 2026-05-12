@@ -182,7 +182,6 @@ export default async function HomePage() {
                 id={g.id}
                 title={g.title}
                 map={g.map}
-                nodeCount={g.nodeCount}
                 score={g.score}
                 authorName={g.user.username ?? g.user.name}
                 authorAvatar={g.user.avatar}
