@@ -102,7 +102,6 @@ export default function AnnotationCreateModal({ onClose, onSendCreate, onSaveCre
       case 'spot':  return 'annotation_create spot'
     }
   }
-  function buildLineAddCmd() { return `annotation_create line ${lineMount}` }
 
   function buildMeta(): CreateMeta {
     return {

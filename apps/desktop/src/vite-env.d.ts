@@ -50,6 +50,9 @@ interface ElectronAPI {
   writeCS2Cfg: (command: string) => Promise<{ error?: string; cfgPath?: string; content?: string }>
   showItemInFolder: (filePath: string) => Promise<void>
   launchCS2: () => Promise<{ error?: string }>
+  getCfgKeybind: () => Promise<string>
+  setCfgKeybind: (key: string) => Promise<void>
+  copyToClipboard: (text: string) => Promise<{ error?: string }>
   watchGuideFile: (filePath: string) => void
   unwatchGuideFile: () => void
   onGuideFileChanged: (callback: (filePath: string) => void) => () => void

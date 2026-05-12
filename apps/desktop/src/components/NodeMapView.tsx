@@ -16,10 +16,10 @@ import { MAP_DATA, worldToPixel } from '@cs2ann/shared'
 import { getMapOverviewUrl } from '@cs2ann/ui'
 
 // ── nade icons (same glob pattern as GuideEditor) ─────────────────────────────
-const _nadeIconModules = import.meta.glob<string>(
+const _nadeIconModules = import.meta.glob(
   '../../resources/nades/*.png',
   { eager: true, query: '?url', import: 'default' },
-)
+) as Record<string, string>
 const NADE_ICON_FILE: Partial<Record<GrenadeType, string>> = {
   smoke: 'smoke', flash: 'flash', he: 'hegrenade', molotov: 'molotov', decoy: 'decoy',
 }

@@ -644,7 +644,7 @@ ipcMain.on('unwatchGuideFile', () => {
 const CS2_APP_ID = '730'
 const CS2_WINDOW_TITLE = 'Counter-Strike 2'
 
-ipcMain.handle('writeCS2Cfg', async (_event, command: string): Promise<{ error?: string; cfgPath?: string }> => {
+ipcMain.handle('writeCS2Cfg', async (_event, command: string): Promise<{ error?: string; cfgPath?: string; content?: string }> => {
   try {
     const annotationsRoot = store.get('annotationsRoot', '')
     if (!annotationsRoot) return { error: 'Annotations folder not configured in Settings.' }
