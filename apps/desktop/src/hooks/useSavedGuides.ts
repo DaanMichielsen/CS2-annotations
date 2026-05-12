@@ -19,19 +19,20 @@ export function useSavedGuides(): { guides: SavedGuide[]; loading: boolean; refr
   const [loading, setLoading] = useState(true)
 
   const fetchGuides = () => {
-    const token = (window as any).electronAPI?.getAuthStateSync?.() ??
-      localStorage.getItem('authToken')
-
     window.electronAPI.getAuthState().then((authState: { token: string | null } | null) => {
       if (!authState?.token) {
         setGuides([])
         setLoading(false)
         return
       }
+      setLoading(true)
       fetch(`${WEB_API}/saved-guides`, {
         headers: { Authorization: `Bearer ${authState.token}` },
       })
-        .then((r) => r.json() as Promise<{ guides: SavedGuide[] }>)
+        .then((r) => {
+          if (!r.ok) return { guides: [] as SavedGuide[] }
+          return r.json() as Promise<{ guides: SavedGuide[] }>
+        })
         .then((data) => setGuides(data.guides ?? []))
         .catch(() => setGuides([]))
         .finally(() => setLoading(false))
@@ -40,7 +41,7 @@ export function useSavedGuides(): { guides: SavedGuide[]; loading: boolean; refr
 
   useEffect(() => {
     fetchGuides()
-    const interval = setInterval(fetchGuides, 5 * 60 * 1000)
+    const interval = setInterval(fetchGuides, 2 * 60 * 1000)
     const unsub = window.electronAPI.onAuthStateChanged(() => {
       setGuides([])
       setLoading(true)
