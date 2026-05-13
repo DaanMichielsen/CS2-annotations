@@ -14,6 +14,7 @@ import { parseKv3Text, kv3ToNodes, extractNodesKey } from '@cs2ann/shared/web'
 import type { Kv3Object, AnnotationNode, GrenadeType } from '@cs2ann/shared/web'
 import { CreditChip } from '@/components/CreditChip'
 import AnnotationList from '@/components/AnnotationList'
+import FollowButton from '@/components/FollowButton'
 
 const GRENADE_ORDER: GrenadeType[] = ['smoke', 'flash', 'he', 'molotov', 'decoy']
 const GRENADE_ICON_FILES: Record<GrenadeType, string> = {
@@ -41,7 +42,7 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
       user: { select: { id: true, username: true, avatar: true, name: true } },
       ratings: { select: { value: true, userId: true } },
       comments: {
-        include: { user: { select: { username: true, avatar: true, name: true } } },
+        include: { user: { select: { id: true, username: true, avatar: true, name: true } } },
         orderBy: { createdAt: 'asc' },
       },
       credits: { orderBy: { position: 'asc' } },
@@ -99,6 +100,18 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
   const authorName = guide.user.username ?? guide.user.name ?? 'Anonymous'
   const { accent, dim, icon: mapIcon } = getMapColor(guide.map)
   const mapLabel = getMapLabel(guide.map)
+
+  const isFollowing =
+    session?.user?.id && !isOwner
+      ? !!(await db.follow.findUnique({
+          where: {
+            followerId_followingId: {
+              followerId: session.user.id,
+              followingId: guide.userId,
+            },
+          },
+        }))
+      : false
 
   async function forkGuide() {
     'use server'
@@ -200,33 +213,31 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
           {/* Author card */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
             <p className="text-[0.65rem] font-data uppercase tracking-wider text-zinc-600 mb-3">Created by</p>
-            <Link
-              href={`/users/${guide.user.id}`}
-              className="flex items-center gap-3 group"
-            >
-              {guide.user.avatar ? (
-                <Image
-                  src={guide.user.avatar}
-                  alt={authorName}
-                  width={40}
-                  height={40}
-                  className="rounded-full ring-1 ring-zinc-700 group-hover:ring-zinc-500 transition-all shrink-0"
-                  unoptimized
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 shrink-0" />
-              )}
-              <div className="min-w-0">
+            <div className="flex items-center gap-3">
+              <Link
+                href={`/users/${guide.user.id}`}
+                className="flex items-center gap-3 group flex-1 min-w-0"
+              >
+                {guide.user.avatar ? (
+                  <Image
+                    src={guide.user.avatar}
+                    alt={authorName}
+                    width={40}
+                    height={40}
+                    className="rounded-full ring-1 ring-zinc-700 group-hover:ring-zinc-500 transition-all shrink-0"
+                    unoptimized
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 shrink-0" />
+                )}
                 <p className="font-display font-semibold text-zinc-100 group-hover:text-white transition-colors truncate">
                   {authorName}
                 </p>
-                <p className="text-xs text-zinc-600 font-data">
-                  v{guide.version} ·{' '}
-                  {new Date(guide.credits[0]?.position ?? 0).toLocaleDateString?.() ??
-                    mapLabel}
-                </p>
-              </div>
-            </Link>
+              </Link>
+              {session && !isOwner && (
+                <FollowButton targetId={guide.user.id} initialFollowing={isFollowing} />
+              )}
+            </div>
           </div>
 
           {/* Rating */}
@@ -235,41 +246,45 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
             <RatingButtons guideId={guide.id} initialScore={score} userVote={userVote} />
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-2">
+          {/* Actions — button group: hugging, shared borders, only outer corners rounded */}
+          <div className="flex overflow-hidden rounded-lg">
             {!isFeatured && (
-              <SaveButton
-                guideId={guide.id}
-                initialSaved={initialSaved}
-                isAuthenticated={!!session?.user?.id}
-                className="flex-1"
-              />
+              <div className="flex-1">
+                <SaveButton
+                  guideId={guide.id}
+                  initialSaved={initialSaved}
+                  isAuthenticated={!!session?.user?.id}
+                  className="rounded-none!"
+                />
+              </div>
             )}
-
             {blobUrl && (
-              <DownloadButton
-                downloadUrl={blobUrl}
-                guideTitle={guide.title}
-                mapName={guide.map ?? null}
-                className="flex-1"
-              />
+              <div className={`flex-1${!isFeatured ? ' -ml-px' : ''}`}>
+                <DownloadButton
+                  downloadUrl={blobUrl}
+                  guideTitle={guide.title}
+                  mapName={guide.map ?? null}
+                  className="rounded-none!"
+                />
+              </div>
             )}
-
             {session && !isOwner && (
-              <form className="flex-1" action={forkGuide}>
+              <form
+                className={`flex-1${blobUrl || !isFeatured ? ' -ml-px' : ''}`}
+                action={forkGuide}
+              >
                 <button
                   type="submit"
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-zinc-700 bg-zinc-800/60 text-zinc-300 hover:bg-zinc-800 hover:border-zinc-600 text-sm font-medium transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-none border border-zinc-700 bg-zinc-800/60 text-zinc-300 hover:bg-zinc-800 hover:border-zinc-600 text-sm font-medium transition-colors"
                 >
                   Fork guide
                 </button>
               </form>
             )}
-
             {isOwner && (
               <Link
                 href="/my-guides"
-                className="flex-1 flex items-center justify-center gap-2 px-2 py-2 rounded-lg border border-zinc-700 bg-zinc-800/60 text-zinc-300 hover:bg-zinc-800 hover:border-zinc-600 text-sm font-medium transition-colors"
+                className={`flex-1 flex items-center justify-center gap-2 px-2 py-2 rounded-none border border-zinc-700 bg-zinc-800/60 text-zinc-300 hover:bg-zinc-800 hover:border-zinc-600 text-sm font-medium transition-colors${blobUrl || !isFeatured ? ' -ml-px' : ''}`}
               >
                 Manage →
               </Link>
@@ -285,6 +300,7 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
                 createdAt: c.createdAt.toISOString(),
               }))}
               isAuthenticated={!!session?.user?.id}
+              currentUserId={session?.user?.id ?? null}
             />
           </div>
         </div>

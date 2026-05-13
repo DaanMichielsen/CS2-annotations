@@ -5,7 +5,6 @@ import { db } from '@/lib/db'
 import { deleteGuideBlob } from '@/lib/blob'
 import { revalidatePath } from 'next/cache'
 import Link from 'next/link'
-import Image from 'next/image'
 import { getMapColor, getMapLabel } from '@/lib/mapColors'
 import { MapFilterBar } from '@/components/MapFilterBar'
 import { PaginationFooter } from '@/components/PaginationFooter'
@@ -126,24 +125,30 @@ export default async function MyGuidesPage({ searchParams }: { searchParams: Pro
             return (
               <div
                 key={guide.id}
-                className="flex items-center gap-4 bg-zinc-900/50 border border-zinc-800 rounded-xl px-5 py-4 hover:border-zinc-700 transition-colors"
+                className="relative overflow-hidden flex items-center gap-4 bg-zinc-900/50 border border-zinc-800 rounded-xl px-5 py-4 hover:border-zinc-700 transition-colors"
                 style={{ borderLeftColor: accent, borderLeftWidth: '3px' }}
               >
-                {/* Map icon chip with image */}
+                {/* Map watermark */}
+                {icon && (
+                  <div
+                    className="absolute inset-y-0 right-0 w-20 pointer-events-none select-none"
+                    style={{
+                      backgroundImage: `url(${icon})`,
+                      backgroundSize: 'contain',
+                      backgroundPosition: 'center right',
+                      backgroundRepeat: 'no-repeat',
+                      opacity: 0.07,
+                      maskImage: 'radial-gradient(ellipse at right center, black 20%, transparent 80%)',
+                      WebkitMaskImage: 'radial-gradient(ellipse at right center, black 20%, transparent 80%)',
+                    }}
+                  />
+                )}
+
+                {/* Map label chip — text only, fixed width for consistent indentation */}
                 <div
-                  className="shrink-0 items-center gap-1.5 text-[0.6rem] font-data uppercase tracking-widest px-2 py-0.5 rounded hidden sm:flex"
+                  className="shrink-0 w-20 text-center text-[0.6rem] font-data uppercase tracking-widest px-2 py-0.5 rounded hidden sm:block"
                   style={{ backgroundColor: dim, color: accent }}
                 >
-                  {icon && (
-                    <Image
-                      src={icon}
-                      alt={mapLabel}
-                      width={12}
-                      height={12}
-                      className="opacity-80"
-                      unoptimized
-                    />
-                  )}
                   {mapLabel}
                 </div>
 

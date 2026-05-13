@@ -6,7 +6,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params
   const comments = await db.guideComment.findMany({
     where: { guideId: id },
-    include: { user: { select: { username: true, avatar: true, name: true } } },
+    include: { user: { select: { id: true, username: true, avatar: true, name: true } } },
     orderBy: { createdAt: 'asc' },
   })
   return NextResponse.json({ comments })
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const comment = await db.guideComment.create({
     data: { userId: session.user.id, guideId: id, body: body.trim() },
-    include: { user: { select: { username: true, avatar: true, name: true } } },
+    include: { user: { select: { id: true, username: true, avatar: true, name: true } } },
   })
   return NextResponse.json({ comment }, { status: 201 })
 }
