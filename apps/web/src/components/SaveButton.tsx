@@ -46,7 +46,7 @@ export default function SaveButton({ guideId, initialSaved, isAuthenticated, cla
         size={15}
         className={saved ? 'fill-violet-400 text-violet-400' : 'text-zinc-400'}
       />
-      {saved ? 'Saved' : 'Save guide'}
+      {saved ? 'Saved' : 'Save'}
     </button>
   )
 }
