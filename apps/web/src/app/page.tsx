@@ -1,20 +1,16 @@
-import { auth, signOut } from '@/lib/auth'
+import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import Image from 'next/image'
 import Link from 'next/link'
 import GuideCard from '@/components/GuideCard'
 import MapCarousel from '@/components/MapCarousel'
+import TopNav from '@/components/TopNav'
 
 export const revalidate = 120
 
 export default async function HomePage() {
   const session = await auth()
   const user = session?.user
-
-  async function handleSignOut() {
-    'use server'
-    await signOut({ redirectTo: '/' })
-  }
 
   const recentGuides = await db.guide.findMany({
     where: { isPublic: true },
@@ -33,66 +29,7 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      {/* Nav */}
-      <nav className="sticky top-0 z-50 border-b border-zinc-800/60 bg-zinc-950/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center gap-6">
-          <Link href="/" className="shrink-0 hover:opacity-80 transition-opacity">
-            <span className="font-display font-bold text-white">CS2</span>
-            <span className="font-display font-semibold text-violet-400"> Annotations</span>
-          </Link>
-
-          <div className="h-4 w-px bg-zinc-800" />
-
-          <Link href="/guides" className="text-sm text-zinc-400 hover:text-white transition-colors font-medium">
-            Browse
-          </Link>
-
-          <Link href="/library" className="text-sm text-zinc-400 hover:text-white transition-colors font-medium">
-            Library
-          </Link>
-
-          {user && (
-            <>
-              <Link href="/for-you" className="text-sm text-zinc-400 hover:text-white transition-colors font-medium">
-                For You
-              </Link>
-              <Link href="/my-guides" className="text-sm text-zinc-400 hover:text-white transition-colors font-medium">
-                My Guides
-              </Link>
-              <Link href="/saved" className="text-sm text-zinc-400 hover:text-white transition-colors font-medium">
-                Saved
-              </Link>
-              {session?.user?.roles?.includes('admin') && (
-                <Link href="/admin" className="text-sm text-violet-400 hover:text-violet-300 transition-colors font-medium">
-                  Admin
-                </Link>
-              )}
-            </>
-          )}
-
-          <div className="ml-auto flex items-center gap-3">
-            {user ? (
-              <>
-                <Link href={`/users/${user.id}`} className="flex items-center gap-2 group">
-                  {user.image && (
-                    <Image src={user.image} alt={user.name ?? 'avatar'} width={28} height={28} className="rounded-full ring-1 ring-zinc-700 group-hover:ring-zinc-500 transition-all" unoptimized />
-                  )}
-                  <span className="text-sm text-zinc-400 group-hover:text-zinc-200 hidden sm:block transition-colors">{user.name}</span>
-                </Link>
-                <form action={handleSignOut}>
-                  <button type="submit" className="text-xs px-3 py-1.5 text-zinc-400 hover:text-zinc-200 border border-zinc-700 hover:border-zinc-500 rounded transition-colors">
-                    Sign out
-                  </button>
-                </form>
-              </>
-            ) : (
-              <Link href="/auth/signin" className="text-xs px-4 py-1.5 bg-violet-600 hover:bg-violet-500 text-white rounded font-semibold transition-colors">
-                Sign in
-              </Link>
-            )}
-          </div>
-        </div>
-      </nav>
+      <TopNav />
 
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-zinc-800/60">
