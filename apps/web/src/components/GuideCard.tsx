@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getMapColor, getMapLabel } from '@/lib/mapColors'
 import SaveButton from './SaveButton'
+import MediaCoverageBar from './MediaCoverageBar'
 
 interface GuideCardProps {
   id: string
@@ -13,10 +14,11 @@ interface GuideCardProps {
   isSaved?: boolean
   isAuthenticated?: boolean
   isFeatured?: boolean
+  mediaCount?: number
 }
 
 export default function GuideCard({
-  id, title, map, score, authorName, authorAvatar, isSaved, isAuthenticated, isFeatured,
+  id, title, map, score, authorName, authorAvatar, isSaved, isAuthenticated, isFeatured, mediaCount,
 }: GuideCardProps) {
   const { accent, dim, icon } = getMapColor(map)
   const mapLabel = getMapLabel(map)
@@ -82,6 +84,7 @@ export default function GuideCard({
             <div className="w-5 h-5 rounded-full bg-zinc-700 shrink-0" />
           )}
           <span className="text-xs text-zinc-500 truncate flex-1">{authorName ?? 'Anonymous'}</span>
+          {mediaCount != null && mediaCount > 0 && <MediaCoverageBar count={mediaCount} />}
           <span
             className="text-xs font-data font-medium"
             style={{ color: score > 0 ? '#a78bfa' : score < 0 ? '#ef4444' : '#52525b' }}

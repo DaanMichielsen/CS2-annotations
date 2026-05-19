@@ -38,7 +38,7 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
 
   const guides = await db.guide.findMany({
     where: { userId: user.id, isPublic: true },
-    include: { ratings: { select: { value: true } } },
+    include: { ratings: { select: { value: true } }, _count: { select: { annotationMedia: true } } },
     orderBy: { updatedAt: 'desc' },
   })
 
@@ -185,7 +185,7 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {topGuides.map((g) => (
-                    <GuideCard key={g.id} id={g.id} title={g.title} map={g.map} score={g.score} authorName={displayName} authorAvatar={user.avatar} />
+                    <GuideCard key={g.id} id={g.id} title={g.title} map={g.map} score={g.score} authorName={displayName} authorAvatar={user.avatar} mediaCount={g._count.annotationMedia} />
                   ))}
                 </div>
               </section>

@@ -17,6 +17,7 @@ export default async function HomePage() {
     include: {
       user: { select: { username: true, avatar: true, name: true } },
       ratings: { select: { value: true } },
+      _count: { select: { annotationMedia: true } },
     },
     orderBy: { updatedAt: 'desc' },
     take: 6,
@@ -122,6 +123,7 @@ export default async function HomePage() {
                 score={g.score}
                 authorName={g.user.username ?? g.user.name}
                 authorAvatar={g.user.avatar}
+                mediaCount={g._count.annotationMedia}
               />
             ))}
           </div>

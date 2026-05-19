@@ -16,6 +16,7 @@ export default async function SavedGuidesPage() {
         include: {
           user: { select: { username: true, avatar: true, name: true } },
           ratings: { select: { value: true } },
+          _count: { select: { annotationMedia: true } },
         },
       },
     },
@@ -69,6 +70,7 @@ export default async function SavedGuidesPage() {
               score={g.score}
               authorName={g.user.username ?? g.user.name}
               authorAvatar={g.user.avatar}
+              mediaCount={g._count.annotationMedia}
             />
           ))}
         </div>
