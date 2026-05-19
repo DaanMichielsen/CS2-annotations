@@ -6,6 +6,7 @@ export * from './annotation/mapData'
 export * from './annotation/kv3Mapping'
 export * from './annotation/inferUtils'
 export * from './annotation/groupUtils'
+export * from './annotation/mediaTypes'
 export * from './kv3/index'
 export * from './kv3/types'
 export type {

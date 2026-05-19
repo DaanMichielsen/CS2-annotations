@@ -4,6 +4,7 @@ export * from './annotation/types'
 export * from './annotation/kv3Mapping'
 export * from './annotation/inferUtils'
 export * from './annotation/groupUtils'
+export * from './annotation/mediaTypes'
 export {
   THROW_TYPE_LABEL,
   THROW_TYPE_SHORT,
