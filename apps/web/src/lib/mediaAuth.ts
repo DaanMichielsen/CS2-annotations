@@ -25,6 +25,8 @@ export async function canCreateMedia(
   const ctx = await getCtx(guideId)
   if (!ctx?.isAuthenticated || !ctx.userId) return null
   if (ctx.isOwner) return ctx.userId
+  if (!ctx.guide.isPublic) return null  // non-owners cannot contribute to private guides
+  // Note: TOCTOU race possible; route should handle duplicate-key errors gracefully
   const count = await db.annotationMedia.count({ where: { guideId, nodeId, slot } })
   return count === 0 ? ctx.userId : null
 }
