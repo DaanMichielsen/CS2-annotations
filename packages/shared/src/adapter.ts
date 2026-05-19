@@ -1,4 +1,5 @@
 import type { AnnotationNode } from './annotation/types'
+import type { AnnotationMedia, CreateMediaPayload, UpdateMediaPayload } from './annotation/mediaTypes'
 
 export interface GuideSummary {
   id: string
@@ -74,5 +75,13 @@ export interface GuideAdapter {
   clipboard?: {
     write(text: string): Promise<{ error?: string }>
     showInFolder?(path: string): Promise<void>
+  }
+
+  media?: {
+    list(guideId: string, nodeId?: string): Promise<AnnotationMedia[]>
+    createLink(guideId: string, payload: CreateMediaPayload): Promise<AnnotationMedia>
+    createUpload(guideId: string, formData: FormData): Promise<AnnotationMedia>
+    update(mediaId: string, payload: UpdateMediaPayload): Promise<AnnotationMedia>
+    remove(mediaId: string): Promise<void>
   }
 }
