@@ -1,15 +1,20 @@
 /// <reference path="../../shared/src/vite-env.d.ts" />
 
 // Vite bundles and hashes these at build time.
+// In non-Vite environments (Next.js/webpack) import.meta.glob is unavailable — modules fall back to {}.
 
-// Large radar/overview images — used for the canvas map overlay.
-const overviewModules = {
-  ...(import.meta.glob('../../../apps/desktop/resources/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>),
-  ...(import.meta.glob('../../../apps/desktop/resources/maps/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>),
+let overviewModules: Record<string, string> = {}
+let iconModules: Record<string, string> = {}
+
+try {
+  overviewModules = {
+    ...(import.meta.glob('../../../apps/desktop/resources/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>),
+    ...(import.meta.glob('../../../apps/desktop/resources/maps/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>),
+  }
+  iconModules = import.meta.glob('../../../apps/desktop/resources/map-icons/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>
+} catch {
+  // webpack / Next.js — map image bundling not available; consumers fall back to null
 }
-
-// Small map icon images — used for filter chips and guide list items.
-const iconModules = import.meta.glob('../../../apps/desktop/resources/map-icons/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>
 
 /** Returns the bundled radar/overview image URL for canvas rendering. */
 export function getMapOverviewUrl(fileName: string): string | null {
