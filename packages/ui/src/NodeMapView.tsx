@@ -14,19 +14,10 @@ import { useState, useRef, useEffect, useMemo, useLayoutEffect, useCallback } fr
 import type { AnnotationNode, GrenadeType, AnnotationMedia } from '@cs2ann/shared'
 import { MAP_DATA, worldToPixel } from '@cs2ann/shared'
 import { getMapOverviewUrl } from './mapImages'
+import { getNadeIconUrl as _getNadeIconUrl } from './nadeImages'
 
-// ── nade icons (same glob pattern as GuideEditor) ─────────────────────────────
-const _nadeIconModules = import.meta.glob(
-  '../../../apps/desktop/resources/nades/*.png',
-  { eager: true, query: '?url', import: 'default' },
-) as Record<string, string>
-const NADE_ICON_FILE: Partial<Record<GrenadeType, string>> = {
-  smoke: 'smoke', flash: 'flash', he: 'hegrenade', molotov: 'molotov', decoy: 'decoy',
-}
 function getNadeIcon(gt: GrenadeType | undefined): string | null {
-  if (!gt) return null
-  const name = NADE_ICON_FILE[gt]
-  return name ? (_nadeIconModules[`../../../apps/desktop/resources/nades/${name}.png`] ?? null) : null
+  return gt ? _getNadeIconUrl(gt) : null
 }
 
 // ── constants ─────────────────────────────────────────────────────────────────

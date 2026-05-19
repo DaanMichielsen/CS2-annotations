@@ -4,19 +4,9 @@ import type { AnnotationNode, NodeType, GrenadeType, TextDescObject, AnnotationM
 import type { GuideSyncState } from '@cs2ann/shared'
 import { GRENADE_TYPES, defaultTextDesc, defaultPosition, defaultAngles, generateId } from '@cs2ann/shared'
 
-// Nade-type icons bundled by Vite
-const _nadeIconModules = import.meta.glob(
-  '../../../apps/desktop/resources/nades/*.png',
-  { eager: true, query: '?url', import: 'default' }
-) as Record<string, string>
-const NADE_ICON_NAME: Partial<Record<GrenadeType, string>> = {
-  smoke: 'smoke', flash: 'flash', he: 'hegrenade',
-  molotov: 'molotov', decoy: 'decoy',
-}
+import { getNadeIconUrl as _getNadeIconUrl } from './nadeImages'
 function getNadeIconUrl(gt: GrenadeType | undefined): string | null {
-  if (!gt) return null
-  const name = NADE_ICON_NAME[gt]
-  return name ? (_nadeIconModules[`../../../apps/desktop/resources/nades/${name}.png`] ?? null) : null
+  return gt ? _getNadeIconUrl(gt) : null
 }
 import {
   inferColorCategory, inferThrowType,
