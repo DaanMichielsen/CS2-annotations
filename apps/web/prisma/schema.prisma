@@ -67,6 +67,7 @@ model Guide {
   grenadeEntries GrenadeEntry[]
   featuredGuide  FeaturedGuide?
   credits        GuideCredit[]
+  annotationMedia AnnotationMedia[]
 }
 
 model GuideRating {
@@ -136,6 +137,8 @@ model GrenadeEntry {
   throwType   String
   posLabel    String?
   aimLabel    String?
+  hasMedia    Boolean  @default(false)
+  landingThumb String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -187,6 +190,31 @@ model GuideCredit {
 
   guide Guide @relation(fields: [guideId], references: [id], onDelete: Cascade)
 
+  @@index([guideId])
+}
+
+model AnnotationMedia {
+  id         String   @id @default(cuid())
+  guideId    String
+  nodeId     String
+  uploadedBy String
+  slot       String
+  mediaType  String
+  source     String
+  url        String
+  blobKey    String?
+  caption    String?
+  notes      String?
+  trimStart  Float?
+  trimEnd    Float?
+  speedRate  Float?
+  cropBox    Json?
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  guide Guide @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@index([guideId, nodeId])
   @@index([guideId])
 }
 
