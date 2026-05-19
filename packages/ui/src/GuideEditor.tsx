@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { Upload, Download, CheckCircle, RefreshCw } from 'lucide-react'
-import type { AnnotationNode, NodeType, GrenadeType, TextDescObject } from '@cs2ann/shared'
+import type { AnnotationNode, NodeType, GrenadeType, TextDescObject, AnnotationMedia, MediaSlot } from '@cs2ann/shared'
 import type { GuideSyncState } from '@cs2ann/shared'
 import { GRENADE_TYPES, defaultTextDesc, defaultPosition, defaultAngles, generateId } from '@cs2ann/shared'
 
@@ -28,6 +28,8 @@ import MapOverlay, { type MapMarker } from './MapOverlay'
 import AnnotationCreateModal, { type CreateMeta } from './AnnotationCreateModal'
 import CopyToFileModal from './CopyToFileModal'
 import NodeMapView from './NodeMapView'
+import MediaViewer from './MediaViewer'
+import MediaUploadModal from './MediaUploadModal'
 import { buildSetposCommand } from '@cs2ann/shared'
 import { buildNodeGroups, nodeLabel, buildSelectedGroups, type NodeGroup, type SelectedGroup } from '@cs2ann/shared'
 import { useGuideAdapter } from './GuideAdapterContext'
@@ -166,6 +168,25 @@ export default function GuideEditor({
   const [selectedKeys, setSelectedKeys] = useState<Set<number>>(new Set())
   const [deleteConfirmPending, setDeleteConfirmPending] = useState(false)
   const [showCopyModal, setShowCopyModal] = useState(false)
+  const [mediaMap, setMediaMap] = useState<Record<string, AnnotationMedia[]>>({})
+  const [mediaModalNodeId, setMediaModalNodeId] = useState<string | null>(null)
+  const cloudId = cloudStatus?.cloudId
+
+
+  const refreshMedia = useCallback(async () => {
+    if (!cloudId || !adapter.media) return
+    try {
+      const all = await adapter.media.list(cloudId)
+      const map: Record<string, AnnotationMedia[]> = {}
+      for (const m of all) {
+        if (!map[m.nodeId]) map[m.nodeId] = []
+        map[m.nodeId].push(m)
+      }
+      setMediaMap(map)
+    } catch {}
+  }, [cloudId, adapter])
+
+  useEffect(() => { refreshMedia() }, [refreshMedia])
 
   // ── pending create metadata (applied when CS2 writes the file) ────────────
   interface PendingNodeMeta extends CreateMeta { existingIds: Set<string> }
@@ -1154,6 +1175,7 @@ export default function GuideEditor({
                   selectedIndex={selectedIndex}
                   onSelectIndex={(i) => setSelectedIndex(i)}
                   className="flex-1 min-h-0"
+                  mediaMap={cloudId ? mediaMap : undefined}
                 />
               : <div className="flex-1 flex items-center justify-center text-zinc-600 text-sm p-4 text-center">
                   Map view requires the annotation to have a MapName set.<br />
@@ -1191,6 +1213,32 @@ export default function GuideEditor({
                     return g.indices.find((i) => nodes[i].SubType === 'aim_target') ?? null
                   })()}
                 />
+                {/* Media section — shown when guide is cloud-synced and node is a grenade */}
+                {cloudId && selectedNode?.Type === 'grenade' && (!selectedNode.SubType || selectedNode.SubType === 'main') && selectedNode.Id && (() => {
+                  const nodeMediaItems = mediaMap[selectedNode.Id] ?? []
+                  const bySlot = Object.fromEntries(nodeMediaItems.map((m) => [m.slot, m])) as Partial<Record<MediaSlot, AnnotationMedia>>
+                  const notes = nodeMediaItems.find((m) => m.notes)?.notes
+                  return (
+                    <div className="shrink-0 border-t border-zinc-700/60">
+                      <div className="px-4 py-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[0.65rem] font-semibold text-zinc-500 uppercase tracking-widest">Media</span>
+                          <button
+                            type="button"
+                            onClick={() => setMediaModalNodeId(selectedNode.Id!)}
+                            className="text-[0.65rem] px-2 py-0.5 bg-zinc-800 hover:bg-violet-900/40 border border-zinc-700 hover:border-violet-700 text-zinc-400 hover:text-violet-300 rounded transition-colors"
+                          >
+                            {nodeMediaItems.length > 0 ? 'Edit media' : '+ Add media'}
+                          </button>
+                        </div>
+                        {nodeMediaItems.length > 0
+                          ? <MediaViewer mediaBySlot={bySlot} notes={notes} />
+                          : <p className="text-[0.65rem] text-zinc-600">No media attached. Push guide to cloud first to add media.</p>
+                        }
+                      </div>
+                    </div>
+                  )
+                })()}
               </div>
               {/* Map — right sidebar on wide screens, compact strip at bottom otherwise */}
               {mapName && mapMarkers.length > 0 && (
@@ -1238,6 +1286,20 @@ export default function GuideEditor({
           selectedGroups={selectedGroups}
           onClose={() => setShowCopyModal(false)}
           onSuccess={handleCopySuccess}
+        />
+      )}
+      {mediaModalNodeId !== null && cloudId && (
+        <MediaUploadModal
+          guideId={cloudId}
+          nodes={nodes}
+          existingMedia={mediaMap}
+          currentUserId=""
+          onCreateLink={(gid, payload) => adapter.media!.createLink(gid, payload)}
+          onCreateUpload={(gid, fd) => adapter.media!.createUpload(gid, fd)}
+          onUpdate={(mediaId, payload) => adapter.media!.update(cloudId, mediaId, payload)}
+          onRemove={(mediaId) => adapter.media!.remove(cloudId, mediaId)}
+          onClose={() => setMediaModalNodeId(null)}
+          onMediaChange={refreshMedia}
         />
       )}
     </div>

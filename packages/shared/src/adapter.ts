@@ -81,7 +81,7 @@ export interface GuideAdapter {
     list(guideId: string, nodeId?: string): Promise<AnnotationMedia[]>
     createLink(guideId: string, payload: CreateMediaPayload): Promise<AnnotationMedia>
     createUpload(guideId: string, formData: FormData): Promise<AnnotationMedia>
-    update(mediaId: string, payload: UpdateMediaPayload): Promise<AnnotationMedia>
-    remove(mediaId: string): Promise<void>
+    update(guideId: string, mediaId: string, payload: UpdateMediaPayload): Promise<AnnotationMedia>
+    remove(guideId: string, mediaId: string): Promise<void>
   }
 }

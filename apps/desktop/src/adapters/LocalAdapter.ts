@@ -5,6 +5,8 @@ import type {
   GuideSummary,
   LoadedGuide,
   SaveGuidePayload,
+  CreateMediaPayload,
+  UpdateMediaPayload,
 } from '@cs2ann/shared'
 
 export function createLocalAdapter(): GuideAdapter {
@@ -119,6 +121,43 @@ export function createLocalAdapter(): GuideAdapter {
       },
       async showInFolder(path: string) {
         return window.electronAPI.showItemInFolder(path)
+      },
+    },
+
+    media: {
+      async list(guideId: string, nodeId?: string) {
+        const result = await (window.electronAPI as any).mediaList(guideId, nodeId ?? '')
+        return Array.isArray(result) ? result : []
+      },
+      async createLink(guideId: string, payload: CreateMediaPayload) {
+        const result = await (window.electronAPI as any).mediaCreateLink(guideId, payload)
+        if (result?.error) throw new Error(result.error)
+        return result
+      },
+      async createUpload(guideId: string, formData: FormData) {
+        const file = formData.get('file') as File
+        if (!file) throw new Error('No file in FormData')
+        const fileData = await file.arrayBuffer()
+        const result = await (window.electronAPI as any).mediaCreateUpload(guideId, {
+          nodeId: formData.get('nodeId') as string,
+          slot: formData.get('slot') as string,
+          fileData,
+          fileName: file.name,
+          mimeType: file.type,
+          caption: (formData.get('caption') as string | null) || undefined,
+          notes: (formData.get('notes') as string | null) || undefined,
+        })
+        if (result?.error) throw new Error(result.error)
+        return result
+      },
+      async update(guideId: string, mediaId: string, payload: UpdateMediaPayload) {
+        const result = await (window.electronAPI as any).mediaUpdate(guideId, mediaId, payload)
+        if (result?.error) throw new Error(result.error)
+        return result
+      },
+      async remove(guideId: string, mediaId: string) {
+        const result = await (window.electronAPI as any).mediaRemove(guideId, mediaId)
+        if (result?.error) throw new Error(result.error)
       },
     },
   }
