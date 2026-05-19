@@ -88,6 +88,8 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
       media = rawMedia.map((m) => ({
         ...m,
         slot: m.slot as AnnotationMedia['slot'],
+        mediaType: m.mediaType as AnnotationMedia['mediaType'],
+        source: m.source as AnnotationMedia['source'],
         createdAt: m.createdAt.toISOString(),
         cropBox: m.cropBox as AnnotationMedia['cropBox'],
       }))

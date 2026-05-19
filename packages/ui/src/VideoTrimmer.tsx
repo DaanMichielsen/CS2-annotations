@@ -57,7 +57,7 @@ export default function VideoTrimmer({ file, onTrimmed, onCancel }: Props) {
     const data = await _ffmpeg.readFile('out.mp4') as Uint8Array
     await _ffmpeg.deleteFile(name)
     await _ffmpeg.deleteFile('out.mp4')
-    const trimmedFile = new File([data], file.name, { type: 'video/mp4' })
+    const trimmedFile = new File([data.buffer as ArrayBuffer], file.name, { type: 'video/mp4' })
     onTrimmed(trimmedFile, start, end, speed)
   }
 
