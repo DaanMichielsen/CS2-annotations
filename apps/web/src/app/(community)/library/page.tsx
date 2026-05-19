@@ -5,11 +5,7 @@ import { ThrowTypeFilterBar } from '@/components/ThrowTypeFilterBar'
 import { GrenadeTypeFilterBar } from '@/components/GrenadeTypeFilterBar'
 import { PaginationFooter } from '@/components/PaginationFooter'
 import { SearchInput } from '@/components/SearchInput'
-import { THROW_TYPE_SHORT } from '@cs2ann/shared/web'
-import type { ThrowType } from '@cs2ann/shared/web'
-import { getMapColor, getMapLabel } from '@/lib/mapColors'
-import Link from 'next/link'
-import Image from 'next/image'
+import LibraryCard from '@/components/LibraryCard'
 
 interface SearchParams {
   map?: string
@@ -22,15 +18,6 @@ interface SearchParams {
 export const revalidate = 300
 
 const PAGE_SIZE = 24
-
-const GRENADE_ICONS: Record<string, string> = {
-  smoke:      '/nades/smoke.png',
-  flash:      '/nades/flash.png',
-  he:         '/nades/hegrenade.png',
-  molotov:    '/nades/molotov.png',
-  incendiary: '/nades/molotov.png',
-  decoy:      '/nades/decoy.png',
-}
 
 export default async function LibraryPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const { map, type, throw: throwParam, q, page: pageParam } = await searchParams
@@ -150,59 +137,21 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {entries.map((entry) => {
-            const { accent, dim, icon: mapIcon } = getMapColor(entry.map)
-            const mapLabel = getMapLabel(entry.map)
-            const grenadeIcon = GRENADE_ICONS[entry.grenadeType]
-            const throwShort = THROW_TYPE_SHORT[entry.throwType as ThrowType] ?? entry.throwType
-
-            return (
-              <div
-                key={entry.id}
-                className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 hover:border-zinc-700 transition-colors flex flex-col gap-3"
-              >
-                {/* Header: map chip + grenade icon + throw badge */}
-                <div className="flex items-center gap-2 flex-wrap">
-                  <div
-                    className="flex items-center gap-1 text-[0.6rem] font-data uppercase tracking-widest px-2 py-0.5 rounded font-semibold"
-                    style={{ backgroundColor: dim, color: accent }}
-                  >
-                    {mapIcon && (
-                      <Image src={mapIcon} alt="" width={10} height={10} className="opacity-80" unoptimized />
-                    )}
-                    {mapLabel}
-                  </div>
-                  {grenadeIcon && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={grenadeIcon} alt={entry.grenadeType} width={16} height={16} className="opacity-80" />
-                  )}
-                  <span className="text-[0.65rem] font-data px-1.5 py-0.5 bg-zinc-800 text-zinc-400 rounded border border-zinc-700">
-                    {throwShort}
-                  </span>
-                </div>
-
-                {/* Labels */}
-                <div className="flex-1">
-                  {entry.aimLabel && (
-                    <p className="font-display font-semibold text-zinc-100 text-sm leading-tight mb-1 truncate">
-                      {entry.aimLabel}
-                    </p>
-                  )}
-                  {entry.posLabel && (
-                    <p className="text-xs text-zinc-500 truncate">{entry.posLabel}</p>
-                  )}
-                </div>
-
-                {/* Guide link */}
-                <Link
-                  href={`/guides/${entry.guideId}`}
-                  className="text-[0.68rem] text-zinc-600 hover:text-violet-400 transition-colors truncate"
-                >
-                  {entry.guide.title} →
-                </Link>
-              </div>
-            )
-          })}
+          {entries.map((entry) => (
+            <LibraryCard
+              key={entry.id}
+              guideId={entry.guideId}
+              nodeId={entry.nodeId}
+              map={entry.map}
+              grenadeType={entry.grenadeType}
+              throwType={entry.throwType}
+              aimLabel={entry.aimLabel}
+              posLabel={entry.posLabel}
+              guideTitle={entry.guide.title}
+              hasMedia={entry.hasMedia}
+              landingThumb={entry.landingThumb}
+            />
+          ))}
         </div>
       )}
 

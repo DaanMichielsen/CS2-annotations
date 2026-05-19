@@ -11,7 +11,7 @@
  *  - Zoom controls (+/−/⌂) in the corner
  */
 import { useState, useRef, useEffect, useMemo, useLayoutEffect, useCallback } from 'react'
-import type { AnnotationNode, GrenadeType } from '@cs2ann/shared'
+import type { AnnotationNode, GrenadeType, AnnotationMedia } from '@cs2ann/shared'
 import { MAP_DATA, worldToPixel } from '@cs2ann/shared'
 import { getMapOverviewUrl } from './mapImages'
 
@@ -93,10 +93,11 @@ interface Props {
   onSelectIndex: (i: number) => void
   /** Optional extra className on the root element. */
   className?: string
+  mediaMap?: Record<string, AnnotationMedia[]>
 }
 
 export default function NodeMapView({
-  mapName, nodes, grenadeGroups, selectedIndex, onSelectIndex, className = '',
+  mapName, nodes, grenadeGroups, selectedIndex, onSelectIndex, className = '', mediaMap,
 }: Props) {
   const containerRef  = useRef<HTMLDivElement>(null)
   const innerRef      = useRef<HTMLDivElement>(null)
@@ -492,6 +493,8 @@ export default function NodeMapView({
                 : item.color
                   ? rgbToHex(item.color)
                   : 'rgba(255,255,255,0.4)'
+              const nodeId = nodes[item.mainIdx]?.Id
+              const hasMedia = !!(mediaMap && nodeId && (mediaMap[nodeId]?.length ?? 0) > 0)
 
               return (
                 <div
@@ -527,6 +530,7 @@ export default function NodeMapView({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    position: 'relative',
                     boxShadow: isSel
                       ? `0 0 ${10 / scale}px ${4 / scale}px rgba(130,200,255,0.45)`
                       : isHov
@@ -537,6 +541,24 @@ export default function NodeMapView({
                       ? <img src={icon} style={{ width: ICON_PX * 0.72 / scale, height: ICON_PX * 0.72 / scale, objectFit: 'contain' }} draggable={false} alt={item.grenadeType} />
                       : <span style={{ fontSize: ICON_PX * 0.5 / scale, color: '#d4d4d8' }}>●</span>
                     }
+                    {hasMedia && (
+                      <div style={{
+                        position: 'absolute',
+                        bottom: `-${3 / scale}px`,
+                        right: `-${3 / scale}px`,
+                        width: ICON_PX * 0.45 / scale,
+                        height: ICON_PX * 0.45 / scale,
+                        borderRadius: '50%',
+                        backgroundColor: '#7c3aed',
+                        border: `${1 / scale}px solid rgba(255,255,255,0.5)`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: ICON_PX * 0.26 / scale,
+                      }}>
+                        📷
+                      </div>
+                    )}
                   </div>
                 </div>
               )

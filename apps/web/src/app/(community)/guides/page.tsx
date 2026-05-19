@@ -35,6 +35,7 @@ export default async function BrowsePage({ searchParams }: { searchParams: Promi
       include: {
         user: { select: { username: true, avatar: true, name: true } },
         ratings: { select: { value: true } },
+        _count: { select: { annotationMedia: true } },
       },
       orderBy: sort === 'newest' ? { createdAt: 'desc' } : { updatedAt: 'desc' },
       skip,
@@ -167,6 +168,7 @@ export default async function BrowsePage({ searchParams }: { searchParams: Promi
               isSaved={userId ? savedSet.has(g.id) : undefined}
               isAuthenticated={!!userId}
               isFeatured={featuredSet.has(g.id)}
+              mediaCount={g._count.annotationMedia}
             />
           ))}
         </div>

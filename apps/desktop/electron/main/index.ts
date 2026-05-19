@@ -927,6 +927,79 @@ ipcMain.handle('cloudDeleteGuide', async (_event, cloudId: string) => {
   }
 })
 
+// ── Annotation media ────────────────────────────────────────────────────────
+
+ipcMain.handle('mediaList', async (_event, guideId: string, nodeId: string) => {
+  try {
+    const res = await fetch(`${WEB_API}/guides/${guideId}/media/node/${nodeId}`, { headers: cloudHeaders() })
+    if (!res.ok) return { error: `Request failed (${res.status})` }
+    return res.json()
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) }
+  }
+})
+
+ipcMain.handle('mediaCreateLink', async (_event, guideId: string, payload: unknown) => {
+  try {
+    const res = await fetch(`${WEB_API}/guides/${guideId}/media`, {
+      method: 'POST',
+      headers: { ...cloudHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    if (!res.ok) return { error: await res.text() }
+    return res.json()
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) }
+  }
+})
+
+ipcMain.handle('mediaCreateUpload', async (_event, guideId: string, payload: {
+  nodeId: string; slot: string; fileData: ArrayBuffer; fileName: string; mimeType: string;
+  caption?: string; notes?: string;
+}) => {
+  try {
+    const fd = new FormData()
+    fd.append('nodeId', payload.nodeId)
+    fd.append('slot', payload.slot)
+    fd.append('file', new Blob([payload.fileData], { type: payload.mimeType }), payload.fileName)
+    if (payload.caption) fd.append('caption', payload.caption)
+    if (payload.notes) fd.append('notes', payload.notes)
+    const res = await fetch(`${WEB_API}/guides/${guideId}/media`, {
+      method: 'POST', headers: cloudHeaders(), body: fd,
+    })
+    if (!res.ok) return { error: await res.text() }
+    return res.json()
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) }
+  }
+})
+
+ipcMain.handle('mediaUpdate', async (_event, guideId: string, mediaId: string, payload: unknown) => {
+  try {
+    const res = await fetch(`${WEB_API}/guides/${guideId}/media/${mediaId}`, {
+      method: 'PUT',
+      headers: { ...cloudHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    if (!res.ok) return { error: await res.text() }
+    return res.json()
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) }
+  }
+})
+
+ipcMain.handle('mediaRemove', async (_event, guideId: string, mediaId: string) => {
+  try {
+    const res = await fetch(`${WEB_API}/guides/${guideId}/media/${mediaId}`, {
+      method: 'DELETE', headers: cloudHeaders(),
+    })
+    if (!res.ok) return { error: `Delete failed (${res.status})` }
+    return {}
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) }
+  }
+})
+
 // ── CS2 console ─────────────────────────────────────────────────────────────
 
 ipcMain.handle(

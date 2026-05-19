@@ -13,8 +13,9 @@
  *  - Detail panel overlay on selection
  */
 import { useState, useRef, useEffect, useMemo, useLayoutEffect, useCallback } from 'react'
-import type { AnnotationNode, GrenadeType } from '@cs2ann/shared/web'
+import type { AnnotationNode, GrenadeType, AnnotationMedia, MediaSlot } from '@cs2ann/shared/web'
 import { buildNodeGroups, nodeLabel } from '@cs2ann/shared/web'
+import { MediaViewer } from '@cs2ann/ui'
 import { MAP_DATA, worldToPixel } from '@/lib/mapData'
 
 // ── static nade icon paths ────────────────────────────────────────────────────
@@ -81,9 +82,12 @@ interface Props {
   mapName: string | null | undefined
   filterTypes?: GrenadeType[]
   className?: string
+  mediaMap?: Record<string, AnnotationMedia[]>
+  pinMode?: 'throw' | 'landing'
+  onTogglePin?: () => void
 }
 
-export default function InteractiveMapView({ nodes, mapName, filterTypes, className = '' }: Props) {
+export default function InteractiveMapView({ nodes, mapName, filterTypes, className = '', mediaMap, pinMode = 'throw', onTogglePin }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale,  setScale]  = useState(1)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
@@ -211,10 +215,13 @@ export default function InteractiveMapView({ nodes, mapName, filterTypes, classN
         if (a.x >= 0 && a.x <= MAP_PX && a.y >= 0 && a.y <= MAP_PX) { aimPx = a.x; aimPy = a.y }
       }
 
+      const pinX = pinMode === 'landing' && destPx !== undefined ? destPx : px
+      const pinY = pinMode === 'landing' && destPy !== undefined ? destPy : py
+
       items.push({
         key:        mainIdx.toString(),
         mainIdx,
-        px, py, destPx, destPy, aimPx, aimPy,
+        px: pinX, py: pinY, destPx, destPy, aimPx, aimPy,
         grenadeType: main.GrenadeType,
         label:       nodeLabel(main) || `${main.GrenadeType ?? 'grenade'}`,
         desc:        main.Desc?.Text?.trim() || undefined,
@@ -286,7 +293,8 @@ export default function InteractiveMapView({ nodes, mapName, filterTypes, classN
           { label: '+', title: 'Zoom in',    fn: () => zoomBy(1.3)  },
           { label: '−', title: 'Zoom out',   fn: () => zoomBy(0.77) },
           { label: '⌂', title: 'Reset view', fn: resetView          },
-        ] as const).map(({ label, title, fn }) => (
+          { label: pinMode === 'throw' ? '📍' : '🎯', title: `Pins: ${pinMode} positions (click to toggle)`, fn: onTogglePin ?? (() => {}) },
+        ] as { label: string; title: string; fn: () => void }[]).map(({ label, title, fn }) => (
           <button
             key={label}
             type="button"
@@ -553,6 +561,23 @@ export default function InteractiveMapView({ nodes, mapName, filterTypes, classN
             <div className="text-zinc-400 text-[0.65rem] capitalize mt-0.5">{hoveredItem.grenadeType}</div>
           )}
           <div className="text-zinc-500 text-[0.6rem] mt-1">Click to inspect</div>
+          {mediaMap && (() => {
+            const main = nodes[hoveredItem.mainIdx]
+            const nodeMedia = main?.Id ? (mediaMap[main.Id] ?? []) : []
+            const landing = nodeMedia.find((m) => m.slot === 'landing')
+            if (!landing) return null
+            if (landing.source === 'youtube') {
+              const id = landing.url.match(/[A-Za-z0-9_-]{11}/)?.[0]
+              return id ? (
+                <img src={`https://img.youtube.com/vi/${id}/mqdefault.jpg`} alt=""
+                  className="w-32 rounded mt-1" />
+              ) : null
+            }
+            if (landing.mediaType === 'image') {
+              return <img src={landing.url} alt="" className="w-32 rounded mt-1" />
+            }
+            return null
+          })()}
         </div>
       )}
 
@@ -589,6 +614,20 @@ export default function InteractiveMapView({ nodes, mapName, filterTypes, classN
               ×
             </button>
           </div>
+
+          {/* Media viewer */}
+          {mediaMap && selectedItem && (() => {
+            const main = nodes[selectedItem.mainIdx]
+            const nodeMedia = main?.Id ? (mediaMap[main.Id] ?? []) : []
+            if (nodeMedia.length === 0) return null
+            const bySlot = Object.fromEntries(nodeMedia.map((m) => [m.slot, m])) as Partial<Record<MediaSlot, AnnotationMedia>>
+            const notes = nodeMedia.find((m) => m.notes)?.notes
+            return (
+              <div className="px-3 pb-3 border-t border-zinc-800 pt-2">
+                <MediaViewer mediaBySlot={bySlot} notes={notes} />
+              </div>
+            )
+          })()}
 
           {/* Info row */}
           <div className="px-3 pb-3 flex flex-wrap gap-1.5">

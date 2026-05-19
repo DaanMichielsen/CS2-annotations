@@ -10,6 +10,7 @@ import { MapFilterBar } from '@/components/MapFilterBar'
 import { PaginationFooter } from '@/components/PaginationFooter'
 import { SearchInput } from '@/components/SearchInput'
 import { CalendarDays } from 'lucide-react'
+import MediaCoverageBar from '@/components/MediaCoverageBar'
 
 interface SearchParams {
   map?: string
@@ -55,7 +56,7 @@ export default async function MyGuidesPage({ searchParams }: { searchParams: Pro
   }
 
   const [guides, total] = await Promise.all([
-    db.guide.findMany({ where, orderBy: { updatedAt: 'desc' }, skip, take: PAGE_SIZE }),
+    db.guide.findMany({ where, include: { _count: { select: { annotationMedia: true } } }, orderBy: { updatedAt: 'desc' }, skip, take: PAGE_SIZE }),
     db.guide.count({ where }),
   ])
 
@@ -154,9 +155,12 @@ export default async function MyGuidesPage({ searchParams }: { searchParams: Pro
 
                 {/* Clickable content area — whole section is a link */}
                 <Link href={`/guides/${guide.id}`} className="flex-1 min-w-0 group">
-                  <p className="font-display font-semibold text-zinc-100 truncate group-hover:text-white transition-colors">
-                    {guide.title}
-                  </p>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <p className="font-display font-semibold text-zinc-100 truncate group-hover:text-white transition-colors">
+                      {guide.title}
+                    </p>
+                    <MediaCoverageBar count={guide._count.annotationMedia} />
+                  </div>
                   <p className="text-xs font-data text-zinc-600 mt-0.5 flex items-center gap-1">
                     <CalendarDays size={10} className="shrink-0" />
                     {new Date(guide.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}

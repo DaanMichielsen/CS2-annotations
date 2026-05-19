@@ -47,6 +47,7 @@ export default async function ForYouPage() {
     include: {
       user: { select: { id: true, username: true, name: true, avatar: true } },
       ratings: { select: { value: true } },
+      _count: { select: { annotationMedia: true } },
     },
     orderBy: { updatedAt: 'desc' },
     take: 48,
@@ -119,6 +120,7 @@ export default async function ForYouPage() {
                         score={g.score}
                         authorName={authorName}
                         authorAvatar={author.avatar}
+                        mediaCount={g._count.annotationMedia}
                       />
                     ))}
                   </div>

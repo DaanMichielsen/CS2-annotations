@@ -18,3 +18,4 @@ export type {
   AppendNodesPayload,
   CreateGuidePayload,
 } from './adapter'
+export * from './annotation/mediaTypes'

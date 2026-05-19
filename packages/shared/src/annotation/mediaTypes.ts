@@ -3,10 +3,10 @@ export type MediaType = 'video' | 'image'
 export type MediaSource = 'upload' | 'youtube'
 
 export interface CropBox {
-  x: number // 0-1 fraction from left
-  y: number // 0-1 fraction from top
-  w: number // 0-1 fraction width
-  h: number // 0-1 fraction height
+  x: number
+  y: number
+  w: number
+  h: number
 }
 
 export interface AnnotationMedia {
