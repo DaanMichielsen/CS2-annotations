@@ -9,6 +9,9 @@ export {
   THROW_TYPE_SHORT,
   type ThrowType,
 } from './annotation/inferUtils'
+export type { AnnotationMedia, CreateMediaPayload, UpdateMediaPayload, MediaSlot, MediaType, MediaSource, CropBox } from './annotation/mediaTypes'
+export { VALID_SLOTS, SLOT_LABELS } from './annotation/mediaTypes'
+export { resolveMediaForDisplay } from './annotation/mediaUtils'
 export type {
   GuideAdapter,
   GuideSummary,
