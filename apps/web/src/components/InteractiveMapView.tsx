@@ -84,10 +84,11 @@ interface Props {
   mapName: string | null | undefined
   filterTypes?: GrenadeType[]
   mediaMap?: Record<string, AnnotationMedia[]>
+  pinMode?: 'throw' | 'landing'
   className?: string
 }
 
-export default function InteractiveMapView({ nodes, mapName, filterTypes, mediaMap, className = '' }: Props) {
+export default function InteractiveMapView({ nodes, mapName, filterTypes, mediaMap, pinMode, className = '' }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale,  setScale]  = useState(1)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
@@ -343,6 +344,24 @@ export default function InteractiveMapView({ nodes, mapName, filterTypes, mediaM
           <svg
             style={{ position: 'absolute', inset: 0, width: MAP_PX, height: MAP_PX, pointerEvents: 'none', overflow: 'visible' }}
           >
+            {/* Smoke radius circles in landing pin mode */}
+            {pinMode === 'landing' && mapData && items.map((item) => {
+              if (item.grenadeType !== 'smoke' || item.destPx === undefined) return null
+              const radiusPx = 144 / mapData.scale
+              return (
+                <circle
+                  key={`smoke-radius-${item.key}`}
+                  cx={item.destPx}
+                  cy={item.destPy}
+                  r={radiusPx}
+                  fill="rgba(200,200,200,0.12)"
+                  stroke="rgba(200,200,200,0.35)"
+                  strokeWidth={1}
+                  style={{ pointerEvents: 'none' }}
+                />
+              )
+            })}
+
             {/* Hover: dashed line to destination */}
             {hoveredItem && hoveredItem !== selectedItem && hoveredItem.destPx !== undefined && (
               <>
