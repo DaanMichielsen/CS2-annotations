@@ -11,10 +11,11 @@ import { GuideNodeFilter } from '@/components/GuideNodeFilter'
 import { getMapColor, getMapLabel } from '@/lib/mapColors'
 import { getGuideBlobUrl } from '@/lib/blob'
 import { parseKv3Text, kv3ToNodes, extractNodesKey } from '@cs2ann/shared/web'
-import type { Kv3Object, AnnotationNode, GrenadeType } from '@cs2ann/shared/web'
+import type { Kv3Object, AnnotationNode, GrenadeType, AnnotationMedia } from '@cs2ann/shared/web'
 import { CreditChip } from '@/components/CreditChip'
 import AnnotationList from '@/components/AnnotationList'
 import FollowButton from '@/components/FollowButton'
+import MediaUploadClientWrapper from '@/components/MediaUploadClientWrapper'
 
 const GRENADE_ORDER: GrenadeType[] = ['smoke', 'flash', 'he', 'molotov', 'decoy']
 const GRENADE_ICON_FILES: Record<GrenadeType, string> = {
@@ -76,6 +77,26 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
       // blob unavailable
     }
   }
+
+  let mediaMap: Record<string, AnnotationMedia[]> = {}
+  try {
+    const rawMedia = await db.annotationMedia.findMany({
+      where: { guideId: guide.id },
+      orderBy: [{ nodeId: 'asc' }, { position: 'asc' }],
+    })
+    for (const m of rawMedia) {
+      const typed = {
+        ...m,
+        slot:      m.slot      as AnnotationMedia['slot'],
+        mediaType: m.mediaType as AnnotationMedia['mediaType'],
+        source:    m.source    as AnnotationMedia['source'],
+        createdAt: m.createdAt.toISOString(),
+        cropBox:   m.cropBox   as AnnotationMedia['cropBox'],
+      }
+      if (!mediaMap[m.nodeId]) mediaMap[m.nodeId] = []
+      mediaMap[m.nodeId].push(typed)
+    }
+  } catch { /* media unavailable */ }
 
   const mainGrenadeNodes = nodes.filter(
     (n) => n.Type === 'grenade' && n.SubType !== 'aim_target' && n.SubType !== 'destination'
@@ -202,7 +223,14 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
             <h2 className="font-display font-semibold text-base text-zinc-400 mb-4 uppercase tracking-wider">
               Annotations · {nodes.length} nodes
             </h2>
-            <GuideNodeFilter nodes={nodes} mapName={guide.map} />
+            <GuideNodeFilter nodes={nodes} mapName={guide.map} mediaMap={mediaMap} />
+            {isOwner && (
+              <MediaUploadClientWrapper
+                guideId={guide.id}
+                nodes={nodes}
+                initialMedia={mediaMap}
+              />
+            )}
             <AnnotationList nodes={nodes} />
           </section>
         </div>

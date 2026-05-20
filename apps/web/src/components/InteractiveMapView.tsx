@@ -14,8 +14,10 @@
  */
 import { useState, useRef, useEffect, useMemo, useLayoutEffect, useCallback } from 'react'
 import type { AnnotationNode, GrenadeType } from '@cs2ann/shared/web'
+import type { AnnotationMedia } from '@cs2ann/shared/web'
 import { buildNodeGroups, nodeLabel } from '@cs2ann/shared/web'
 import { MAP_DATA, worldToPixel } from '@/lib/mapData'
+import { MediaViewer } from '@cs2ann/ui'
 
 // ── static nade icon paths ────────────────────────────────────────────────────
 const NADE_ICONS: Partial<Record<GrenadeType, string>> = {
@@ -36,6 +38,7 @@ const DOT_R          = 7
 interface MapItem {
   key: string
   mainIdx: number
+  mainNodeId?: string
   px: number; py: number
   destPx?: number; destPy?: number
   aimPx?: number;  aimPy?: number
@@ -80,10 +83,11 @@ interface Props {
   nodes: AnnotationNode[]
   mapName: string | null | undefined
   filterTypes?: GrenadeType[]
+  mediaMap?: Record<string, AnnotationMedia[]>
   className?: string
 }
 
-export default function InteractiveMapView({ nodes, mapName, filterTypes, className = '' }: Props) {
+export default function InteractiveMapView({ nodes, mapName, filterTypes, mediaMap, className = '' }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale,  setScale]  = useState(1)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
@@ -214,6 +218,7 @@ export default function InteractiveMapView({ nodes, mapName, filterTypes, classN
       items.push({
         key:        mainIdx.toString(),
         mainIdx,
+        mainNodeId: main.Id,
         px, py, destPx, destPy, aimPx, aimPy,
         grenadeType: main.GrenadeType,
         label:       nodeLabel(main) || `${main.GrenadeType ?? 'grenade'}`,
@@ -608,6 +613,13 @@ export default function InteractiveMapView({ nodes, mapName, filterTypes, classN
               </span>
             )}
           </div>
+
+          {/* Media */}
+          {selectedItem?.mainNodeId && mediaMap?.[selectedItem.mainNodeId]?.length ? (
+            <div className="px-3 pb-3 border-t border-zinc-800 pt-2">
+              <MediaViewer media={mediaMap[selectedItem.mainNodeId]} maxHeight="max-h-48" />
+            </div>
+          ) : null}
         </div>
       )}
     </div>

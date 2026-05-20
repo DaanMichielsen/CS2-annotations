@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { inferThrowType, THROW_TYPE_SHORT, THROW_TYPE_LABEL } from '@cs2ann/shared/web'
 import GuideAnnotationPreview from '@/components/GuideAnnotationPreview'
-import type { AnnotationNode, ThrowType, GrenadeType } from '@cs2ann/shared/web'
+import type { AnnotationNode, ThrowType, GrenadeType, AnnotationMedia } from '@cs2ann/shared/web'
 
 const THROW_TYPES: ThrowType[] = [
   'stand', 'walk', 'run', 'stand_jump', 'w_jump',
@@ -21,6 +21,7 @@ const GRENADE_ICONS: Record<GrenadeType, string> = {
 interface Props {
   nodes: AnnotationNode[]
   mapName: string | null | undefined
+  mediaMap?: Record<string, AnnotationMedia[]>
 }
 
 const pill = (active: boolean) =>
@@ -30,13 +31,13 @@ const pill = (active: boolean) =>
       : 'border-zinc-700 text-zinc-500 hover:border-zinc-500 hover:text-zinc-200'
   }`
 
-export function GuideNodeFilter({ nodes, mapName }: Props) {
+export function GuideNodeFilter({ nodes, mapName, mediaMap }: Props) {
   const [throwFilter, setThrowFilter] = useState<ThrowType | 'all'>('all')
   const [grenadeFilter, setGrenadeFilter] = useState<GrenadeType | 'all'>('all')
 
   const hasGrenades = nodes.some((n) => n.Type === 'grenade')
   if (!hasGrenades) {
-    return <GuideAnnotationPreview nodes={nodes} mapName={mapName} />
+    return <GuideAnnotationPreview nodes={nodes} mapName={mapName} mediaMap={mediaMap} />
   }
 
   // Map aim_target nodes by MasterNodeId for throw type lookup
@@ -107,7 +108,7 @@ export function GuideNodeFilter({ nodes, mapName }: Props) {
         ))}
       </div>
 
-      <GuideAnnotationPreview nodes={filteredNodes} mapName={mapName} />
+      <GuideAnnotationPreview nodes={filteredNodes} mapName={mapName} mediaMap={mediaMap} />
     </div>
   )
 }
