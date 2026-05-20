@@ -927,6 +927,65 @@ ipcMain.handle('cloudDeleteGuide', async (_event, cloudId: string) => {
   }
 })
 
+// ── Media (cloud proxy) ─────────────────────────────────────────────────────
+
+ipcMain.handle('media:list', async (_e, guideId: string, nodeId?: string) => {
+  const token = store.get('authToken') as string | undefined
+  if (!token) return []
+  const url = nodeId
+    ? `${WEB_API}/guides/${guideId}/media?nodeId=${nodeId}`
+    : `${WEB_API}/guides/${guideId}/media`
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+  return res.ok ? res.json() : []
+})
+
+ipcMain.handle('media:createLink', async (_e, guideId: string, payload: unknown) => {
+  const token = store.get('authToken') as string | undefined
+  if (!token) throw new Error('Not authenticated')
+  const res = await fetch(`${WEB_API}/guides/${guideId}/media`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error(await res.text())
+  return res.json()
+})
+
+ipcMain.handle('media:createUpload', async (_e, guideId: string, entries: [string, unknown][]) => {
+  const token = store.get('authToken') as string | undefined
+  if (!token) throw new Error('Not authenticated')
+  const fd = new FormData()
+  for (const [key, val] of entries) {
+    if (val instanceof Uint8Array) fd.append(key, new Blob([val]))
+    else fd.append(key, String(val))
+  }
+  const res = await fetch(`${WEB_API}/guides/${guideId}/media`, {
+    method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: fd,
+  })
+  if (!res.ok) throw new Error(await res.text())
+  return res.json()
+})
+
+ipcMain.handle('media:update', async (_e, guideId: string, mediaId: string, payload: unknown) => {
+  const token = store.get('authToken') as string | undefined
+  if (!token) throw new Error('Not authenticated')
+  const res = await fetch(`${WEB_API}/guides/${guideId}/media/${mediaId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error(await res.text())
+  return res.json()
+})
+
+ipcMain.handle('media:remove', async (_e, guideId: string, mediaId: string) => {
+  const token = store.get('authToken') as string | undefined
+  if (!token) throw new Error('Not authenticated')
+  await fetch(`${WEB_API}/guides/${guideId}/media/${mediaId}`, {
+    method: 'DELETE', headers: { Authorization: `Bearer ${token}` },
+  })
+})
+
 // ── CS2 console ─────────────────────────────────────────────────────────────
 
 ipcMain.handle(

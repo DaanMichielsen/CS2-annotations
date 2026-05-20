@@ -1,10 +1,12 @@
 import type {
   AppendNodesPayload,
   CreateGuidePayload,
+  CreateMediaPayload,
   GuideAdapter,
   GuideSummary,
   LoadedGuide,
   SaveGuidePayload,
+  UpdateMediaPayload,
 } from '@cs2ann/shared'
 
 export function createLocalAdapter(): GuideAdapter {
@@ -119,6 +121,33 @@ export function createLocalAdapter(): GuideAdapter {
       },
       async showInFolder(path: string) {
         return window.electronAPI.showItemInFolder(path)
+      },
+    },
+
+    media: {
+      async list(guideId: string, nodeId?: string) {
+        return window.electronAPI.mediaList(guideId, nodeId)
+      },
+      async createLink(guideId: string, payload: CreateMediaPayload) {
+        return window.electronAPI.mediaCreateLink(guideId, payload)
+      },
+      async createUpload(guideId: string, formData: FormData) {
+        const entries: [string, unknown][] = []
+        for (const [key, val] of formData.entries()) {
+          if (val instanceof File) {
+            const buf = await val.arrayBuffer()
+            entries.push([key, new Uint8Array(buf)])
+          } else {
+            entries.push([key, val])
+          }
+        }
+        return window.electronAPI.mediaCreateUpload(guideId, entries)
+      },
+      async update(guideId: string, mediaId: string, payload: UpdateMediaPayload) {
+        return window.electronAPI.mediaUpdate(guideId, mediaId, payload)
+      },
+      async remove(guideId: string, mediaId: string) {
+        return window.electronAPI.mediaRemove(guideId, mediaId)
       },
     },
   }

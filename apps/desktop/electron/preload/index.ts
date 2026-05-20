@@ -63,4 +63,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   savedPullGuide: (payload: { guideId: string; title: string; downloadUrl: string }) =>
     ipcRenderer.invoke('savedPullGuide', payload),
   cloudDeleteGuide: (cloudId: string) => ipcRenderer.invoke('cloudDeleteGuide', cloudId),
+  mediaList: (guideId: string, nodeId?: string) => ipcRenderer.invoke('media:list', guideId, nodeId),
+  mediaCreateLink: (guideId: string, payload: unknown) => ipcRenderer.invoke('media:createLink', guideId, payload),
+  mediaCreateUpload: (guideId: string, entries: [string, unknown][]) => ipcRenderer.invoke('media:createUpload', guideId, entries),
+  mediaUpdate: (guideId: string, mediaId: string, payload: unknown) => ipcRenderer.invoke('media:update', guideId, mediaId, payload),
+  mediaRemove: (guideId: string, mediaId: string) => ipcRenderer.invoke('media:remove', guideId, mediaId),
 })
