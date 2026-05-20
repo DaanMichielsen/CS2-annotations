@@ -60,13 +60,14 @@ model Guide {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  ratings        GuideRating[]
-  comments       GuideComment[]
-  savedBy        SavedGuide[]
-  grenadeEntries GrenadeEntry[]
-  featuredGuide  FeaturedGuide?
-  credits        GuideCredit[]
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ratings           GuideRating[]
+  comments          GuideComment[]
+  savedBy           SavedGuide[]
+  grenadeEntries    GrenadeEntry[]
+  annotationMedia   AnnotationMedia[]
+  featuredGuide     FeaturedGuide?
+  credits           GuideCredit[]
 }
 
 model GuideRating {
@@ -136,6 +137,8 @@ model GrenadeEntry {
   throwType   String
   posLabel    String?
   aimLabel    String?
+  hasMedia    Boolean  @default(false)
+  landingThumb String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -201,4 +204,27 @@ model SavedGuide {
 
   @@unique([userId, guideId])
   @@index([userId])
+}
+
+model AnnotationMedia {
+  id         String   @id @default(cuid())
+  guideId    String
+  nodeId     String
+  uploadedBy String
+  slot       String
+  mediaType  String
+  source     String
+  url        String
+  blobKey    String?
+  caption    String?
+  trimStart  Float?
+  trimEnd    Float?
+  cropBox    Json?
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  guide Guide @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@index([guideId, nodeId])
+  @@index([guideId])
 }
