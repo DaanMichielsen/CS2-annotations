@@ -2,13 +2,14 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import type { AnnotationNode, GrenadeType } from '@cs2ann/shared/web'
+import type { AnnotationNode, GrenadeType, AnnotationMedia } from '@cs2ann/shared/web'
 import { MAP_DATA, worldToPixel } from '@/lib/mapData'
 import InteractiveMapView from './InteractiveMapView'
 
 interface Props {
   nodes: AnnotationNode[]
   mapName: string | null | undefined
+  mediaMap?: Record<string, AnnotationMedia[]>
 }
 
 const GRENADE_COLORS: Record<GrenadeType, string> = {
@@ -41,7 +42,7 @@ function isMainNode(node: AnnotationNode): boolean {
   return node.SubType !== 'aim_target' && node.SubType !== 'destination'
 }
 
-export default function GuideAnnotationPreview({ nodes, mapName }: Props) {
+export default function GuideAnnotationPreview({ nodes, mapName, mediaMap }: Props) {
   const [expanded, setExpanded] = useState(false)
   const [activeFilters, setActiveFilters] = useState<Set<GrenadeType>>(new Set())
 
@@ -176,6 +177,7 @@ export default function GuideAnnotationPreview({ nodes, mapName }: Props) {
             mapName={mapName}
             className="h-[480px] sm:h-[560px] rounded-none border-0"
             filterTypes={activeFilters.size > 0 ? [...activeFilters] : undefined}
+            mediaMap={mediaMap}
           />
         </div>
       )}

@@ -7,14 +7,15 @@ import RatingButtons from '@/components/RatingButtons'
 import CommentThread from '@/components/CommentThread'
 import SaveButton from '@/components/SaveButton'
 import DownloadButton from '@/components/DownloadButton'
+import { GuideNodeFilter } from '@/components/GuideNodeFilter'
 import { getMapColor, getMapLabel } from '@/lib/mapColors'
 import { getGuideBlobUrl } from '@/lib/blob'
 import { parseKv3Text, kv3ToNodes, extractNodesKey } from '@cs2ann/shared/web'
 import type { Kv3Object, AnnotationNode, GrenadeType, AnnotationMedia } from '@cs2ann/shared/web'
 import { CreditChip } from '@/components/CreditChip'
+import AnnotationList from '@/components/AnnotationList'
 import FollowButton from '@/components/FollowButton'
-import GuideMapWithMedia from '@/components/GuideMapWithMedia'
-import MediaManagerClient from '@/components/MediaManagerClient'
+import MediaUploadClientWrapper from '@/components/MediaUploadClientWrapper'
 
 const GRENADE_ORDER: GrenadeType[] = ['smoke', 'flash', 'he', 'molotov', 'decoy']
 const GRENADE_ICON_FILES: Record<GrenadeType, string> = {
@@ -77,32 +78,25 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
     }
   }
 
-  // Fetch annotation media
-  let media: AnnotationMedia[] = []
-  if (guide.blobKey && nodes.length > 0) {
-    try {
-      const rawMedia = await db.annotationMedia.findMany({
-        where: { guideId: guide.id },
-        orderBy: [{ nodeId: 'asc' }, { slot: 'asc' }, { position: 'asc' }],
-      })
-      media = rawMedia.map((m) => ({
+  let mediaMap: Record<string, AnnotationMedia[]> = {}
+  try {
+    const rawMedia = await db.annotationMedia.findMany({
+      where: { guideId: guide.id },
+      orderBy: [{ nodeId: 'asc' }, { position: 'asc' }],
+    })
+    for (const m of rawMedia) {
+      const typed = {
         ...m,
-        slot: m.slot as AnnotationMedia['slot'],
+        slot:      m.slot      as AnnotationMedia['slot'],
         mediaType: m.mediaType as AnnotationMedia['mediaType'],
-        source: m.source as AnnotationMedia['source'],
+        source:    m.source    as AnnotationMedia['source'],
         createdAt: m.createdAt.toISOString(),
-        cropBox: m.cropBox as AnnotationMedia['cropBox'],
-      }))
-    } catch {
-      // media unavailable
+        cropBox:   m.cropBox   as AnnotationMedia['cropBox'],
+      }
+      if (!mediaMap[m.nodeId]) mediaMap[m.nodeId] = []
+      mediaMap[m.nodeId].push(typed)
     }
-  }
-
-  const mediaMap: Record<string, AnnotationMedia[]> = {}
-  for (const m of media) {
-    if (!mediaMap[m.nodeId]) mediaMap[m.nodeId] = []
-    mediaMap[m.nodeId].push(m)
-  }
+  } catch { /* media unavailable */ }
 
   const mainGrenadeNodes = nodes.filter(
     (n) => n.Type === 'grenade' && n.SubType !== 'aim_target' && n.SubType !== 'destination'
@@ -226,16 +220,24 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
 
           {/* Annotation preview */}
           <section>
-            <h2 className="font-display font-semibold text-base text-zinc-400 mb-4 uppercase tracking-wider">
-              Annotations · {nodes.length} nodes
-            </h2>
-            <GuideMapWithMedia nodes={nodes} mapName={guide.map} media={media} />
-            <MediaManagerClient
-              guideId={guide.id}
-              nodes={nodes}
-              mediaMap={mediaMap}
-              isOwner={isOwner}
-            />
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display font-semibold text-base text-zinc-400 uppercase tracking-wider">
+                Annotations · {nodes.length} nodes
+              </h2>
+              <Link href={`/guides/${guide.id}/play`}
+                className="text-xs px-3 py-1.5 bg-zinc-800 border border-zinc-700 text-zinc-300 hover:bg-zinc-700 rounded transition-colors flex items-center gap-1.5">
+                ▶ Play mode
+              </Link>
+            </div>
+            <GuideNodeFilter nodes={nodes} mapName={guide.map} mediaMap={mediaMap} />
+            {isOwner && (
+              <MediaUploadClientWrapper
+                guideId={guide.id}
+                nodes={nodes}
+                initialMedia={mediaMap}
+              />
+            )}
+            <AnnotationList nodes={nodes} />
           </section>
         </div>
 

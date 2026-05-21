@@ -1,44 +1,28 @@
-import { auth } from '@/lib/auth'
+import { getApiUser } from '@/lib/api-auth'
 import { db } from '@/lib/db'
+import type { NextRequest } from 'next/server'
 
-async function getCtx(guideId: string) {
-  const [session, guide] = await Promise.all([
-    auth(),
-    db.guide.findUnique({ where: { id: guideId }, select: { userId: true, isPublic: true } }),
-  ])
-  if (!guide) return null
-  const userId = session?.user?.id ?? null
-  return { guide, userId, isOwner: userId === guide.userId, isAuthenticated: !!userId }
+export async function canReadMedia(guideId: string, req?: NextRequest): Promise<boolean> {
+  const guide = await db.guide.findUnique({ where: { id: guideId }, select: { isPublic: true, userId: true } })
+  if (!guide) return false
+  if (guide.isPublic) return true
+  if (!req) return false
+  const user = await getApiUser(req)
+  return user?.id === guide.userId
 }
 
-export async function canReadMedia(guideId: string): Promise<boolean> {
-  const ctx = await getCtx(guideId)
-  if (!ctx) return false
-  return ctx.guide.isPublic || ctx.isOwner
+/** Returns the authenticated userId if the user can add media to this guide, null otherwise. */
+export async function canCreateMedia(guideId: string, req: NextRequest): Promise<string | null> {
+  const user = await getApiUser(req)
+  if (!user?.id) return null
+  const guide = await db.guide.findUnique({ where: { id: guideId }, select: { userId: true } })
+  if (!guide || guide.userId !== user.id) return null
+  return user.id
 }
 
-/** Returns userId if allowed to create in this slot, null if forbidden. */
-export async function canCreateMedia(
-  guideId: string, nodeId: string, slot: string
-): Promise<string | null> {
-  const ctx = await getCtx(guideId)
-  if (!ctx?.isAuthenticated || !ctx.userId) return null
-  if (ctx.isOwner) return ctx.userId
-  if (!ctx.guide.isPublic) return null  // non-owners cannot contribute to private guides
-  // Note: TOCTOU race possible; route should handle duplicate-key errors gracefully
-  const count = await db.annotationMedia.count({ where: { guideId, nodeId, slot } })
-  return count === 0 ? ctx.userId : null
-}
-
-/** Returns true if the caller owns the media record or owns the guide. */
-export async function canEditMedia(mediaId: string): Promise<boolean> {
-  const session = await auth()
-  const userId = session?.user?.id
-  if (!userId) return false
-  const record = await db.annotationMedia.findUnique({
-    where: { id: mediaId },
-    include: { guide: { select: { userId: true } } },
-  })
-  if (!record) return false
-  return record.uploadedBy === userId || record.guide.userId === userId
+export async function canEditMedia(mediaId: string, req: NextRequest): Promise<boolean> {
+  const user = await getApiUser(req)
+  if (!user?.id) return false
+  const record = await db.annotationMedia.findUnique({ where: { id: mediaId }, select: { uploadedBy: true } })
+  return record?.uploadedBy === user.id
 }

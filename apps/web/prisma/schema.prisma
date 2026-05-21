@@ -193,31 +193,6 @@ model GuideCredit {
   @@index([guideId])
 }
 
-model AnnotationMedia {
-  id         String   @id @default(cuid())
-  guideId    String
-  nodeId     String
-  uploadedBy String
-  slot       String
-  mediaType  String
-  source     String
-  url        String
-  blobKey    String?
-  caption    String?
-  notes      String?
-  trimStart  Float?
-  trimEnd    Float?
-  speedRate  Float?
-  cropBox    Json?
-  position   Int      @default(0)
-  createdAt  DateTime @default(now())
-
-  guide Guide @relation(fields: [guideId], references: [id], onDelete: Cascade)
-
-  @@index([guideId, nodeId])
-  @@index([guideId])
-}
-
 model SavedGuide {
   id      String   @id @default(cuid())
   userId  String
@@ -229,4 +204,27 @@ model SavedGuide {
 
   @@unique([userId, guideId])
   @@index([userId])
+}
+
+model AnnotationMedia {
+  id         String   @id @default(cuid())
+  guideId    String
+  nodeId     String
+  uploadedBy String
+  slot       String
+  mediaType  String
+  source     String
+  url        String
+  blobKey    String?
+  caption    String?
+  trimStart  Float?
+  trimEnd    Float?
+  cropBox    Json?
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  guide Guide @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@index([guideId, nodeId])
+  @@index([guideId])
 }

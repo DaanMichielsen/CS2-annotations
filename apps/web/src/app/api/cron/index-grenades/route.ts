@@ -96,37 +96,24 @@ export async function GET(request: NextRequest) {
 
       await Promise.all(upserts)
 
-      // Sync hasMedia / landingThumb from annotationMedia table
-      const mediaRows = await db.annotationMedia.findMany({
+      // Sync hasMedia + landingThumb from AnnotationMedia
+      const allMedia = await db.annotationMedia.findMany({
         where: { guideId: guide.id },
         select: { nodeId: true, slot: true, url: true },
       })
       const mediaByNode = new Map<string, { hasMedia: boolean; landingThumb: string | null }>()
-      for (const m of mediaRows) {
-        const entry = mediaByNode.get(m.nodeId) ?? { hasMedia: false, landingThumb: null }
-        entry.hasMedia = true
-        if (m.slot === 'landing' && !entry.landingThumb) entry.landingThumb = m.url
-        mediaByNode.set(m.nodeId, entry)
+      for (const m of allMedia) {
+        const existing = mediaByNode.get(m.nodeId) ?? { hasMedia: false, landingThumb: null }
+        existing.hasMedia = true
+        if (m.slot === 'landing' && !existing.landingThumb) existing.landingThumb = m.url
+        mediaByNode.set(m.nodeId, existing)
       }
-
-      const nodeIds = mainNodes.map((n: AnnotationNode) => n.Id!)
-      const withMedia = [...mediaByNode.entries()]
-      const withoutMedia = nodeIds.filter((id) => !mediaByNode.has(id))
-
-      await Promise.all([
-        ...withMedia.map(([nodeId, val]) =>
-          db.grenadeEntry.updateMany({
-            where: { guideId: guide.id, nodeId },
-            data: { hasMedia: val.hasMedia, landingThumb: val.landingThumb },
-          })
-        ),
-        withoutMedia.length > 0
-          ? db.grenadeEntry.updateMany({
-              where: { guideId: guide.id, nodeId: { in: withoutMedia } },
-              data: { hasMedia: false, landingThumb: null },
-            })
-          : Promise.resolve(),
-      ])
+      for (const [nodeId, data] of mediaByNode) {
+        await db.grenadeEntry.updateMany({
+          where: { guideId: guide.id, nodeId },
+          data,
+        })
+      }
 
       processed++
       if (guide.updatedAt > latestDate) latestDate = guide.updatedAt

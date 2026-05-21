@@ -927,77 +927,63 @@ ipcMain.handle('cloudDeleteGuide', async (_event, cloudId: string) => {
   }
 })
 
-// ── Annotation media ────────────────────────────────────────────────────────
+// ── Media (cloud proxy) ─────────────────────────────────────────────────────
 
-ipcMain.handle('mediaList', async (_event, guideId: string, nodeId: string) => {
-  try {
-    const res = await fetch(`${WEB_API}/guides/${guideId}/media/node/${nodeId}`, { headers: cloudHeaders() })
-    if (!res.ok) return { error: `Request failed (${res.status})` }
-    return res.json()
-  } catch (err) {
-    return { error: err instanceof Error ? err.message : String(err) }
-  }
+ipcMain.handle('media:list', async (_e, guideId: string, nodeId?: string) => {
+  const token = store.get('authToken') as string | undefined
+  if (!token) return []
+  const url = nodeId
+    ? `${WEB_API}/guides/${guideId}/media?nodeId=${nodeId}`
+    : `${WEB_API}/guides/${guideId}/media`
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+  return res.ok ? res.json() : []
 })
 
-ipcMain.handle('mediaCreateLink', async (_event, guideId: string, payload: unknown) => {
-  try {
-    const res = await fetch(`${WEB_API}/guides/${guideId}/media`, {
-      method: 'POST',
-      headers: { ...cloudHeaders(), 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-    if (!res.ok) return { error: await res.text() }
-    return res.json()
-  } catch (err) {
-    return { error: err instanceof Error ? err.message : String(err) }
-  }
+ipcMain.handle('media:createLink', async (_e, guideId: string, payload: unknown) => {
+  const token = store.get('authToken') as string | undefined
+  if (!token) throw new Error('Not authenticated')
+  const res = await fetch(`${WEB_API}/guides/${guideId}/media`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error(await res.text())
+  return res.json()
 })
 
-ipcMain.handle('mediaCreateUpload', async (_event, guideId: string, payload: {
-  nodeId: string; slot: string; fileData: ArrayBuffer; fileName: string; mimeType: string;
-  caption?: string; notes?: string;
-}) => {
-  try {
-    const fd = new FormData()
-    fd.append('nodeId', payload.nodeId)
-    fd.append('slot', payload.slot)
-    fd.append('file', new Blob([payload.fileData], { type: payload.mimeType }), payload.fileName)
-    if (payload.caption) fd.append('caption', payload.caption)
-    if (payload.notes) fd.append('notes', payload.notes)
-    const res = await fetch(`${WEB_API}/guides/${guideId}/media`, {
-      method: 'POST', headers: cloudHeaders(), body: fd,
-    })
-    if (!res.ok) return { error: await res.text() }
-    return res.json()
-  } catch (err) {
-    return { error: err instanceof Error ? err.message : String(err) }
+ipcMain.handle('media:createUpload', async (_e, guideId: string, entries: [string, unknown][]) => {
+  const token = store.get('authToken') as string | undefined
+  if (!token) throw new Error('Not authenticated')
+  const fd = new FormData()
+  for (const [key, val] of entries) {
+    if (val instanceof Uint8Array) fd.append(key, new Blob([val]))
+    else fd.append(key, String(val))
   }
+  const res = await fetch(`${WEB_API}/guides/${guideId}/media`, {
+    method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: fd,
+  })
+  if (!res.ok) throw new Error(await res.text())
+  return res.json()
 })
 
-ipcMain.handle('mediaUpdate', async (_event, guideId: string, mediaId: string, payload: unknown) => {
-  try {
-    const res = await fetch(`${WEB_API}/guides/${guideId}/media/${mediaId}`, {
-      method: 'PUT',
-      headers: { ...cloudHeaders(), 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-    if (!res.ok) return { error: await res.text() }
-    return res.json()
-  } catch (err) {
-    return { error: err instanceof Error ? err.message : String(err) }
-  }
+ipcMain.handle('media:update', async (_e, guideId: string, mediaId: string, payload: unknown) => {
+  const token = store.get('authToken') as string | undefined
+  if (!token) throw new Error('Not authenticated')
+  const res = await fetch(`${WEB_API}/guides/${guideId}/media/${mediaId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error(await res.text())
+  return res.json()
 })
 
-ipcMain.handle('mediaRemove', async (_event, guideId: string, mediaId: string) => {
-  try {
-    const res = await fetch(`${WEB_API}/guides/${guideId}/media/${mediaId}`, {
-      method: 'DELETE', headers: cloudHeaders(),
-    })
-    if (!res.ok) return { error: `Delete failed (${res.status})` }
-    return {}
-  } catch (err) {
-    return { error: err instanceof Error ? err.message : String(err) }
-  }
+ipcMain.handle('media:remove', async (_e, guideId: string, mediaId: string) => {
+  const token = store.get('authToken') as string | undefined
+  if (!token) throw new Error('Not authenticated')
+  await fetch(`${WEB_API}/guides/${guideId}/media/${mediaId}`, {
+    method: 'DELETE', headers: { Authorization: `Bearer ${token}` },
+  })
 })
 
 // ── CS2 console ─────────────────────────────────────────────────────────────

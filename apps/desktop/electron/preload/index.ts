@@ -63,12 +63,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   savedPullGuide: (payload: { guideId: string; title: string; downloadUrl: string }) =>
     ipcRenderer.invoke('savedPullGuide', payload),
   cloudDeleteGuide: (cloudId: string) => ipcRenderer.invoke('cloudDeleteGuide', cloudId),
-  mediaList: (guideId: string, nodeId: string) => ipcRenderer.invoke('mediaList', guideId, nodeId),
-  mediaCreateLink: (guideId: string, payload: unknown) => ipcRenderer.invoke('mediaCreateLink', guideId, payload),
-  mediaCreateUpload: (guideId: string, payload: {
-    nodeId: string; slot: string; fileData: ArrayBuffer; fileName: string; mimeType: string;
-    caption?: string; notes?: string;
-  }) => ipcRenderer.invoke('mediaCreateUpload', guideId, payload),
-  mediaUpdate: (guideId: string, mediaId: string, payload: unknown) => ipcRenderer.invoke('mediaUpdate', guideId, mediaId, payload),
-  mediaRemove: (guideId: string, mediaId: string) => ipcRenderer.invoke('mediaRemove', guideId, mediaId),
+  mediaList: (guideId: string, nodeId?: string) => ipcRenderer.invoke('media:list', guideId, nodeId),
+  mediaCreateLink: (guideId: string, payload: unknown) => ipcRenderer.invoke('media:createLink', guideId, payload),
+  mediaCreateUpload: (guideId: string, entries: [string, unknown][]) => ipcRenderer.invoke('media:createUpload', guideId, entries),
+  mediaUpdate: (guideId: string, mediaId: string, payload: unknown) => ipcRenderer.invoke('media:update', guideId, mediaId, payload),
+  mediaRemove: (guideId: string, mediaId: string) => ipcRenderer.invoke('media:remove', guideId, mediaId),
 })

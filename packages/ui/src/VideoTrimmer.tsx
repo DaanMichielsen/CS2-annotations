@@ -5,7 +5,7 @@ import { fetchFile, toBlobURL } from '@ffmpeg/util'
 
 interface Props {
   file: File
-  onTrimmed(trimmedFile: File, trimStart: number, trimEnd: number, speedRate: number): void
+  onTrimmed(trimmedFile: File, trimStart: number, trimEnd: number): void
   onCancel(): void
 }
 
@@ -14,12 +14,11 @@ let _ffmpeg: FFmpeg | null = null
 
 export default function VideoTrimmer({ file, onTrimmed, onCancel }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const srcUrl = useRef(URL.createObjectURL(file))
+  const srcUrl   = useRef(URL.createObjectURL(file))
   const [duration, setDuration] = useState(0)
-  const [start, setStart] = useState(0)
-  const [end, setEnd] = useState(0)
-  const [speed, setSpeed] = useState(1)
-  const [phase, setPhase] = useState<'trim' | 'loading' | 'processing'>('trim')
+  const [start,    setStart]    = useState(0)
+  const [end,      setEnd]      = useState(0)
+  const [phase,    setPhase]    = useState<'trim' | 'loading' | 'processing'>('trim')
   const [progress, setProgress] = useState(0)
 
   useEffect(() => () => URL.revokeObjectURL(srcUrl.current), [])
@@ -45,25 +44,32 @@ export default function VideoTrimmer({ file, onTrimmed, onCancel }: Props) {
     if (!_ffmpeg) _ffmpeg = new FFmpeg()
     if (!_ffmpeg.loaded) {
       await _ffmpeg.load({
-        coreURL: await toBlobURL(`${CDN}/ffmpeg-core.js`, 'text/javascript'),
+        coreURL: await toBlobURL(`${CDN}/ffmpeg-core.js`,   'text/javascript'),
         wasmURL: await toBlobURL(`${CDN}/ffmpeg-core.wasm`, 'application/wasm'),
       })
     }
     setPhase('processing')
     _ffmpeg.on('progress', ({ progress: p }) => setProgress(Math.round(p * 100)))
-    const name = 'in.' + (file.name.split('.').pop() ?? 'mp4')
-    await _ffmpeg.writeFile(name, await fetchFile(file))
-    await _ffmpeg.exec(['-i', name, '-ss', String(start), '-to', String(end), '-c', 'copy', 'out.mp4'])
+    const ext  = file.name.split('.').pop() ?? 'mp4'
+    const inName = `in.${ext}`
+    await _ffmpeg.writeFile(inName, await fetchFile(file))
+    // Re-encode for frame-accurate cuts (stream copy only cuts at keyframes)
+    await _ffmpeg.exec([
+      '-i', inName,
+      '-ss', String(start), '-to', String(end),
+      '-c:v', 'libx264', '-preset', 'ultrafast',
+      '-c:a', 'aac',
+      'out.mp4',
+    ])
     const data = await _ffmpeg.readFile('out.mp4') as Uint8Array
-    await _ffmpeg.deleteFile(name)
+    await _ffmpeg.deleteFile(inName)
     await _ffmpeg.deleteFile('out.mp4')
-    const trimmedFile = new File([data.buffer as ArrayBuffer], file.name, { type: 'video/mp4' })
-    onTrimmed(trimmedFile, start, end, speed)
+    onTrimmed(new File([data.buffer as ArrayBuffer], file.name, { type: 'video/mp4' }), start, end)
   }
 
-  const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
-  const inputCls = 'w-full accent-violet-500 cursor-pointer'
-  const btnSm = 'px-3 py-1.5 text-xs rounded transition-colors'
+  const fmt    = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
+  const btnSm  = 'px-3 py-1.5 text-xs rounded transition-colors'
+  const input  = 'w-full accent-violet-500 cursor-pointer'
 
   if (phase === 'loading') return (
     <div className="flex flex-col items-center gap-2 py-6 text-zinc-400 text-sm">
@@ -87,32 +93,19 @@ export default function VideoTrimmer({ file, onTrimmed, onCancel }: Props) {
         className="w-full rounded-lg max-h-52 bg-black" controls />
 
       {duration > 0 && (
-        <>
-          <div className="flex flex-col gap-1.5">
-            <div className="flex justify-between text-[0.65rem] text-zinc-500">
-              <span>Start: {fmt(start)}</span>
-              <span>End: {fmt(end)}</span>
-              <span>Duration: {fmt(end - start)}</span>
-            </div>
-            <label className="text-[0.65rem] text-zinc-500">Trim start</label>
-            <input type="range" className={inputCls} min={0} max={duration} step={0.1}
-              value={start} onChange={(e) => seekStart(Number(e.target.value))} />
-            <label className="text-[0.65rem] text-zinc-500">Trim end</label>
-            <input type="range" className={inputCls} min={0} max={duration} step={0.1}
-              value={end} onChange={(e) => seekEnd(Number(e.target.value))} />
+        <div className="flex flex-col gap-1.5">
+          <div className="flex justify-between text-[0.65rem] text-zinc-500">
+            <span>Start: {fmt(start)}</span>
+            <span>End: {fmt(end)}</span>
+            <span>Clip: {fmt(end - start)}</span>
           </div>
-
-          <div>
-            <p className="text-[0.65rem] text-zinc-500 mb-1">Playback speed</p>
-            <div className="flex gap-1.5">
-              {([1, 1.5, 2] as const).map((s) => (
-                <button key={s} type="button"
-                  className={`${btnSm} border ${speed === s ? 'bg-violet-900/50 border-violet-700 text-violet-300' : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700'}`}
-                  onClick={() => setSpeed(s)}>{s}×</button>
-              ))}
-            </div>
-          </div>
-        </>
+          <label className="text-[0.65rem] text-zinc-500">Trim start</label>
+          <input type="range" className={input} min={0} max={duration} step={0.1}
+            value={start} onChange={(e) => seekStart(Number(e.target.value))} />
+          <label className="text-[0.65rem] text-zinc-500">Trim end</label>
+          <input type="range" className={input} min={0} max={duration} step={0.1}
+            value={end} onChange={(e) => seekEnd(Number(e.target.value))} />
+        </div>
       )}
 
       <div className="flex gap-2 justify-end">

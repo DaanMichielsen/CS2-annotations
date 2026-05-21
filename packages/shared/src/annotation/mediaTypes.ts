@@ -1,13 +1,8 @@
-export type MediaSlot = 'standing' | 'aim' | 'landing'
+export type MediaSlot = 'full' | 'standing' | 'aim' | 'landing'
 export type MediaType = 'video' | 'image'
 export type MediaSource = 'upload' | 'youtube'
 
-export interface CropBox {
-  x: number
-  y: number
-  w: number
-  h: number
-}
+export interface CropBox { x: number; y: number; w: number; h: number }
 
 export interface AnnotationMedia {
   id: string
@@ -20,10 +15,8 @@ export interface AnnotationMedia {
   url: string
   blobKey?: string | null
   caption?: string | null
-  notes?: string | null
   trimStart?: number | null
   trimEnd?: number | null
-  speedRate?: number | null
   cropBox?: CropBox | null
   position: number
   createdAt: string
@@ -37,23 +30,20 @@ export interface CreateMediaPayload {
   url: string
   blobKey?: string
   caption?: string
-  notes?: string
   trimStart?: number
   trimEnd?: number
-  speedRate?: number
   cropBox?: CropBox
 }
 
 export interface UpdateMediaPayload {
   caption?: string
-  notes?: string
-  speedRate?: number
   cropBox?: CropBox
 }
 
-export const VALID_SLOTS: MediaSlot[] = ['standing', 'aim', 'landing']
+export const VALID_SLOTS: MediaSlot[] = ['full', 'standing', 'aim', 'landing']
 export const SLOT_LABELS: Record<MediaSlot, string> = {
+  full:     'Full video',
   standing: 'Standing position',
-  aim: 'Aim position',
-  landing: 'Landing position',
+  aim:      'Aim position',
+  landing:  'Landing position',
 }
