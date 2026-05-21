@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { put } from '@vercel/blob'
 import { db } from '@/lib/db'
 import { canReadMedia, canCreateMedia } from '@/lib/mediaAuth'
-import { VALID_SLOTS } from '@cs2ann/shared/web'
+import { VALID_SLOTS, type MediaSlot } from '@cs2ann/shared/web'
 
 const ALLOWED_VIDEO = ['video/mp4', 'video/webm', 'video/quicktime']
 const ALLOWED_IMAGE = ['image/jpeg', 'image/png', 'image/webp']
@@ -48,7 +48,7 @@ export async function POST(
     const slot      = fd.get('slot') as string | null
     const mediaType = fd.get('mediaType') as string | null
 
-    if (!file || !nodeId || !slot || !mediaType || !VALID_SLOTS.includes(slot))
+    if (!file || !nodeId || !slot || !mediaType || !VALID_SLOTS.includes(slot as MediaSlot))
       return NextResponse.json({ error: 'Missing or invalid fields' }, { status: 400 })
     const allowed = mediaType === 'video' ? ALLOWED_VIDEO : ALLOWED_IMAGE
     if (!allowed.includes(file.type))
