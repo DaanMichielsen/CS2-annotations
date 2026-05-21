@@ -85,10 +85,11 @@ interface Props {
   filterTypes?: GrenadeType[]
   mediaMap?: Record<string, AnnotationMedia[]>
   pinMode?: 'throw' | 'landing'
+  onPinClick?: (nodeId: string) => void
   className?: string
 }
 
-export default function InteractiveMapView({ nodes, mapName, filterTypes, mediaMap, pinMode, className = '' }: Props) {
+export default function InteractiveMapView({ nodes, mapName, filterTypes, mediaMap, pinMode, onPinClick, className = '' }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale,  setScale]  = useState(1)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
@@ -524,6 +525,7 @@ export default function InteractiveMapView({ nodes, mapName, filterTypes, mediaM
                     e.stopPropagation()
                     setSelectedKey((prev) => prev === item.key ? null : item.key)
                     if (isClusterExpanded) setExpandedCluster(null)
+                    if (item.mainNodeId) onPinClick?.(item.mainNodeId)
                   }}
                   onMouseEnter={(e) => { setHoveredItem(item); setTooltipPos({ x: e.clientX, y: e.clientY }) }}
                   onMouseMove={(e) => setTooltipPos({ x: e.clientX, y: e.clientY })}
@@ -577,6 +579,9 @@ export default function InteractiveMapView({ nodes, mapName, filterTypes, mediaM
             <div className="text-zinc-400 text-[0.65rem] capitalize mt-0.5">{hoveredItem.grenadeType}</div>
           )}
           <div className="text-zinc-500 text-[0.6rem] mt-1">Click to inspect</div>
+          {hoveredItem && mediaMap?.[hoveredItem.mainNodeId ?? '']?.length ? (
+            <div className="text-[0.6rem] text-violet-400 mt-0.5">&#9654; click to view</div>
+          ) : null}
         </div>
       )}
 
