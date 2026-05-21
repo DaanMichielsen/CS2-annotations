@@ -52,20 +52,20 @@ export default function GuideInteractionClient({ guideId, nodes, mapName, isOwne
   }
 
   async function remove(_gId: string, mediaId: string): Promise<void> {
-    await fetch(`/api/guides/${guideId}/media/${mediaId}`, { method: 'DELETE' })
+    const res = await fetch(`/api/guides/${guideId}/media/${mediaId}`, { method: 'DELETE' })
+    if (!res.ok) throw new Error(await res.text())
   }
 
   async function handleMediaChange() {
     const res = await fetch(`/api/guides/${guideId}/media`)
-    if (res.ok) {
-      const list: AnnotationMedia[] = await res.json()
-      const map: Record<string, AnnotationMedia[]> = {}
-      for (const m of list) {
-        if (!map[m.nodeId]) map[m.nodeId] = []
-        map[m.nodeId].push(m)
-      }
-      setMediaMap(map)
+    if (!res.ok) throw new Error(await res.text())
+    const list: AnnotationMedia[] = await res.json()
+    const map: Record<string, AnnotationMedia[]> = {}
+    for (const m of list) {
+      if (!map[m.nodeId]) map[m.nodeId] = []
+      map[m.nodeId].push(m)
     }
+    setMediaMap(map)
     setOpenNodeId(null)
   }
 
