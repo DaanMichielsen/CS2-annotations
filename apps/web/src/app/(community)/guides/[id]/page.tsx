@@ -220,9 +220,15 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
 
           {/* Annotation preview */}
           <section>
-            <h2 className="font-display font-semibold text-base text-zinc-400 mb-4 uppercase tracking-wider">
-              Annotations · {nodes.length} nodes
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display font-semibold text-base text-zinc-400 uppercase tracking-wider">
+                Annotations · {nodes.length} nodes
+              </h2>
+              <Link href={`/guides/${guide.id}/play`}
+                className="text-xs px-3 py-1.5 bg-zinc-800 border border-zinc-700 text-zinc-300 hover:bg-zinc-700 rounded transition-colors flex items-center gap-1.5">
+                ▶ Play mode
+              </Link>
+            </div>
             <GuideNodeFilter nodes={nodes} mapName={guide.map} mediaMap={mediaMap} />
             {isOwner && (
               <MediaUploadClientWrapper
