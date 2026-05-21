@@ -8,7 +8,7 @@ interface Props {
 
 export default function MediaPanel({ media }: Props) {
   return (
-    <aside className="w-80 shrink-0 border-l border-zinc-800 flex flex-col bg-zinc-900 overflow-y-auto">
+    <aside className="flex-1 border-l border-zinc-800 flex flex-col bg-zinc-900 overflow-y-auto">
       {media.length === 0 ? (
         <div className="flex-1 flex items-center justify-center">
           <p className="text-xs text-zinc-600 text-center px-4">

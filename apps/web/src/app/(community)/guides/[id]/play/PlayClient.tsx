@@ -24,7 +24,7 @@ export default function PlayClient({ mapName, nodes, mediaMap }: Props) {
   return (
     <div className="flex flex-1 min-h-0">
       {/* map area */}
-      <div className="flex flex-col flex-1 min-w-0">
+      <div className="flex flex-col shrink-0 h-full">
         <div className="px-3 py-2 border-b border-zinc-800 shrink-0">
           <PlayFilters
             grenadeType={grenadeType}
@@ -35,7 +35,7 @@ export default function PlayClient({ mapName, nodes, mediaMap }: Props) {
             onPinMode={setPinMode}
           />
         </div>
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 aspect-square">
           <InteractiveMapView
             nodes={nodes}
             mapName={mapName}
