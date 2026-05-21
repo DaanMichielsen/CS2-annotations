@@ -22,6 +22,7 @@ interface Props {
   nodes: AnnotationNode[]
   mapName: string | null | undefined
   mediaMap?: Record<string, AnnotationMedia[]>
+  onPinClick?: (nodeId: string) => void
 }
 
 const pill = (active: boolean) =>
@@ -31,13 +32,13 @@ const pill = (active: boolean) =>
       : 'border-zinc-700 text-zinc-500 hover:border-zinc-500 hover:text-zinc-200'
   }`
 
-export function GuideNodeFilter({ nodes, mapName, mediaMap }: Props) {
+export function GuideNodeFilter({ nodes, mapName, mediaMap, onPinClick }: Props) {
   const [throwFilter, setThrowFilter] = useState<ThrowType | 'all'>('all')
   const [grenadeFilter, setGrenadeFilter] = useState<GrenadeType | 'all'>('all')
 
   const hasGrenades = nodes.some((n) => n.Type === 'grenade')
   if (!hasGrenades) {
-    return <GuideAnnotationPreview nodes={nodes} mapName={mapName} mediaMap={mediaMap} />
+    return <GuideAnnotationPreview nodes={nodes} mapName={mapName} mediaMap={mediaMap} onPinClick={onPinClick} />
   }
 
   // Map aim_target nodes by MasterNodeId for throw type lookup
@@ -108,7 +109,7 @@ export function GuideNodeFilter({ nodes, mapName, mediaMap }: Props) {
         ))}
       </div>
 
-      <GuideAnnotationPreview nodes={filteredNodes} mapName={mapName} mediaMap={mediaMap} />
+      <GuideAnnotationPreview nodes={filteredNodes} mapName={mapName} mediaMap={mediaMap} onPinClick={onPinClick} />
     </div>
   )
 }

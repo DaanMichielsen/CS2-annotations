@@ -10,6 +10,7 @@ interface Props {
   nodes: AnnotationNode[]
   mapName: string | null | undefined
   mediaMap?: Record<string, AnnotationMedia[]>
+  onPinClick?: (nodeId: string) => void
 }
 
 const GRENADE_COLORS: Record<GrenadeType, string> = {
@@ -42,7 +43,7 @@ function isMainNode(node: AnnotationNode): boolean {
   return node.SubType !== 'aim_target' && node.SubType !== 'destination'
 }
 
-export default function GuideAnnotationPreview({ nodes, mapName, mediaMap }: Props) {
+export default function GuideAnnotationPreview({ nodes, mapName, mediaMap, onPinClick }: Props) {
   const [expanded, setExpanded] = useState(false)
   const [activeFilters, setActiveFilters] = useState<Set<GrenadeType>>(new Set())
 
@@ -178,6 +179,7 @@ export default function GuideAnnotationPreview({ nodes, mapName, mediaMap }: Pro
             className="h-[480px] sm:h-[560px] rounded-none border-0"
             filterTypes={activeFilters.size > 0 ? [...activeFilters] : undefined}
             mediaMap={mediaMap}
+            onPinClick={onPinClick}
           />
         </div>
       )}
