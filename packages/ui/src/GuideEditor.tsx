@@ -1279,13 +1279,21 @@ export default function GuideEditor({
       {mediaModalNodeId !== null && cloudId && (
         <MediaUploadModal
           guideId={cloudId}
-          nodes={nodes}
-          existingMedia={mediaMap}
+          nodeId={mediaModalNodeId}
+          existingMedia={mediaMap[mediaModalNodeId] ?? []}
           currentUserId=""
           onCreateLink={(gid, payload) => adapter.media!.createLink(gid, payload)}
-          onCreateUpload={(gid, fd) => adapter.media!.createUpload(gid, fd)}
+          onCreateUpload={(gid, file, nodeId, slot, mediaType, caption) => {
+            const fd = new FormData()
+            fd.append('file', file)
+            fd.append('nodeId', nodeId)
+            fd.append('slot', slot)
+            fd.append('mediaType', mediaType)
+            if (caption) fd.append('caption', caption)
+            return adapter.media!.createUpload(gid, fd)
+          }}
           onUpdate={(gid, mediaId, payload) => adapter.media!.update(gid, mediaId, payload)}
-          onRemove={(mediaId) => adapter.media!.remove(cloudId, mediaId)}
+          onRemove={(gid, mediaId) => adapter.media!.remove(gid, mediaId)}
           onClose={() => setMediaModalNodeId(null)}
           onMediaChange={refreshMedia}
         />

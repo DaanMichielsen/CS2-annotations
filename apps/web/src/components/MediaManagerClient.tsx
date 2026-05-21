@@ -28,7 +28,13 @@ export default function MediaManagerClient({ guideId, nodes, mediaMap, isOwner }
     return res.json()
   }
 
-  const createUpload = async (gid: string, fd: FormData): Promise<AnnotationMedia> => {
+  const createUpload = async (gid: string, file: File, nodeId: string, slot: string, mediaType: string, caption?: string): Promise<AnnotationMedia> => {
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('nodeId', nodeId)
+    fd.append('slot', slot)
+    fd.append('mediaType', mediaType)
+    if (caption) fd.append('caption', caption)
     const res = await fetch(`/api/guides/${gid}/media`, { method: 'POST', body: fd })
     if (!res.ok) throw new Error(await res.text())
     return res.json()
@@ -59,8 +65,8 @@ export default function MediaManagerClient({ guideId, nodes, mediaMap, isOwner }
       {modalNodeId !== null && (
         <MediaUploadModal
           guideId={guideId}
-          nodes={nodes}
-          existingMedia={mediaMap}
+          nodeId={modalNodeId}
+          existingMedia={mediaMap[modalNodeId] ?? []}
           currentUserId=""
           onCreateLink={createLink}
           onCreateUpload={createUpload}

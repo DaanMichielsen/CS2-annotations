@@ -7,15 +7,13 @@ import RatingButtons from '@/components/RatingButtons'
 import CommentThread from '@/components/CommentThread'
 import SaveButton from '@/components/SaveButton'
 import DownloadButton from '@/components/DownloadButton'
-import { GuideNodeFilter } from '@/components/GuideNodeFilter'
 import { getMapColor, getMapLabel } from '@/lib/mapColors'
 import { getGuideBlobUrl } from '@/lib/blob'
 import { parseKv3Text, kv3ToNodes, extractNodesKey } from '@cs2ann/shared/web'
 import type { Kv3Object, AnnotationNode, GrenadeType, AnnotationMedia } from '@cs2ann/shared/web'
 import { CreditChip } from '@/components/CreditChip'
-import AnnotationList from '@/components/AnnotationList'
 import FollowButton from '@/components/FollowButton'
-import MediaUploadClientWrapper from '@/components/MediaUploadClientWrapper'
+import GuideInteractionClient from '@/components/GuideInteractionClient'
 
 const GRENADE_ORDER: GrenadeType[] = ['smoke', 'flash', 'he', 'molotov', 'decoy']
 const GRENADE_ICON_FILES: Record<GrenadeType, string> = {
@@ -229,15 +227,13 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ id
                 ▶ Play mode
               </Link>
             </div>
-            <GuideNodeFilter nodes={nodes} mapName={guide.map} mediaMap={mediaMap} />
-            {isOwner && (
-              <MediaUploadClientWrapper
-                guideId={guide.id}
-                nodes={nodes}
-                initialMedia={mediaMap}
-              />
-            )}
-            <AnnotationList nodes={nodes} />
+            <GuideInteractionClient
+              guideId={guide.id}
+              nodes={nodes}
+              mapName={guide.map}
+              isOwner={isOwner}
+              initialMedia={mediaMap}
+            />
           </section>
         </div>
 
