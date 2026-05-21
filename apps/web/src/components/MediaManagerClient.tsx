@@ -34,7 +34,7 @@ export default function MediaManagerClient({ guideId, nodes, mediaMap, isOwner }
     return res.json()
   }
 
-  const update = async (mediaId: string, payload: UpdateMediaPayload): Promise<AnnotationMedia> => {
+  const update = async (_gid: string, mediaId: string, payload: UpdateMediaPayload): Promise<AnnotationMedia> => {
     const res = await fetch(`/api/guides/${guideId}/media/${mediaId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -44,7 +44,7 @@ export default function MediaManagerClient({ guideId, nodes, mediaMap, isOwner }
     return res.json()
   }
 
-  const remove = async (mediaId: string): Promise<void> => {
+  const remove = async (_gid: string, mediaId: string): Promise<void> => {
     await fetch(`/api/guides/${guideId}/media/${mediaId}`, { method: 'DELETE' })
   }
 

@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { nodeLabel, inferThrowType, THROW_TYPE_SHORT } from '@cs2ann/shared/web'
-import type { AnnotationNode, GrenadeType, AnnotationMedia, MediaSlot } from '@cs2ann/shared/web'
+import type { AnnotationNode, GrenadeType, AnnotationMedia } from '@cs2ann/shared/web'
 import { MediaViewer } from '@cs2ann/ui'
 
 const GRENADE_ORDER: GrenadeType[] = ['smoke', 'flash', 'he', 'molotov', 'decoy']
@@ -108,11 +108,9 @@ export default function AnnotationList({ nodes, mediaMap, canAddMedia, onAddMedi
                             <div className="px-3 pb-3 border-t border-zinc-800/60 mt-0.5">
                               {mediaMap && node.Id && (mediaMap[node.Id]?.length ?? 0) > 0 ? (() => {
                                 const items = mediaMap[node.Id!]!
-                                const bySlot = Object.fromEntries(items.map((m) => [m.slot, m])) as Partial<Record<MediaSlot, AnnotationMedia>>
-                                const notes = items.find((m) => m.notes)?.notes
                                 return (
                                   <div className="mt-2">
-                                    <MediaViewer mediaBySlot={bySlot} notes={notes} />
+                                    <MediaViewer media={items} />
                                   </div>
                                 )
                               })() : (

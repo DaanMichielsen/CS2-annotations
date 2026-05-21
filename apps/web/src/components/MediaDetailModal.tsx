@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import type { AnnotationMedia, MediaSlot } from '@cs2ann/shared/web'
+import type { AnnotationMedia } from '@cs2ann/shared/web'
 import { MediaViewer } from '@cs2ann/ui'
 
 interface Props {
@@ -17,14 +17,11 @@ export default function MediaDetailModal({ guideId, guideTitle, nodeId, label, o
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`/api/guides/${guideId}/media/node/${nodeId}`)
+    fetch(`/api/guides/${guideId}/media`)
       .then((r) => r.json())
-      .then((data) => { setMedia(data); setLoading(false) })
+      .then((data: AnnotationMedia[]) => { setMedia(data.filter((m) => m.nodeId === nodeId)); setLoading(false) })
       .catch(() => setLoading(false))
   }, [guideId, nodeId])
-
-  const bySlot = Object.fromEntries(media.map((m) => [m.slot, m])) as Partial<Record<MediaSlot, AnnotationMedia>>
-  const notes = media.find((m) => m.notes)?.notes
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
@@ -47,7 +44,7 @@ export default function MediaDetailModal({ guideId, guideTitle, nodeId, label, o
           ) : media.length === 0 ? (
             <p className="text-sm text-zinc-600 text-center py-8">No media available for this lineup.</p>
           ) : (
-            <MediaViewer mediaBySlot={bySlot} notes={notes} />
+            <MediaViewer media={media} />
           )}
         </div>
 

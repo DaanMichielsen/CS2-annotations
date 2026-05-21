@@ -1206,8 +1206,6 @@ export default function GuideEditor({
                 {/* Media section — shown when guide is cloud-synced and node is a grenade */}
                 {cloudId && selectedNode?.Type === 'grenade' && (!selectedNode.SubType || selectedNode.SubType === 'main') && selectedNode.Id && (() => {
                   const nodeMediaItems = mediaMap[selectedNode.Id] ?? []
-                  const bySlot = Object.fromEntries(nodeMediaItems.map((m) => [m.slot, m])) as Partial<Record<MediaSlot, AnnotationMedia>>
-                  const notes = nodeMediaItems.find((m) => m.notes)?.notes
                   return (
                     <div className="shrink-0 border-t border-zinc-700/60">
                       <div className="px-4 py-3">
@@ -1222,7 +1220,7 @@ export default function GuideEditor({
                           </button>
                         </div>
                         {nodeMediaItems.length > 0
-                          ? <MediaViewer mediaBySlot={bySlot} notes={notes} />
+                          ? <MediaViewer media={nodeMediaItems} />
                           : <p className="text-[0.65rem] text-zinc-600">No media attached. Push guide to cloud first to add media.</p>
                         }
                       </div>
@@ -1286,7 +1284,7 @@ export default function GuideEditor({
           currentUserId=""
           onCreateLink={(gid, payload) => adapter.media!.createLink(gid, payload)}
           onCreateUpload={(gid, fd) => adapter.media!.createUpload(gid, fd)}
-          onUpdate={(mediaId, payload) => adapter.media!.update(cloudId, mediaId, payload)}
+          onUpdate={(gid, mediaId, payload) => adapter.media!.update(gid, mediaId, payload)}
           onRemove={(mediaId) => adapter.media!.remove(cloudId, mediaId)}
           onClose={() => setMediaModalNodeId(null)}
           onMediaChange={refreshMedia}

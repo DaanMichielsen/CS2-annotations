@@ -94,7 +94,6 @@ export default function GuideMapWithMedia({ nodes, mapName, media, className, fi
             filterTypes={activeFilters.size > 0 ? [...activeFilters] : filterTypes}
             mediaMap={mediaMap}
             pinMode={pinMode}
-            onTogglePin={() => setPinMode((m) => m === 'throw' ? 'landing' : 'throw')}
           />
         </div>
       )}
