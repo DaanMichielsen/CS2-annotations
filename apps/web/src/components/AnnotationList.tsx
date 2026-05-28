@@ -10,6 +10,10 @@ const GRENADE_LABELS: Record<GrenadeType, string> = {
   smoke: 'Smoke', flash: 'Flash', he: 'HE Grenade', molotov: 'Molotov', decoy: 'Decoy',
 }
 
+function compareNodeLabels(a: AnnotationNode, b: AnnotationNode) {
+  return nodeLabel(a).localeCompare(nodeLabel(b), undefined, { sensitivity: 'base' })
+}
+
 interface Props {
   nodes: AnnotationNode[]
   mediaMap?: Record<string, AnnotationMedia[]>
@@ -45,7 +49,9 @@ export default function AnnotationList({ nodes, mediaMap, canAddMedia, onAddMedi
   // Group matched nodes by grenade type
   const grouped = GRENADE_ORDER.reduce<Partial<Record<GrenadeType, AnnotationNode[]>>>(
     (acc, gt) => {
-      const group = matchedNodes.filter((n) => n.GrenadeType === gt)
+      const group = matchedNodes
+        .filter((n) => n.GrenadeType === gt)
+        .sort(compareNodeLabels)
       if (group.length > 0) acc[gt] = group
       return acc
     },
