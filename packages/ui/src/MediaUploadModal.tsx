@@ -139,62 +139,64 @@ export default function MediaUploadModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="bg-zinc-900 border border-zinc-700 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-5 flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-zinc-100">Media</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+      <div className="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl w-full max-w-lg mx-4 flex flex-col overflow-hidden max-h-[90vh]">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700/60 shrink-0">
+          <h2 className="text-sm font-semibold text-zinc-100 m-0">Media</h2>
           <button type="button" onClick={onClose} className="text-zinc-500 hover:text-zinc-200 text-lg leading-none">×</button>
         </div>
 
-        {/* Existing media */}
-        {existingMedia.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <p className="text-xs text-zinc-400">Existing media</p>
-            {existingMedia.map((item) => (
-              <div key={item.id} className="flex items-center gap-2 px-3 py-2 bg-zinc-800/50 rounded-lg border border-zinc-700">
-                <span className="flex-1 text-xs text-zinc-300 truncate">
-                  {SLOT_LABELS[item.slot as MediaSlot]}{item.source === 'youtube' ? ' (YouTube)' : ''}
-                  {item.caption ? ` — ${item.caption}` : ''}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => onRemove(guideId, item.id)}
-                  className="text-xs text-zinc-500 hover:text-red-400 transition-colors shrink-0"
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="px-4 py-4 flex flex-col gap-4 overflow-y-auto">
+          {/* Existing media */}
+          {existingMedia.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <p className="text-xs text-zinc-400 m-0">Existing media</p>
+              {existingMedia.map((item) => (
+                <div key={item.id} className="flex items-center gap-2 px-3 py-2 bg-zinc-800/50 rounded-lg border border-zinc-700">
+                  <span className="flex-1 text-xs text-zinc-300 truncate">
+                    {SLOT_LABELS[item.slot as MediaSlot]}{item.source === 'youtube' ? ' (YouTube)' : ''}
+                    {item.caption ? ` — ${item.caption}` : ''}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onRemove(guideId, item.id)}
+                    className="text-xs text-zinc-500 hover:text-red-400 transition-colors shrink-0"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
-        {/* Add slots */}
-        <div className="flex flex-col gap-2">
-          <p className="text-xs text-zinc-400">
-            Full video <span className="text-zinc-600">(recommended — one clip covering the whole throw)</span>
-          </p>
-          <SlotEditor slot="full" state={full} setState={setFull} />
+          {/* Add slots */}
+          <div className="flex flex-col gap-2">
+            <p className="text-xs text-zinc-400 m-0">
+              Full video <span className="text-zinc-600">(recommended — one clip covering the whole throw)</span>
+            </p>
+            <SlotEditor slot="full" state={full} setState={setFull} />
+          </div>
+
+          <button
+            type="button"
+            className="text-xs text-zinc-500 hover:text-zinc-300 self-center underline underline-offset-2"
+            onClick={() => setShowSlots(!showSlots)}
+          >
+            {showSlots ? 'Hide individual screenshots' : '+ Add individual screenshots (standing / aim / landing)'}
+          </button>
+
+          {showSlots && (
+            <div className="flex flex-col gap-3">
+              <SlotEditor slot="standing" state={standing} setState={setStanding} />
+              <SlotEditor slot="aim"      state={aim}      setState={setAim}      />
+              <SlotEditor slot="landing"  state={landing}  setState={setLanding}  />
+            </div>
+          )}
+
+          {error && <p className="text-xs text-red-400 m-0">{error}</p>}
         </div>
 
-        <button
-          type="button"
-          className="text-xs text-zinc-500 hover:text-zinc-300 self-center underline underline-offset-2"
-          onClick={() => setShowSlots(!showSlots)}
-        >
-          {showSlots ? 'Hide individual screenshots' : '+ Add individual screenshots (standing / aim / landing)'}
-        </button>
-
-        {showSlots && (
-          <div className="flex flex-col gap-3">
-            <SlotEditor slot="standing" state={standing} setState={setStanding} />
-            <SlotEditor slot="aim"      state={aim}      setState={setAim}      />
-            <SlotEditor slot="landing"  state={landing}  setState={setLanding}  />
-          </div>
-        )}
-
-        {error && <p className="text-xs text-red-400">{error}</p>}
-
-        <div className="flex gap-2 justify-end pt-1">
+        <div className="px-4 py-3 border-t border-zinc-700/60 flex gap-2 justify-end shrink-0">
           <button type="button" onClick={onClose}
             className={`${btnSm} bg-zinc-800 border border-zinc-700 text-zinc-400 hover:bg-zinc-700`}>
             Cancel
