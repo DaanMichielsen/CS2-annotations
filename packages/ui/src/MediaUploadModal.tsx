@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import type { AnnotationMedia, CreateMediaPayload, MediaSlot, UpdateMediaPayload } from '@cs2ann/shared'
 import { SLOT_LABELS } from '@cs2ann/shared'
 
@@ -24,6 +24,77 @@ interface Props {
 }
 
 const empty: SlotState = { mode: null }
+
+const btnSm = 'px-3 py-1.5 text-xs rounded transition-colors'
+const inputCls = 'w-full bg-zinc-900 border border-zinc-700 rounded px-2 py-1.5 text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-violet-600'
+
+function btnMode(active: boolean) {
+  return `${btnSm} border ${active ? 'bg-violet-900/50 border-violet-700 text-violet-300' : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700'}`
+}
+
+function SlotEditor({ slot, state, setState }: { slot: MediaSlot; state: SlotState; setState: (s: SlotState) => void }) {
+  const fileInputId = useId()
+
+  return (
+    <div className="flex flex-col gap-3 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700">
+      <p className="text-xs font-medium text-zinc-300">{SLOT_LABELS[slot]}</p>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className={btnMode(state.mode === 'upload')} onClick={() => setState({ ...state, mode: 'upload' })}>
+          Upload file
+        </button>
+        <button type="button" className={btnMode(state.mode === 'youtube')} onClick={() => setState({ ...state, mode: 'youtube' })}>
+          YouTube
+        </button>
+        {state.mode && (
+          <button type="button" className={`${btnSm} text-zinc-500 hover:text-zinc-300`} onClick={() => setState(empty)}>
+            Clear
+          </button>
+        )}
+      </div>
+      {state.mode === 'upload' && (
+        <div className="flex flex-col gap-1.5">
+          <label
+            htmlFor={fileInputId}
+            className={`${btnSm} inline-flex w-fit cursor-pointer border bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700`}
+          >
+            {state.file ? 'Change file' : 'Choose file'}
+          </label>
+          <input
+            id={fileInputId}
+            type="file"
+            accept={slot === 'full' ? 'video/*' : 'video/*,image/*'}
+            className="sr-only"
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              if (f) setState({ ...state, file: f })
+            }}
+          />
+          {state.file && (
+            <p className="text-xs text-zinc-400 truncate">{state.file.name}</p>
+          )}
+        </div>
+      )}
+      {state.mode === 'youtube' && (
+        <input
+          type="url"
+          placeholder="https://youtube.com/watch?v=..."
+          className={inputCls}
+          value={state.youtubeUrl ?? ''}
+          onChange={(e) => setState({ ...state, youtubeUrl: e.target.value })}
+        />
+      )}
+      {state.mode && (
+        <input
+          type="text"
+          placeholder="Caption (optional)"
+          className={inputCls}
+          value={state.caption ?? ''}
+          onChange={(e) => setState({ ...state, caption: e.target.value })}
+        />
+      )}
+    </div>
+  )
+}
 
 export default function MediaUploadModal({
   guideId, nodeId, existingMedia, onCreateLink, onCreateUpload, onRemove, onClose, onMediaChange,
@@ -67,60 +138,6 @@ export default function MediaUploadModal({
     }
   }
 
-  const btnSm   = 'px-3 py-1.5 text-xs rounded transition-colors'
-  const btnMode = (active: boolean) =>
-    `${btnSm} border ${active ? 'bg-violet-900/50 border-violet-700 text-violet-300' : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700'}`
-
-  function SlotEditor({ slot, state, setState }: { slot: MediaSlot; state: SlotState; setState: (s: SlotState) => void }) {
-    return (
-      <div className="flex flex-col gap-2 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700">
-        <p className="text-xs font-medium text-zinc-300">{SLOT_LABELS[slot]}</p>
-        <div className="flex gap-2">
-          <button type="button" className={btnMode(state.mode === 'upload')} onClick={() => setState({ ...state, mode: 'upload' })}>
-            Upload file
-          </button>
-          <button type="button" className={btnMode(state.mode === 'youtube')} onClick={() => setState({ ...state, mode: 'youtube' })}>
-            YouTube
-          </button>
-          {state.mode && (
-            <button type="button" className={`${btnSm} text-zinc-500 hover:text-zinc-300`} onClick={() => setState(empty)}>
-              Clear
-            </button>
-          )}
-        </div>
-        {state.mode === 'upload' && (
-          <input
-            type="file"
-            accept={slot === 'full' ? 'video/*' : 'video/*,image/*'}
-            className="text-xs text-zinc-400"
-            onChange={(e) => {
-              const f = e.target.files?.[0]
-              if (f) setState({ ...state, file: f })
-            }}
-          />
-        )}
-        {state.mode === 'youtube' && (
-          <input
-            type="url"
-            placeholder="https://youtube.com/watch?v=..."
-            className="w-full bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 placeholder-zinc-600"
-            value={state.youtubeUrl ?? ''}
-            onChange={(e) => setState({ ...state, youtubeUrl: e.target.value })}
-          />
-        )}
-        {state.mode && (
-          <input
-            type="text"
-            placeholder="Caption (optional)"
-            className="w-full bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 placeholder-zinc-600"
-            value={state.caption ?? ''}
-            onChange={(e) => setState({ ...state, caption: e.target.value })}
-          />
-        )}
-      </div>
-    )
-  }
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
       <div className="bg-zinc-900 border border-zinc-700 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-5 flex flex-col gap-4">
@@ -152,7 +169,7 @@ export default function MediaUploadModal({
         )}
 
         {/* Add slots */}
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-2">
           <p className="text-xs text-zinc-400">
             Full video <span className="text-zinc-600">(recommended — one clip covering the whole throw)</span>
           </p>
@@ -161,7 +178,7 @@ export default function MediaUploadModal({
 
         <button
           type="button"
-          className="text-xs text-zinc-500 hover:text-zinc-300 self-start underline underline-offset-2"
+          className="text-xs text-zinc-500 hover:text-zinc-300 self-center underline underline-offset-2"
           onClick={() => setShowSlots(!showSlots)}
         >
           {showSlots ? 'Hide individual screenshots' : '+ Add individual screenshots (standing / aim / landing)'}
@@ -183,7 +200,7 @@ export default function MediaUploadModal({
             Cancel
           </button>
           <button type="button" onClick={handleSubmit} disabled={submitting}
-            className={`${btnSm} bg-violet-700 hover:bg-violet-600 text-white disabled:opacity-40`}>
+            className={`${btnSm} bg-violet-700 hover:bg-violet-600 text-white font-medium disabled:opacity-40`}>
             {submitting ? 'Uploading…' : 'Save'}
           </button>
         </div>
