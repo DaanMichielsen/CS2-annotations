@@ -1,18 +1,29 @@
 'use client'
 
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
-export default function DesktopCallbackPage() {
+function DesktopCallbackContent() {
   const { data: session, status } = useSession()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.id) {
       const token = session.user.id
-      window.location.href = `cs2ann://auth/callback?token=${encodeURIComponent(token)}&name=${encodeURIComponent(session.user.name ?? '')}&avatar=${encodeURIComponent(session.user.image ?? '')}`
+      // `client=tauri` (set by the Tauri app's authBridge.openSteamSignIn,
+      // see apps/desktop-tauri/src/lib/authBridge.ts) travels here inside the
+      // /auth/signin `callbackUrl` param rather than as a sibling query param,
+      // because /auth/signin only reads `callbackUrl` and threads that single
+      // string through NextAuth's redirectTo — anything else would be dropped
+      // before reaching this page. Electron never sends `client`, so it keeps
+      // defaulting to the `cs2ann://` scheme unchanged.
+      const client = searchParams.get('client')
+      const scheme = client === 'tauri' ? 'cs2ann-tauri' : 'cs2ann'
+      window.location.href = `${scheme}://auth/callback?token=${encodeURIComponent(token)}&name=${encodeURIComponent(session.user.name ?? '')}&avatar=${encodeURIComponent(session.user.image ?? '')}`
     }
-  }, [status, session])
+  }, [status, session, searchParams])
 
   return (
     <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center text-center px-4">
@@ -48,5 +59,13 @@ export default function DesktopCallbackPage() {
         </>
       )}
     </div>
+  )
+}
+
+export default function DesktopCallbackPage() {
+  return (
+    <Suspense fallback={null}>
+      <DesktopCallbackContent />
+    </Suspense>
   )
 }
