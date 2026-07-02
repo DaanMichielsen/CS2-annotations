@@ -1,6 +1,7 @@
 mod commands;
 
 use commands::fs_ops::{copy_file, delete_dir_if_empty, delete_file, list_dir, path_exists, read_text_file, write_text_file};
+use commands::steam::detect_steam_path;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -24,6 +25,7 @@ pub fn run() {
             delete_dir_if_empty,
             list_dir,
             path_exists,
+            detect_steam_path,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
