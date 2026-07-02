@@ -1,0 +1,27 @@
+[package]
+name = "cs2ann-desktop-tauri"
+version = "0.1.0"
+description = "CS2 Annotations Manager desktop app (Tauri)"
+edition = "2021"
+
+[lib]
+name = "cs2ann_desktop_tauri_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-store = "2"
+tauri-plugin-shell = "2"
+tauri-plugin-clipboard-manager = "2"
+tauri-plugin-deep-link = "2"
+tauri-plugin-single-instance = "2"
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+notify = "6"
+
+[target.'cfg(windows)'.dependencies]
+winreg = "0.52"
