@@ -13,6 +13,7 @@ import {
 import type {
   AnnotationNode,
   AppendNodesPayload,
+  CloudPushPayload,
   CreateGuidePayload,
   GuideAdapter,
   GuideSummary,
@@ -20,6 +21,14 @@ import type {
   LoadedGuide,
   SaveGuidePayload,
 } from '@cs2ann/shared'
+import { getAuthState } from '../lib/authBridge'
+import {
+  cloudPushGuide as cloudPushGuideImpl,
+  cloudPullGuide,
+  cloudGetSyncState,
+  cloudDeleteGuide,
+  media,
+} from '../lib/cloudApi'
 import { toLocalGuideName } from '../lib/guideNaming'
 import { scanLocalGuides, scanFeaturedWorkshopGuides, scanUserWorkshopGuides } from '../lib/guideScan'
 import { getSetting, setSetting, deleteSetting } from '../lib/settingsStore'
@@ -306,5 +315,21 @@ export function createTauriAdapter(): GuideAdapter {
         await revealItemInDir(path)
       },
     },
+
+    // `cloudApi.cloudPushGuide` requires `content` explicitly (there's no
+    // privileged main process to read the file silently, unlike Electron's
+    // `LocalAdapter`), while `GuideAdapter.cloudPushGuide` is typed to match
+    // Electron's signature (no `content`). This wrapper reconciles the two by
+    // reading the file here before delegating.
+    async cloudPushGuide(payload: CloudPushPayload) {
+      const raw = await invoke<string>('read_text_file', { path: payload.filePath })
+      const content = stripBom(raw)
+      return cloudPushGuideImpl({ ...payload, content })
+    },
+    cloudPullGuide,
+    cloudGetSyncState,
+    cloudDeleteGuide,
+    getAuthState,
+    media,
   }
 }
