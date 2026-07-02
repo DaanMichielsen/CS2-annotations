@@ -165,3 +165,21 @@ describe('createTauriAdapter — deleteGuide containment', () => {
     expect(files.has(siblingPath)).toBe(true)
   })
 })
+
+describe('createTauriAdapter — settings', () => {
+  it('round-trips the annotations root setting', async () => {
+    const adapter = createTauriAdapter()
+    await adapter.setAnnotationsRoot?.('C:\\CS2\\annotations')
+    expect(await adapter.getAnnotationsRoot?.()).toBe('C:\\CS2\\annotations')
+  })
+
+  it('defaults autoCopyLoadCommandsOnOpen to false', async () => {
+    const adapter = createTauriAdapter()
+    expect(await adapter.getAutoCopyLoadCommandsOnOpen?.()).toBe(false)
+  })
+
+  it('defaults cfgKeybind to f8', async () => {
+    const adapter = createTauriAdapter()
+    expect(await adapter.getCfgKeybind?.()).toBe('f8')
+  })
+})

@@ -18,7 +18,7 @@ import type {
 } from '@cs2ann/shared'
 import { toLocalGuideName } from '../lib/guideNaming'
 import { scanLocalGuides, scanFeaturedWorkshopGuides, scanUserWorkshopGuides } from '../lib/guideScan'
-import { getSetting, deleteSetting } from '../lib/settingsStore'
+import { getSetting, setSetting, deleteSetting } from '../lib/settingsStore'
 
 const UTF8_BOM = '﻿'
 
@@ -210,6 +210,45 @@ export function createTauriAdapter(): GuideAdapter {
       } catch (err) {
         return { error: err instanceof Error ? err.message : String(err) }
       }
+    },
+
+    async getAnnotationsRoot() {
+      return (await getSetting<string>('annotationsRoot')) ?? ''
+    },
+
+    async setAnnotationsRoot(root: string) {
+      await setSetting('annotationsRoot', root)
+    },
+
+    async getWorkshopContentPath() {
+      return (await getSetting<string>('workshopContentPath')) ?? ''
+    },
+
+    async setWorkshopContentPath(path: string) {
+      await setSetting('workshopContentPath', path)
+    },
+
+    async getAutoCopyLoadCommandsOnOpen() {
+      return (await getSetting<boolean>('autoCopyLoadCommandsOnOpen')) ?? false
+    },
+
+    async setAutoCopyLoadCommandsOnOpen(value: boolean) {
+      await setSetting('autoCopyLoadCommandsOnOpen', value)
+    },
+
+    async getCfgKeybind() {
+      return (await getSetting<string>('cfgKeybind')) ?? 'f8'
+    },
+
+    async setCfgKeybind(key: string) {
+      await setSetting('cfgKeybind', key)
+    },
+
+    async detectSteamPath() {
+      return invoke<
+        | { path: string; annotationsRoot: string; workshopContentPath: string }
+        | { error: string }
+      >('detect_steam_path')
     },
   }
 }
