@@ -1,3 +1,7 @@
+mod commands;
+
+use commands::fs_ops::{copy_file, delete_dir_if_empty, delete_file, list_dir, path_exists, read_text_file, write_text_file};
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -12,6 +16,15 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_opener::init())
+        .invoke_handler(tauri::generate_handler![
+            read_text_file,
+            write_text_file,
+            copy_file,
+            delete_file,
+            delete_dir_if_empty,
+            list_dir,
+            path_exists,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
