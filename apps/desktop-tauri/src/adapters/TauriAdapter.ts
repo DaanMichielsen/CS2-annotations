@@ -36,6 +36,27 @@ async function getAnnotationsRootOrThrow(): Promise<string> {
   return root
 }
 
+/**
+ * Returns true only if `candidate` is `root` itself or a path nested inside
+ * it. Both inputs are normalized (lowercased, `/` collapsed to `\`, trailing
+ * backslashes stripped) before comparison so this can't be fooled by a
+ * sibling directory whose name merely starts with the same characters as
+ * `root` (e.g. `C:\annotations-other\foo.txt` vs root `C:\annotations`).
+ */
+export function isInsideRoot(root: string, candidate: string): boolean {
+  const normalize = (p: string): string => {
+    let n = p.toLowerCase().replace(/\//g, '\\')
+    while (n.endsWith('\\')) n = n.slice(0, -1)
+    return n
+  }
+  const normalizedRoot = normalize(root)
+  const normalizedCandidate = normalize(candidate)
+  return (
+    normalizedCandidate === normalizedRoot ||
+    normalizedCandidate.startsWith(`${normalizedRoot}\\`)
+  )
+}
+
 export function createTauriAdapter(): GuideAdapter {
   return {
     async listGuides(): Promise<GuideSummary[]> {
@@ -138,14 +159,17 @@ export function createTauriAdapter(): GuideAdapter {
       try {
         const annotationsRoot = (await getSetting<string>('annotationsRoot')) ?? ''
         if (!annotationsRoot) return { error: 'Annotations folder not set.' }
-        if (!id.toLowerCase().startsWith(annotationsRoot.toLowerCase())) {
+        if (!isInsideRoot(annotationsRoot, id)) {
           return { error: 'Can only delete local annotation files from the configured annotations folder.' }
         }
         if (!(await invoke<boolean>('path_exists', { path: id }))) return { error: 'File not found.' }
         await invoke('unwatch_file')
         await invoke('delete_file', { path: id })
-        const dirPath = id.slice(0, id.lastIndexOf('\\'))
-        await invoke('delete_dir_if_empty', { path: dirPath })
+        const lastSlash = id.lastIndexOf('\\')
+        if (lastSlash > 0) {
+          const dirPath = id.slice(0, lastSlash)
+          await invoke('delete_dir_if_empty', { path: dirPath })
+        }
         await deleteSetting(`cloudId:${id}`)
         await deleteSetting(`cloudVersion:${id}`)
         await deleteSetting(`lastPushed:${id}`)

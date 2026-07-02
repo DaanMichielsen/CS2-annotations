@@ -20,7 +20,7 @@ vi.mock('../lib/settingsStore', () => ({
   deleteSetting: vi.fn((key: string) => Promise.resolve(settings.delete(key))),
 }))
 
-import { createTauriAdapter } from './TauriAdapter'
+import { createTauriAdapter, isInsideRoot } from './TauriAdapter'
 
 const files = new Map<string, string>()
 
@@ -104,5 +104,64 @@ describe('createTauriAdapter — guide CRUD', () => {
     const adapter = createTauriAdapter()
     const result = await adapter.createGuide({ filename: '///', mapName: '' })
     expect(result.error).toMatch(/invalid guide name/i)
+  })
+})
+
+describe('isInsideRoot', () => {
+  it('matches the root path itself', () => {
+    expect(isInsideRoot('C:\\annotations', 'C:\\annotations')).toBe(true)
+  })
+
+  it('accepts forward-slash candidate paths', () => {
+    expect(isInsideRoot('C:\\annotations', 'C:/annotations/g/g.txt')).toBe(true)
+  })
+
+  it('is case-insensitive', () => {
+    expect(isInsideRoot('C:\\Annotations', 'c:\\annotations\\g\\g.txt')).toBe(true)
+  })
+
+  it('rejects a sibling directory that merely shares a prefix', () => {
+    expect(isInsideRoot('C:\\annotations', 'C:\\annotations-other\\g\\g.txt')).toBe(false)
+  })
+})
+
+describe('createTauriAdapter — deleteGuide containment', () => {
+  it('rejects deleting a file in a sibling directory that shares the root as a string prefix', async () => {
+    const adapter = createTauriAdapter()
+    const siblingPath = 'C:\\annotations-other\\g\\g.txt'
+    files.set(siblingPath, 'contents')
+
+    const result = await adapter.deleteGuide(siblingPath)
+
+    expect(result.error).toBe('Can only delete local annotation files from the configured annotations folder.')
+    expect(files.has(siblingPath)).toBe(true)
+  })
+
+  it('deletes a file properly nested inside the annotations root', async () => {
+    const adapter = createTauriAdapter()
+    const insidePath = 'C:\\annotations\\g\\g.txt'
+    files.set(insidePath, 'contents')
+
+    const result = await adapter.deleteGuide(insidePath)
+
+    expect(result.error).toBeUndefined()
+    expect(files.has(insidePath)).toBe(false)
+  })
+
+  it('accepts inside-paths and rejects the sibling when the root has a trailing backslash', async () => {
+    settings.set('annotationsRoot', 'C:\\annotations\\')
+    const adapter = createTauriAdapter()
+
+    const insidePath = 'C:\\annotations\\g\\g.txt'
+    files.set(insidePath, 'contents')
+    const insideResult = await adapter.deleteGuide(insidePath)
+    expect(insideResult.error).toBeUndefined()
+    expect(files.has(insidePath)).toBe(false)
+
+    const siblingPath = 'C:\\annotations-other\\g\\g.txt'
+    files.set(siblingPath, 'contents')
+    const siblingResult = await adapter.deleteGuide(siblingPath)
+    expect(siblingResult.error).toBe('Can only delete local annotation files from the configured annotations folder.')
+    expect(files.has(siblingPath)).toBe(true)
   })
 })
