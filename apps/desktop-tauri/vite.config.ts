@@ -1,12 +1,12 @@
 import { resolve } from 'path'
-import { defineConfig } from 'vite'
+import { defineConfig, type UserConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 const sharedEntry = resolve(__dirname, '../../packages/shared/src/index.ts')
 const uiEntry = resolve(__dirname, '../../packages/ui/src/index.ts')
 
-export default defineConfig(async () => ({
+export default defineConfig(async (): Promise<UserConfig> => ({
   plugins: [tailwindcss(), react()],
   resolve: {
     alias: {
