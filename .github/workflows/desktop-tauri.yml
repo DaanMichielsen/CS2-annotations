@@ -1,0 +1,113 @@
+name: Desktop (Tauri) — Build and Test
+
+on:
+  push:
+    branches:
+      - 'tauri-desktop-rewrite'
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop-tauri/src-tauri
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: TypeScript unit tests
+        run: pnpm --filter @cs2ann/shared test
+      - run: pnpm --filter @cs2ann/desktop-tauri test
+
+      - name: Rust unit tests
+        working-directory: apps/desktop-tauri/src-tauri
+        run: cargo test
+
+      - name: Install tauri-driver
+        run: cargo install tauri-driver --locked
+
+      # Deviation from the original brief: msedgedriver.azureedge.net no
+      # longer resolves (see apps/desktop-tauri/e2e/README.md). Download
+      # from msedgedriver.microsoft.com instead, and probe both the 64-bit
+      # and x86 Program Files locations for msedge.exe since GitHub's
+      # windows-latest image has moved Edge between them across image
+      # revisions. The harness (e2e/wdio.conf.ts) prepends
+      # e2e/.drivers/ to PATH for the tauri-driver child process only, so
+      # the driver is extracted straight into that gitignored directory
+      # rather than fighting with the runner's global PATH.
+      - name: Install Edge WebDriver
+        working-directory: apps/desktop-tauri/e2e
+        shell: pwsh
+        run: |
+          $edgePath = "C:\Program Files\Microsoft\Edge\Application\msedge.exe"
+          if (-not (Test-Path $edgePath)) {
+            $edgePath = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+          }
+          $edgeVersion = (Get-Item $edgePath).VersionInfo.ProductVersion
+          Write-Host "Detected Edge $edgeVersion at $edgePath"
+          Invoke-WebRequest -Uri "https://msedgedriver.microsoft.com/$edgeVersion/edgedriver_win64.zip" -OutFile edgedriver_win64.zip
+          New-Item -ItemType Directory -Force -Path .drivers | Out-Null
+          Expand-Archive -Path edgedriver_win64.zip -DestinationPath .drivers -Force
+
+      # Deviation from the original brief: wdio.conf.ts's beforeSession
+      # hook only runs `cargo build --release --features
+      # tauri/custom-protocol` — it does not build the frontend. The Rust
+      # build embeds whatever is currently in apps/desktop-tauri/dist/, so
+      # that directory must contain a fresh Vite build before `pnpm e2e`
+      # runs, or the packaged app has no UI to load.
+      - name: Build frontend for E2E
+        run: pnpm --filter @cs2ann/desktop-tauri build
+
+      # Deviation from the original brief: a known race on second/later
+      # runs on the same runner leaves a stale app/driver process holding
+      # the WebView2 user-data directory, which then fails the next E2E
+      # run. Best-effort kill any leftovers before starting; a run where
+      # nothing is running (fresh runner) is expected to "fail" here and
+      # must not fail the job.
+      - name: Pre-E2E cleanup
+        shell: cmd
+        continue-on-error: true
+        run: |
+          taskkill /IM cs2ann-desktop-tauri.exe /F
+          taskkill /IM msedgedriver.exe /F
+          taskkill /IM tauri-driver.exe /F
+
+      - name: E2E smoke suite
+        working-directory: apps/desktop-tauri
+        run: pnpm e2e
+
+  build:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop-tauri/src-tauri
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build installer
+        working-directory: apps/desktop-tauri
+        run: pnpm tauri build
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cs2ann-desktop-tauri-installer
+          path: apps/desktop-tauri/src-tauri/target/release/bundle/nsis/*.exe
+          retention-days: 30
