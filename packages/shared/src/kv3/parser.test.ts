@@ -29,10 +29,9 @@ describe('parseKv3Text / serializeKv3Text round trip', () => {
     expect(reparsed).toEqual(root)
   })
 
-  it('strips a UTF-8 BOM before parsing', () => {
+  it('tolerates a leading UTF-8 BOM', () => {
     const withBom = '﻿' + SAMPLE_KV3
-    const stripped = withBom.charCodeAt(0) === 0xfeff ? withBom.slice(1) : withBom
-    const root = parseKv3Text(stripped) as Kv3Object
+    const root = parseKv3Text(withBom) as Kv3Object
     expect(root.MapName).toBe('de_dust2')
   })
 
