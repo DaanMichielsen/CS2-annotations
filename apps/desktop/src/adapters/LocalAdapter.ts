@@ -150,5 +150,21 @@ export function createLocalAdapter(): GuideAdapter {
         return window.electronAPI.mediaRemove(guideId, mediaId)
       },
     },
+
+    async cloudPushGuide(payload) {
+      return window.electronAPI.cloudPushGuide(payload)
+    },
+    async cloudPullGuide(payload) {
+      return window.electronAPI.cloudPullGuide(payload)
+    },
+    async cloudGetSyncState(filePath: string) {
+      return window.electronAPI.cloudGetSyncState(filePath)
+    },
+    async cloudDeleteGuide(cloudId: string) {
+      return window.electronAPI.cloudDeleteGuide(cloudId)
+    },
+    async getAuthState() {
+      return window.electronAPI.getAuthState()
+    },
   }
 }

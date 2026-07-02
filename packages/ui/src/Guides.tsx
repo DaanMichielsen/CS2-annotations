@@ -203,7 +203,7 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
   async function handleCloudPush() {
     if (!openGuide) return
     const state = cloudStatuses[openGuide.filePath]
-    await (window as any).electronAPI.cloudPushGuide({
+    await adapter.cloudPushGuide?.({
       filePath: openGuide.filePath,
       title: openGuide.name,
       map: (openGuide.root['MapName'] as string | undefined) ?? openGuide.mapName ?? '',
@@ -218,7 +218,7 @@ export default function Guides({ onGuideChange, cloudStatuses = {}, onCloudRefre
     if (!openGuide) return
     const state = cloudStatuses[openGuide.filePath]
     if (!state?.cloudId) return
-    await (window as any).electronAPI.cloudPullGuide({ cloudId: state.cloudId, filePath: openGuide.filePath })
+    await adapter.cloudPullGuide?.({ cloudId: state.cloudId, filePath: openGuide.filePath })
     onCloudRefresh?.()
   }
 

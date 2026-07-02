@@ -18,4 +18,8 @@ export type {
   SaveGuidePayload,
   AppendNodesPayload,
   CreateGuidePayload,
+  CloudPushPayload,
+  CloudPushResult,
+  CloudSyncStateResult,
+  AuthState,
 } from './adapter'

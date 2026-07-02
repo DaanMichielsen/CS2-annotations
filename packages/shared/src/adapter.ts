@@ -37,6 +37,37 @@ export interface CreateGuidePayload {
   root?: Record<string, unknown>
 }
 
+export interface CloudPushPayload {
+  filePath: string
+  title: string
+  map: string
+  nodeCount?: number
+  cloudId?: string
+  cloudVersion?: number
+}
+
+export interface CloudPushResult {
+  error?: string
+  conflict?: boolean
+  cloudVersion?: number
+  guide?: { id: string; version: number }
+}
+
+export interface CloudSyncStateResult {
+  synced: boolean
+  cloudId?: string
+  localVersion?: number
+  cloudVersion?: number
+  behind?: boolean
+  cloudAuthorId?: string | null
+}
+
+export interface AuthState {
+  token: string | null
+  name: string
+  avatar: string
+}
+
 export interface GuideAdapter {
   listGuides(): Promise<GuideSummary[]>
   createGuide(payload: CreateGuidePayload): Promise<{ error?: string; id?: string; loadName?: string }>
@@ -84,4 +115,10 @@ export interface GuideAdapter {
     update(guideId: string, mediaId: string, payload: UpdateMediaPayload): Promise<AnnotationMedia>
     remove(guideId: string, mediaId: string): Promise<void>
   }
+
+  cloudPushGuide?(payload: CloudPushPayload): Promise<CloudPushResult>
+  cloudPullGuide?(payload: { cloudId: string; filePath: string }): Promise<{ ok?: boolean; error?: string }>
+  cloudGetSyncState?(filePath: string): Promise<CloudSyncStateResult>
+  cloudDeleteGuide?(cloudId: string): Promise<{ error?: string }>
+  getAuthState?(): Promise<AuthState>
 }
