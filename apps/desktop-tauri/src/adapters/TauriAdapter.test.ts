@@ -56,6 +56,10 @@ beforeEach(() => {
         return []
       case 'unwatch_file':
         return null
+      case 'write_cs2_cfg':
+        return { cfgPath: 'C:\\fake\\cfg\\annotation_manager.cfg', content: a.command as string }
+      case 'plugin:clipboard-manager|write_text':
+        return null
       default:
         throw new Error(`unmocked command: ${cmd}`)
     }
@@ -181,5 +185,15 @@ describe('createTauriAdapter — settings', () => {
   it('defaults cfgKeybind to f8', async () => {
     const adapter = createTauriAdapter()
     expect(await adapter.getCfgKeybind?.()).toBe('f8')
+  })
+})
+
+describe('createTauriAdapter — cs2', () => {
+  it('writes the command to the cfg file via the Rust command', async () => {
+    const adapter = createTauriAdapter()
+    await adapter.setAnnotationsRoot?.('C:\\Steam\\steamapps\\common\\Counter-Strike Global Offensive\\game\\csgo\\annotations\\local')
+    const result = await adapter.cs2?.writeCommand('sv_cheats 1')
+    expect(result?.error).toBeUndefined()
+    expect(result?.cfgPath).toContain('annotation_manager.cfg')
   })
 })

@@ -1,4 +1,8 @@
 import { invoke } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
+import { writeText } from '@tauri-apps/plugin-clipboard-manager'
+import { revealItemInDir } from '@tauri-apps/plugin-opener'
+import { open } from '@tauri-apps/plugin-shell'
 import {
   parseKv3Text,
   serializeKv3Text,
@@ -249,6 +253,58 @@ export function createTauriAdapter(): GuideAdapter {
         | { path: string; annotationsRoot: string; workshopContentPath: string }
         | { error: string }
       >('detect_steam_path')
+    },
+
+    async launchCS2() {
+      try {
+        await open('steam://run/730')
+        return {}
+      } catch (err) {
+        return { error: err instanceof Error ? err.message : String(err) }
+      }
+    },
+
+    cs2: {
+      async writeCommand(command: string) {
+        const annotationsRoot = (await getSetting<string>('annotationsRoot')) ?? ''
+        try {
+          const result = await invoke<{ cfgPath: string; content: string }>('write_cs2_cfg', {
+            annotationsRoot,
+            command,
+          })
+          await writeText(command)
+          return result
+        } catch (err) {
+          return { error: err instanceof Error ? err.message : String(err) }
+        }
+      },
+      watchFile(filePath: string) {
+        void invoke('watch_file', { path: filePath })
+      },
+      unwatchFile() {
+        void invoke('unwatch_file')
+      },
+      onFileChanged(callback: (filePath: string) => void) {
+        let unlisten: (() => void) | undefined
+        void listen<string>('guide-file-changed', (event) => callback(event.payload)).then((fn) => {
+          unlisten = fn
+        })
+        return () => unlisten?.()
+      },
+    },
+
+    clipboard: {
+      async write(text: string) {
+        try {
+          await writeText(text)
+          return {}
+        } catch (err) {
+          return { error: err instanceof Error ? err.message : String(err) }
+        }
+      },
+      async showInFolder(path: string) {
+        await revealItemInDir(path)
+      },
     },
   }
 }

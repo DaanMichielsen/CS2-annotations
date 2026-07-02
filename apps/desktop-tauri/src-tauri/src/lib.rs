@@ -1,5 +1,6 @@
 mod commands;
 
+use commands::cs2::write_cs2_cfg;
 use commands::fs_ops::{copy_file, delete_dir_if_empty, delete_file, list_dir, path_exists, read_text_file, write_text_file};
 use commands::steam::detect_steam_path;
 use commands::watcher::{unwatch_file, watch_file, WatcherState};
@@ -30,6 +31,7 @@ pub fn run() {
             detect_steam_path,
             watch_file,
             unwatch_file,
+            write_cs2_cfg,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
