@@ -109,6 +109,13 @@ describe('createTauriAdapter — guide CRUD', () => {
     const result = await adapter.createGuide({ filename: '///', mapName: '' })
     expect(result.error).toMatch(/invalid guide name/i)
   })
+
+  it('resolves to an {error} instead of rejecting when the annotations folder is not set', async () => {
+    settings.delete('annotationsRoot')
+    const adapter = createTauriAdapter()
+    const result = await adapter.createGuide({ filename: 'x' })
+    expect(result.error).toMatch(/Annotations folder not set/)
+  })
 })
 
 describe('isInsideRoot', () => {

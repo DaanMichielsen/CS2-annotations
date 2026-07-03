@@ -169,12 +169,20 @@ export async function cloudGetAllSyncStates(filePaths: string[]) {
         continue
       }
       // Electron distinguishes "synced" from "local_ahead" here via
-      // fs.statSync(filePath).mtimeMs vs lastPushed. There's no Rust `stat`
-      // command exposed yet, so we can't compare mtimes — approximate with
-      // lastPushed alone: any successful push at all reads as synced, and a
-      // guide that was never pushed (but somehow has a cloudId) reads as
-      // local_ahead so it doesn't silently look "done".
-      states[filePath] = { status: lastPushed > 0 ? 'synced' : 'local_ahead', cloudId, cloudVersion: cloudGuide.version }
+      // fs.statSync(filePath).mtimeMs vs lastPushed (apps/desktop/electron/main/index.ts:841-847).
+      // Mirror that exactly via the Rust `stat_mtime_ms` command: a file
+      // modified after its last successful push is locally-edited
+      // ("local_ahead"); otherwise it's synced. If the stat call fails
+      // (e.g. the file was moved/deleted underneath us), fall back to
+      // "synced" to match Electron's catch branch.
+      let status: string
+      try {
+        const mtime = await invoke<number>('stat_mtime_ms', { path: filePath })
+        status = lastPushed > 0 && mtime > lastPushed ? 'local_ahead' : 'synced'
+      } catch {
+        status = 'synced'
+      }
+      states[filePath] = { status, cloudId, cloudVersion: cloudGuide.version }
     }
     return { states }
   } catch {

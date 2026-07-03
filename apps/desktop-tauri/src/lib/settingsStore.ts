@@ -17,7 +17,13 @@ function getStore(): Promise<Store> {
     // The installed `StoreOptions` type marks `defaults` as required even
     // though the plugin treats it as optional at runtime; pass an empty
     // object so we don't seed any keys while still satisfying the type.
-    storePromise = load(STORE_PATH, { autoSave: true, defaults: {} })
+    // If `load()` rejects (e.g. a transient IPC failure), clear the cached
+    // promise so the next call retries instead of permanently memoizing the
+    // rejection and bricking settings access until restart.
+    storePromise = load(STORE_PATH, { autoSave: true, defaults: {} }).catch((e) => {
+      storePromise = null
+      throw e
+    })
   }
   return storePromise
 }

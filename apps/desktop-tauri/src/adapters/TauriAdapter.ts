@@ -93,23 +93,27 @@ export function createTauriAdapter(): GuideAdapter {
     },
 
     async createGuide(payload: CreateGuidePayload) {
-      const rootPath = await getAnnotationsRootOrThrow()
-      const safeName = toLocalGuideName(payload.filename)
-      if (!safeName) {
-        return { error: 'Invalid guide name. Use letters, numbers, underscores or hyphens (no spaces).' }
-      }
-      const dirPath = `${rootPath}\\${safeName}`
-      const filePath = `${dirPath}\\${safeName}.txt`
-      if (await invoke<boolean>('path_exists', { path: filePath })) {
-        return { error: `Guide "${safeName}" already exists.` }
-      }
+      try {
+        const rootPath = await getAnnotationsRootOrThrow()
+        const safeName = toLocalGuideName(payload.filename)
+        if (!safeName) {
+          return { error: 'Invalid guide name. Use letters, numbers, underscores or hyphens (no spaces).' }
+        }
+        const dirPath = `${rootPath}\\${safeName}`
+        const filePath = `${dirPath}\\${safeName}.txt`
+        if (await invoke<boolean>('path_exists', { path: filePath })) {
+          return { error: `Guide "${safeName}" already exists.` }
+        }
 
-      const root: Kv3Object = { MapName: payload.mapName ?? '', ScreenText: {}, Nodes: [] }
-      if (payload.nodes && payload.nodesKey) {
-        setNodesInRoot(root, payload.nodes, payload.nodesKey)
+        const root: Kv3Object = { MapName: payload.mapName ?? '', ScreenText: {}, Nodes: [] }
+        if (payload.nodes && payload.nodesKey) {
+          setNodesInRoot(root, payload.nodes, payload.nodesKey)
+        }
+        await writeAnnotationFile(filePath, serializeKv3Text(root))
+        return { loadName: safeName, id: filePath }
+      } catch (err) {
+        return { error: err instanceof Error ? err.message : String(err) }
       }
-      await writeAnnotationFile(filePath, serializeKv3Text(root))
-      return { loadName: safeName, id: filePath }
     },
 
     async loadGuide(id: string): Promise<LoadedGuide | { error: string }> {
@@ -294,11 +298,31 @@ export function createTauriAdapter(): GuideAdapter {
         void invoke('unwatch_file')
       },
       onFileChanged(callback: (filePath: string) => void) {
-        let unlisten: (() => void) | undefined
-        void listen<string>('guide-file-changed', (event) => callback(event.payload)).then((fn) => {
-          unlisten = fn
+        // `listen()` is async, so `unlisten` doesn't exist yet when this
+        // returns. Under React StrictMode the effect that calls this can be
+        // cleaned up before `listen()` resolves — without the `cancelled`
+        // flag that cleanup would be a no-op and the listener would leak
+        // forever. `released` guards against calling `unlisten` twice (once
+        // from the pre-resolve cancel check, once from the returned cleanup)
+        // if both fire.
+        let cancelled = false
+        let released = false
+        const listening = listen<string>('guide-file-changed', (event) => callback(event.payload))
+        listening.then((unlisten) => {
+          if (cancelled && !released) {
+            released = true
+            unlisten()
+          }
         })
-        return () => unlisten?.()
+        return () => {
+          cancelled = true
+          void listening.then((unlisten) => {
+            if (!released) {
+              released = true
+              unlisten()
+            }
+          })
+        }
       },
     },
 

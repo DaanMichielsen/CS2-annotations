@@ -4,6 +4,26 @@ on:
   push:
     branches:
       - 'tauri-desktop-rewrite'
+      - 'master'
+    # GitHub Actions applies `paths` as a single filter across the whole
+    # `push` trigger — it can't be scoped to only one of the branches above.
+    # In practice every commit on `tauri-desktop-rewrite` touches these
+    # paths anyway (it's the branch this app is developed on), so this is
+    # equivalent to "unfiltered" for that branch while giving `master`
+    # push-triggered CI only for changes that matter to this app.
+    paths:
+      - 'apps/desktop-tauri/**'
+      - 'packages/shared/**'
+      - 'packages/ui/**'
+      - '.github/workflows/desktop-tauri.yml'
+  pull_request:
+    branches:
+      - 'master'
+    paths:
+      - 'apps/desktop-tauri/**'
+      - 'packages/shared/**'
+      - 'packages/ui/**'
+      - '.github/workflows/desktop-tauri.yml'
   workflow_dispatch: {}
 
 jobs:
@@ -21,7 +41,7 @@ jobs:
           workspaces: apps/desktop-tauri/src-tauri
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: TypeScript unit tests
         run: pnpm --filter @cs2ann/shared test
@@ -99,7 +119,7 @@ jobs:
           workspaces: apps/desktop-tauri/src-tauri
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build installer
         working-directory: apps/desktop-tauri

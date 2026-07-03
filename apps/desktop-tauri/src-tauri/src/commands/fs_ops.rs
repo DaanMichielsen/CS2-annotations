@@ -60,6 +60,16 @@ pub fn path_exists(path: String) -> bool {
     Path::new(&path).exists()
 }
 
+#[tauri::command]
+pub fn stat_mtime_ms(path: String) -> Result<f64, String> {
+    let metadata = fs::metadata(&path).map_err(|e| e.to_string())?;
+    let modified = metadata.modified().map_err(|e| e.to_string())?;
+    let duration = modified
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|e| e.to_string())?;
+    Ok(duration.as_millis() as f64)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -203,5 +213,27 @@ mod tests {
     fn path_exists_false_for_missing_path() {
         let base = unique_temp_dir("exists-missing");
         assert!(!path_exists(base));
+    }
+
+    #[test]
+    fn stat_mtime_ms_returns_positive_mtime_for_existing_file() {
+        let base = unique_temp_dir("mtime");
+        fs::create_dir_all(&base).expect("failed to create base temp dir");
+        let file_path = Path::new(&base).join("file.txt").to_string_lossy().to_string();
+        write_text_file(file_path.clone(), "hello".to_string()).expect("write should succeed");
+
+        let mtime = stat_mtime_ms(file_path).expect("stat should succeed for existing file");
+        assert!(mtime > 0.0, "mtime should be a positive number of milliseconds since epoch");
+
+        let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn stat_mtime_ms_missing_returns_err() {
+        let base = unique_temp_dir("mtime-missing");
+        let missing = Path::new(&base).join("does-not-exist.txt").to_string_lossy().to_string();
+
+        let result = stat_mtime_ms(missing);
+        assert!(result.is_err(), "stat of a missing path should return Err");
     }
 }
