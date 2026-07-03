@@ -11,7 +11,7 @@ import type {
   CloudSyncStateResult,
 } from '@cs2ann/shared'
 
-const WEB_API = 'https://cs2annotations.com/api'
+export const WEB_API = 'https://cs2annotations.com/api'
 
 async function authHeaders(): Promise<Record<string, string>> {
   const token = await getSetting<string>('authToken')
@@ -223,8 +223,8 @@ export async function featuredFork(guideId: string, title: string) {
     if (await invoke<boolean>('path_exists', { path: filePath })) {
       return { error: `A guide named "${safeName}" already exists in your annotations folder.` }
     }
-    const cleanContent = content.startsWith('﻿') ? content.slice(1) : content
-    await invoke('write_text_file', { path: filePath, content: '﻿' + cleanContent })
+    const cleanContent = content.startsWith('\uFEFF') ? content.slice(1) : content
+    await invoke('write_text_file', { path: filePath, content: '\uFEFF' + cleanContent })
     await setSetting(`cloudId:${filePath}`, guideId)
     await setSetting(`cloudVersion:${filePath}`, 1)
     return { ok: true, filePath }
@@ -243,8 +243,8 @@ export async function savedPullGuide(payload: { guideId: string; title: string; 
     const content = await res.text()
     const safeName = toLocalGuideName(payload.title) || 'saved_guide'
     const filePath = `${annotationsRoot}\\${safeName}\\${safeName}.txt`
-    const cleanContent = content.startsWith('﻿') ? content.slice(1) : content
-    await invoke('write_text_file', { path: filePath, content: '﻿' + cleanContent })
+    const cleanContent = content.startsWith('\uFEFF') ? content.slice(1) : content
+    await invoke('write_text_file', { path: filePath, content: '\uFEFF' + cleanContent })
     return { ok: true, filePath }
   } catch (err) {
     return { error: err instanceof Error ? err.message : String(err) }

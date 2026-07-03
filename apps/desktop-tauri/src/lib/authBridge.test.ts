@@ -33,7 +33,9 @@ vi.mock('@tauri-apps/plugin-shell', () => ({
   open: vi.fn(() => Promise.resolve()),
 }))
 
-import { getAuthState, signOut, onAuthStateChanged } from './authBridge'
+// Note: the cold-start test below deliberately does NOT use this static
+// import — see the comment on that test.
+import { getAuthState, signOut } from './authBridge'
 
 beforeEach(() => {
   settings.clear()
@@ -59,7 +61,21 @@ describe('authBridge', () => {
   // Cold start: the OS launched this process *because of* the deep link, so
   // there's no live `deep-link://new-url` event for `onOpenUrl` to catch —
   // the URL only exists as this process's own argv, exposed via `getCurrent`.
+  //
+  // CONSTRAINT: authBridge keeps a module-level `deepLinkRegistered` flag
+  // that never resets between tests — only the *first* `onAuthStateChanged`
+  // call on a given module instance registers the deep-link handlers and
+  // replays `getCurrent()`. Any other test that called `onAuthStateChanged`
+  // on the statically-imported instance before this test would silently
+  // consume that one-shot registration. To stay order-independent, this test
+  // resets the module registry and imports a fresh authBridge instance whose
+  // flag is guaranteed to be false. (The `vi.mock` factories re-run on the
+  // fresh import but return the same hoisted mock objects, so the settings
+  // map and getCurrent/onOpenUrl mocks are shared with the rest of the file.)
   it('persists the token from getCurrent() on cold start', async () => {
+    vi.resetModules()
+    const { getAuthState: freshGetAuthState, onAuthStateChanged } = await import('./authBridge')
+
     getCurrentMock.mockResolvedValue([
       'cs2ann-tauri://auth/callback?token=cold-start-tok&name=Cold&avatar=',
     ])
@@ -75,7 +91,7 @@ describe('authBridge', () => {
     await new Promise((resolve) => setTimeout(resolve, 0))
 
     expect(received).toEqual([{ token: 'cold-start-tok', name: 'Cold', avatar: '' }])
-    const state = await getAuthState()
+    const state = await freshGetAuthState()
     expect(state).toEqual({ token: 'cold-start-tok', name: 'Cold', avatar: '' })
   })
 })

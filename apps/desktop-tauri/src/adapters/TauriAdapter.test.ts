@@ -134,6 +134,10 @@ describe('isInsideRoot', () => {
   it('rejects a sibling directory that merely shares a prefix', () => {
     expect(isInsideRoot('C:\\annotations', 'C:\\annotations-other\\g\\g.txt')).toBe(false)
   })
+
+  it('rejects a candidate that escapes the root via a `..` segment', () => {
+    expect(isInsideRoot('C:\\annotations', 'C:\\annotations\\..\\elsewhere\\g.txt')).toBe(false)
+  })
 })
 
 describe('createTauriAdapter — deleteGuide containment', () => {

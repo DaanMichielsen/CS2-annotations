@@ -129,25 +129,32 @@ mod tests {
 
     #[test]
     fn burst_of_sends_yields_exactly_one_fire_after_the_last_send() {
+        // Wider margins than the other tests: a starved CI runner can stall
+        // this thread between sends, and with 50ms spacing against a 100ms
+        // window a stall of just over 50ms lets the debouncer fire mid-burst
+        // and fail the `== 0` assertion below. 25ms spacing against a 200ms
+        // window gives an 8x margin instead of 2x.
+        const BURST_DEBOUNCE: Duration = Duration::from_millis(200);
+
         let counter = Arc::new(AtomicUsize::new(0));
         let counter_clone = Arc::clone(&counter);
-        let tx = spawn_debouncer(TEST_DEBOUNCE, move || {
+        let tx = spawn_debouncer(BURST_DEBOUNCE, move || {
             counter_clone.fetch_add(1, Ordering::SeqCst);
         });
 
-        // 5 sends spaced ~50ms apart, well under the 100ms debounce window,
+        // 5 sends spaced ~25ms apart, well under the 200ms debounce window,
         // so each one should reset the timer instead of firing.
         for _ in 0..5 {
             tx.send(()).unwrap();
-            sleep(Duration::from_millis(50));
+            sleep(Duration::from_millis(25));
         }
 
         // Immediately after the last send, no fire should have happened yet
         // (this is what distinguishes trailing-edge from leading-edge).
         assert_eq!(counter.load(Ordering::SeqCst), 0);
 
-        // Wait well past the debounce window (100ms) for the trailing fire.
-        sleep(Duration::from_millis(600));
+        // Wait well past the debounce window (200ms) for the trailing fire.
+        sleep(Duration::from_millis(1200));
         assert_eq!(counter.load(Ordering::SeqCst), 1);
     }
 

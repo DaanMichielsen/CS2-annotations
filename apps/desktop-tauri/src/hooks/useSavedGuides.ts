@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getAuthState, onAuthStateChanged } from '../lib/authBridge'
+import { WEB_API } from '../lib/cloudApi'
 
 export interface SavedGuide {
   savedId: string
@@ -12,8 +13,6 @@ export interface SavedGuide {
   authorName: string | null
   downloadUrl: string | null
 }
-
-const WEB_API = 'https://cs2annotations.com/api'
 
 export function useSavedGuides(): { guides: SavedGuide[]; loading: boolean; refresh: () => void } {
   const [guides, setGuides] = useState<SavedGuide[]>([])

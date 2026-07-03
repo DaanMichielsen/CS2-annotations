@@ -33,7 +33,7 @@ import { toLocalGuideName } from '../lib/guideNaming'
 import { scanLocalGuides, scanFeaturedWorkshopGuides, scanUserWorkshopGuides } from '../lib/guideScan'
 import { getSetting, setSetting, deleteSetting } from '../lib/settingsStore'
 
-const UTF8_BOM = '﻿'
+const UTF8_BOM = '\uFEFF'
 
 function stripBom(raw: string): string {
   return raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw
@@ -50,20 +50,30 @@ async function getAnnotationsRootOrThrow(): Promise<string> {
 }
 
 /**
+ * Lowercases, collapses `/` to `\` and strips trailing backslashes so two
+ * spellings of the same Windows path compare equal.
+ */
+function normalizePath(p: string): string {
+  let n = p.toLowerCase().replace(/\//g, '\\')
+  while (n.endsWith('\\')) n = n.slice(0, -1)
+  return n
+}
+
+/**
  * Returns true only if `candidate` is `root` itself or a path nested inside
  * it. Both inputs are normalized (lowercased, `/` collapsed to `\`, trailing
  * backslashes stripped) before comparison so this can't be fooled by a
  * sibling directory whose name merely starts with the same characters as
  * `root` (e.g. `C:\annotations-other\foo.txt` vs root `C:\annotations`).
+ * Candidates containing a `..` segment are rejected outright — a prefix
+ * check can't reason about where they actually resolve.
  */
 export function isInsideRoot(root: string, candidate: string): boolean {
-  const normalize = (p: string): string => {
-    let n = p.toLowerCase().replace(/\//g, '\\')
-    while (n.endsWith('\\')) n = n.slice(0, -1)
-    return n
+  const normalizedRoot = normalizePath(root)
+  const normalizedCandidate = normalizePath(candidate)
+  if (normalizedCandidate.includes('\\..\\') || normalizedCandidate.endsWith('\\..')) {
+    return false
   }
-  const normalizedRoot = normalize(root)
-  const normalizedCandidate = normalize(candidate)
   return (
     normalizedCandidate === normalizedRoot ||
     normalizedCandidate.startsWith(`${normalizedRoot}\\`)
@@ -185,7 +195,11 @@ export function createTauriAdapter(): GuideAdapter {
         const lastSlash = id.lastIndexOf('\\')
         if (lastSlash > 0) {
           const dirPath = id.slice(0, lastSlash)
-          await invoke('delete_dir_if_empty', { path: dirPath })
+          // Never target the annotations root itself — a file living directly
+          // in the root would otherwise make us try to delete the root folder.
+          if (normalizePath(dirPath) !== normalizePath(annotationsRoot)) {
+            await invoke('delete_dir_if_empty', { path: dirPath })
+          }
         }
         await deleteSetting(`cloudId:${id}`)
         await deleteSetting(`cloudVersion:${id}`)

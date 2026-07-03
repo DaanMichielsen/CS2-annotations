@@ -20,5 +20,9 @@ export type {
   SaveGuidePayload,
   AppendNodesPayload,
   CreateGuidePayload,
+  CloudPushPayload,
+  CloudPushResult,
+  CloudSyncStateResult,
+  AuthState,
 } from './adapter'
 export * from './annotation/mediaTypes'

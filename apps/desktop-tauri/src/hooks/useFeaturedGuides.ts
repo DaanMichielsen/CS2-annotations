@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { WEB_API } from '../lib/cloudApi'
 
 export interface FeaturedGuide {
   id: string
@@ -7,8 +8,6 @@ export interface FeaturedGuide {
   nodeCount: number
   credits: Array<{ handle: string; label: string | null }>
 }
-
-const WEB_API = 'https://cs2annotations.com/api'
 
 export function useFeaturedGuides(): { guides: FeaturedGuide[]; loading: boolean } {
   const [guides, setGuides] = useState<FeaturedGuide[]>([])
