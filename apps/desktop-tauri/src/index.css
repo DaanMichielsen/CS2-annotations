@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/* Tailwind v4 auto-detects sources only inside this package's root.
+   The bulk of the UI lives in the shared packages/ui workspace package
+   (aliased to its raw source in vite.config.ts), so its class names must
+   be declared as an explicit source or their utilities are never
+   generated. (The Electron app dodges this by carrying legacy component
+   copies inside its own src/ that happen to cover the same classes.) */
+@source "../../../packages/ui/src";
+
 @theme {
   --font-display: 'Rajdhani', system-ui, sans-serif;
   --font-body: 'IBM Plex Sans', system-ui, sans-serif;
