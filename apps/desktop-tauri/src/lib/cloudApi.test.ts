@@ -14,7 +14,7 @@ vi.mock('./settingsStore', () => ({
   deleteSetting: vi.fn((key: string) => Promise.resolve(settings.delete(key))),
 }))
 
-import { cloudGetSyncState } from './cloudApi'
+import { cloudGetSyncState, cloudListGuides, cloudPushGuide, media } from './cloudApi'
 
 beforeEach(() => {
   settings.clear()
@@ -45,5 +45,37 @@ describe('cloudGetSyncState', () => {
       expect.stringContaining('/guides/cloud-abc'),
       expect.objectContaining({ headers: { Authorization: 'Bearer tok-123' } })
     )
+  })
+})
+
+describe('cloudListGuides', () => {
+  it('returns an error object (not a rejection) when fetch rejects with a network error', async () => {
+    ;(fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new TypeError('Failed to fetch'))
+
+    const result = await cloudListGuides()
+
+    expect(result).toEqual({ error: 'Failed to fetch' })
+  })
+})
+
+describe('cloudPushGuide', () => {
+  it('returns an error object (not a rejection) when fetch rejects with a network error', async () => {
+    ;(fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new TypeError('Failed to fetch'))
+
+    const result = await cloudPushGuide({
+      filePath: 'C:\\guides\\foo.txt',
+      title: 'Foo',
+      map: 'de_dust2',
+      content: 'guide content',
+    })
+
+    expect(result).toEqual({ error: 'Failed to fetch' })
+  })
+})
+
+describe('media.remove', () => {
+  it('rejects with Not authenticated when no auth token is stored', async () => {
+    await expect(media.remove('guide-1', 'media-1')).rejects.toThrow('Not authenticated')
+    expect(fetch).not.toHaveBeenCalled()
   })
 })

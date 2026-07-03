@@ -322,9 +322,13 @@ export function createTauriAdapter(): GuideAdapter {
     // Electron's signature (no `content`). This wrapper reconciles the two by
     // reading the file here before delegating.
     async cloudPushGuide(payload: CloudPushPayload) {
-      const raw = await invoke<string>('read_text_file', { path: payload.filePath })
-      const content = stripBom(raw)
-      return cloudPushGuideImpl({ ...payload, content })
+      try {
+        const raw = await invoke<string>('read_text_file', { path: payload.filePath })
+        const content = stripBom(raw)
+        return await cloudPushGuideImpl({ ...payload, content })
+      } catch (err) {
+        return { error: err instanceof Error ? err.message : String(err) }
+      }
     },
     cloudPullGuide,
     cloudGetSyncState,
