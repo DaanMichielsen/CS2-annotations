@@ -18,7 +18,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data: asset: http://asset.localhost; media-src 'self' https: blob:; connect-src 'self' https://cs2annotations.com https://*.public.blob.vercel-storage.com ipc: http://ipc.localhost; font-src 'self' data:"
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data: asset: http://asset.localhost; media-src 'self' https: blob:; connect-src 'self' https://cs2annotations.com https://*.public.blob.vercel-storage.com ipc: http://ipc.localhost; font-src 'self' data:; frame-src https://www.youtube-nocookie.com"
     }
   },
   "bundle": {
