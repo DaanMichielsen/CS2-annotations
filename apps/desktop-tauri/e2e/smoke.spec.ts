@@ -29,10 +29,16 @@ const GUIDE_NAME = 'E2E_Smoke_Guide'
 
 describe('CS2 Annotations Manager (Tauri) — smoke', () => {
   it('launches and shows the guides UI', async () => {
+    // <body> exists before React paints anything, so waitForExist alone
+    // races the first render on cold machines (observed as a blank-body
+    // failure on a fresh CI runner). Poll until text actually appears.
     const body = await $('body')
     await body.waitForExist({ timeout: 15000 })
-    const text = await body.getText()
-    expect(text).not.toBe('')
+    await browser.waitUntil(async () => (await body.getText()) !== '', {
+      timeout: 30000,
+      timeoutMsg: 'app never rendered any text into <body>',
+    })
+    expect(await body.getText()).not.toBe('')
   })
 
   it('sets the annotations folder in Settings', async () => {
