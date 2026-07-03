@@ -1,4 +1,5 @@
 import path from 'node:path'
+import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process'
 
@@ -8,6 +9,17 @@ import { spawn, spawnSync, type ChildProcess } from 'node:child_process'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 let tauriDriver: ChildProcess | undefined
+
+// Scratch annotations root the "creates a guide" E2E scenario points the
+// app at via the Settings UI (smoke.spec.ts). Defined here (not just in the
+// spec) so onPrepare below can guarantee a clean, pre-existing empty
+// directory before every run — the Tauri `write_text_file` command does
+// `create_dir_all` on write, so the directory would get created lazily
+// anyway, but starting from a clean slate makes the "create guide" scenario
+// idempotent across repeated local runs (a leftover E2E_Smoke_Guide folder
+// from a prior run would otherwise make `createGuide` fail with "already
+// exists").
+export const E2E_ANNOTATIONS_ROOT = 'C:\\Temp\\cs2ann-tauri-e2e\\annotations'
 
 const APP_BINARY = path.resolve(
   __dirname,
@@ -45,6 +57,14 @@ export const config: WebdriverIO.Config = {
   reporters: ['spec'],
   framework: 'mocha',
   mochaOpts: { ui: 'bdd', timeout: 60000 },
+
+  onPrepare: () => {
+    // Clean slate for the "sets the annotations folder" / "creates a guide"
+    // scenario in smoke.spec.ts — remove any guide left over from a
+    // previous local run, then recreate the empty directory.
+    fs.rmSync(E2E_ANNOTATIONS_ROOT, { recursive: true, force: true })
+    fs.mkdirSync(E2E_ANNOTATIONS_ROOT, { recursive: true })
+  },
 
   beforeSession: () => {
     // Deviation from brief: a plain `cargo build --release` compiles the
