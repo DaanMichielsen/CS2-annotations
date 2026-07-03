@@ -1,5 +1,5 @@
 import { open } from '@tauri-apps/plugin-shell'
-import { onOpenUrl } from '@tauri-apps/plugin-deep-link'
+import { getCurrent, onOpenUrl } from '@tauri-apps/plugin-deep-link'
 import type { AuthState } from '@cs2ann/shared'
 import { getSetting, setSetting, deleteSetting } from './settingsStore'
 
@@ -49,20 +49,38 @@ function parseCallbackUrl(url: string): AuthState | null {
   }
 }
 
+async function handleUrls(urls: string[]): Promise<void> {
+  for (const url of urls) {
+    const state = parseCallbackUrl(url)
+    if (!state) continue
+    await setSetting('authToken', state.token)
+    await setSetting('authName', state.name)
+    await setSetting('authAvatar', state.avatar)
+    listeners.forEach((l) => l(state))
+  }
+}
+
 export function onAuthStateChanged(callback: AuthListener): () => void {
   listeners.add(callback)
 
   if (!deepLinkRegistered) {
     deepLinkRegistered = true
-    void onOpenUrl(async (urls) => {
-      for (const url of urls) {
-        const state = parseCallbackUrl(url)
-        if (!state) continue
-        await setSetting('authToken', state.token)
-        await setSetting('authName', state.name)
-        await setSetting('authAvatar', state.avatar)
-        listeners.forEach((l) => l(state))
-      }
+
+    // WARM START: the app is already running and a second launch (e.g. the
+    // OS handling a `cs2ann-tauri://` deep link) forwarded its argv to us —
+    // see the `deep-link` feature on tauri-plugin-single-instance in
+    // src-tauri/src/lib.rs. That forwarding re-emits `deep-link://new-url`,
+    // which this listener picks up for the lifetime of the app.
+    void onOpenUrl((urls) => {
+      void handleUrls(urls)
+    })
+
+    // COLD START: the OS launched *this* process because of a deep link, so
+    // there is no "second instance" to forward anything — the URL only
+    // exists as this process's own CLI argv. `onOpenUrl` never fires for it;
+    // it must be read once via `getCurrent()` on startup.
+    void getCurrent().then((urls) => {
+      if (urls) void handleUrls(urls)
     })
   }
 

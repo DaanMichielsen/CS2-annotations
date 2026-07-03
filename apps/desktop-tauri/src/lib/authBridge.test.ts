@@ -14,10 +14,31 @@ vi.mock('./settingsStore', () => ({
   deleteSetting: vi.fn((key: string) => Promise.resolve(settings.delete(key))),
 }))
 
-import { getAuthState, signOut } from './authBridge'
+// `@tauri-apps/plugin-deep-link` talks over Tauri's IPC (`invoke`/`listen`),
+// which isn't available under jsdom/vitest, so mock it wholesale. Tests below
+// override `getCurrentMock`'s resolved value per-case; `onOpenUrlMock`
+// defaults to a no-op "never fires" listener like the real one would be for
+// a cold-started process (no live deep-link event, only the argv snapshot).
+const { getCurrentMock, onOpenUrlMock } = vi.hoisted(() => ({
+  getCurrentMock: vi.fn(() => Promise.resolve<string[] | null>(null)),
+  onOpenUrlMock: vi.fn(() => Promise.resolve(() => {})),
+}))
+
+vi.mock('@tauri-apps/plugin-deep-link', () => ({
+  getCurrent: getCurrentMock,
+  onOpenUrl: onOpenUrlMock,
+}))
+
+vi.mock('@tauri-apps/plugin-shell', () => ({
+  open: vi.fn(() => Promise.resolve()),
+}))
+
+import { getAuthState, signOut, onAuthStateChanged } from './authBridge'
 
 beforeEach(() => {
   settings.clear()
+  getCurrentMock.mockReset().mockResolvedValue(null)
+  onOpenUrlMock.mockReset().mockResolvedValue(() => {})
 })
 
 describe('authBridge', () => {
@@ -33,5 +54,28 @@ describe('authBridge', () => {
     await signOut()
     const state = await getAuthState()
     expect(state.token).toBeNull()
+  })
+
+  // Cold start: the OS launched this process *because of* the deep link, so
+  // there's no live `deep-link://new-url` event for `onOpenUrl` to catch —
+  // the URL only exists as this process's own argv, exposed via `getCurrent`.
+  it('persists the token from getCurrent() on cold start', async () => {
+    getCurrentMock.mockResolvedValue([
+      'cs2ann-tauri://auth/callback?token=cold-start-tok&name=Cold&avatar=',
+    ])
+
+    const received: Array<{ token: string | null; name: string; avatar: string }> = []
+    onAuthStateChanged((state) => {
+      received.push(state)
+    })
+
+    // handleUrls() runs off the getCurrent() promise chain (several chained
+    // awaits: getCurrent() itself, then one per setSetting call), so flush
+    // past it with a macrotask tick rather than guessing a microtask count.
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(received).toEqual([{ token: 'cold-start-tok', name: 'Cold', avatar: '' }])
+    const state = await getAuthState()
+    expect(state).toEqual({ token: 'cold-start-tok', name: 'Cold', avatar: '' })
   })
 })
