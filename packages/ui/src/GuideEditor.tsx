@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { Upload, Download, CheckCircle, RefreshCw } from 'lucide-react'
-import type { AnnotationNode, NodeType, GrenadeType, TextDescObject, AnnotationMedia, MediaSlot } from '@cs2ann/shared'
+import type { AnnotationNode, NodeType, GrenadeType, TextDescObject, AnnotationMedia } from '@cs2ann/shared'
 import type { GuideSyncState } from '@cs2ann/shared'
 import { GRENADE_TYPES, defaultTextDesc, defaultPosition, defaultAngles, generateId } from '@cs2ann/shared'
 
