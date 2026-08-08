@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getApiUser } from '@/lib/api-auth'
+import { revalidateTag } from 'next/cache'
 import { db } from '@/lib/db'
+import { CACHE_TAG_GUIDES } from '@/lib/queries'
 import { uploadGuideBlob, deleteGuideBlob, getGuideBlobUrl } from '@/lib/blob'
 
 export async function GET(
@@ -77,6 +79,7 @@ export async function PUT(
     },
   })
 
+  revalidateTag(CACHE_TAG_GUIDES)
   return NextResponse.json({ guide: updated })
 }
 
@@ -94,6 +97,7 @@ export async function DELETE(
 
   await deleteGuideBlob(guide.blobKey)
   await db.guide.delete({ where: { id } })
+  revalidateTag(CACHE_TAG_GUIDES)
 
   return NextResponse.json({ ok: true })
 }

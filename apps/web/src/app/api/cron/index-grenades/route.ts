@@ -1,6 +1,8 @@
 // apps/web/src/app/api/cron/index-grenades/route.ts
 import { type NextRequest, NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { db } from '@/lib/db'
+import { CACHE_TAG_GUIDES, CACHE_TAG_LIBRARY } from '@/lib/queries'
 import { getGuideBlobUrl } from '@/lib/blob'
 import { parseKv3Text, kv3ToNodes, extractNodesKey, inferThrowType } from '@cs2ann/shared/web'
 import type { Kv3Object, AnnotationNode } from '@cs2ann/shared/web'
@@ -129,6 +131,12 @@ export async function GET(request: NextRequest) {
       create: { key: CURSOR_KEY, value: latestDate.toISOString() },
       update: { value: latestDate.toISOString() },
     })
+  }
+
+  // The nightly re-index rewrites the grenade rows behind /library.
+  if (processed > 0 || cleaned > 0) {
+    revalidateTag(CACHE_TAG_LIBRARY)
+    revalidateTag(CACHE_TAG_GUIDES)
   }
 
   return NextResponse.json({ processed, cleaned })

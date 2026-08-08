@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
+import { revalidateTag } from 'next/cache'
 import { db } from '@/lib/db'
+import { CACHE_TAG_GUIDES } from '@/lib/queries'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -30,5 +32,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     _sum: { value: true },
   })
 
+  // `score` is part of the cached card data on / and /guides.
+  revalidateTag(CACHE_TAG_GUIDES)
   return NextResponse.json({ score: agg._sum.value ?? 0 })
 }

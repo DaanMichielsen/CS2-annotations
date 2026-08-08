@@ -1,11 +1,17 @@
+'use client'
 import Link from 'next/link'
 import Image from 'next/image'
-import { auth } from '@/lib/auth'
+import { useSession } from 'next-auth/react'
 import { handleSignOut } from '@/app/actions'
 import { LeftNavLinks, RightNavLinks } from '@/components/NavLinks'
 
-export default async function TopNav() {
-  const session = await auth()
+// Reads the session client-side rather than via auth(). A server-side auth()
+// call here would opt every page that renders the nav out of static rendering.
+export default function TopNav() {
+  const { data: session, status } = useSession()
+  // The session now resolves after hydration, so suppress the signed-out state
+  // while it is still loading — otherwise a signed-in user sees "Sign in" flash.
+  const pending = status === 'loading'
 
   return (
     <nav className="sticky top-0 z-50 border-b border-zinc-800/60 bg-zinc-950/80 backdrop-blur-md">
@@ -53,6 +59,9 @@ export default async function TopNav() {
                 </button>
               </form>
             </>
+          ) : pending ? (
+            // Reserve the button's footprint so the nav doesn't shift on hydration.
+            <span aria-hidden className="text-xs px-4 py-1.5 rounded invisible">Sign in</span>
           ) : (
             <Link
               href="/auth/signin"

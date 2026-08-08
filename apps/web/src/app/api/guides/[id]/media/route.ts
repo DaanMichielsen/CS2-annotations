@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { db } from '@/lib/db'
+import { CACHE_TAG_GUIDES } from '@/lib/queries'
 import { canReadMedia, canCreateMedia } from '@/lib/mediaAuth'
 import { VALID_SLOTS, type MediaSlot } from '@cs2ann/shared/web'
 
@@ -50,5 +52,7 @@ export async function POST(
       caption: caption ?? null,
     },
   })
+  // mediaCount is part of the cached card data.
+  revalidateTag(CACHE_TAG_GUIDES)
   return NextResponse.json(record, { status: 201 })
 }

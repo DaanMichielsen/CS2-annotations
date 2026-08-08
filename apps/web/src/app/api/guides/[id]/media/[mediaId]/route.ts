@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { del } from '@vercel/blob'
+import { revalidateTag } from 'next/cache'
 import { db } from '@/lib/db'
+import { CACHE_TAG_GUIDES } from '@/lib/queries'
 import { canEditMedia } from '@/lib/mediaAuth'
 
 export async function PUT(
@@ -27,5 +29,6 @@ export async function DELETE(
   if (!record) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (record.blobKey) await del(record.url)
   await db.annotationMedia.delete({ where: { id: mediaId } })
+  revalidateTag(CACHE_TAG_GUIDES)
   return new NextResponse(null, { status: 204 })
 }

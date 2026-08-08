@@ -23,8 +23,16 @@ export function useFeaturedGuides(): { guides: FeaturedGuide[]; loading: boolean
         .finally(() => setLoading(false))
     }
     fetchGuides()
-    const interval = setInterval(fetchGuides, 5 * 60 * 1000)
-    return () => clearInterval(interval)
+
+    // Featured guides change rarely; a 5-minute poll kept Neon's compute from
+    // ever scaling to zero. Mirrors apps/desktop-tauri.
+    const onFocus = () => fetchGuides()
+    window.addEventListener('focus', onFocus)
+    const interval = setInterval(fetchGuides, 30 * 60 * 1000)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      clearInterval(interval)
+    }
   }, [])
 
   return { guides, loading }

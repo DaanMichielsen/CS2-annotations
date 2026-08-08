@@ -1,32 +1,18 @@
-import { auth } from '@/lib/auth'
-import { db } from '@/lib/db'
 import Image from 'next/image'
 import Link from 'next/link'
 import GuideCard from '@/components/GuideCard'
+import HeroCta from '@/components/HeroCta'
 import MapCarousel from '@/components/MapCarousel'
 import TopNav from '@/components/TopNav'
+import { getRecentPublicGuides } from '@/lib/queries'
 
 export const revalidate = 120
 
+// No auth() call — the signed-in/signed-out CTA lives in <HeroCta/>, which
+// resolves the session client-side. That keeps this route statically rendered
+// so crawler traffic is served from the cache and never reaches Postgres.
 export default async function HomePage() {
-  const session = await auth()
-  const user = session?.user
-
-  const recentGuides = await db.guide.findMany({
-    where: { isPublic: true },
-    include: {
-      user: { select: { username: true, avatar: true, name: true } },
-      ratings: { select: { value: true } },
-      _count: { select: { annotationMedia: true } },
-    },
-    orderBy: { updatedAt: 'desc' },
-    take: 6,
-  })
-
-  const guidesWithScore = recentGuides.map((g) => ({
-    ...g,
-    score: g.ratings.reduce((acc, r) => acc + r.value, 0),
-  }))
+  const guidesWithScore = await getRecentPublicGuides(6)
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
@@ -57,30 +43,7 @@ export default async function HomePage() {
                 Annotated nade guides built in-game and shared with the community.
                 Study lineups, discover new spots, master every map.
               </p>
-              <div className="flex gap-3 flex-wrap">
-                <Link
-                  href="/guides"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-lg transition-colors text-sm"
-                >
-                  Browse Guides
-                </Link>
-                {!user && (
-                  <Link
-                    href="/auth/signin"
-                    className="px-6 py-3 border border-zinc-700 hover:border-zinc-500 text-zinc-300 hover:text-white font-semibold rounded-lg transition-colors text-sm"
-                  >
-                    Sign in with Steam
-                  </Link>
-                )}
-                {user && (
-                  <Link
-                    href="/my-guides"
-                    className="px-6 py-3 border border-zinc-700 hover:border-violet-600/50 text-zinc-300 hover:text-violet-300 font-semibold rounded-lg transition-colors text-sm"
-                  >
-                    My Guides →
-                  </Link>
-                )}
-              </div>
+              <HeroCta />
             </div>
 
             {/* Agent skin — stretches to hero height, image fills 4/5 from bottom */}
@@ -121,9 +84,9 @@ export default async function HomePage() {
                 title={g.title}
                 map={g.map}
                 score={g.score}
-                authorName={g.user.username ?? g.user.name}
-                authorAvatar={g.user.avatar}
-                mediaCount={g._count.annotationMedia}
+                authorName={g.authorName}
+                authorAvatar={g.authorAvatar}
+                mediaCount={g.mediaCount}
               />
             ))}
           </div>

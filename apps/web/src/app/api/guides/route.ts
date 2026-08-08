@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getApiUser } from '@/lib/api-auth'
+import { revalidateTag } from 'next/cache'
 import { db } from '@/lib/db'
+import { CACHE_TAG_GUIDES } from '@/lib/queries'
 import { uploadGuideBlob } from '@/lib/blob'
 
 export async function GET(req: NextRequest) {
@@ -59,6 +61,7 @@ export async function POST(req: NextRequest) {
   try {
     const blobKey = await uploadGuideBlob(guide.id, kv3Content)
     const updated = await db.guide.update({ where: { id: guide.id }, data: { blobKey } })
+    revalidateTag(CACHE_TAG_GUIDES)
     return NextResponse.json({ guide: updated }, { status: 201 })
   } catch {
     await db.guide.delete({ where: { id: guide.id } }).catch(() => {})

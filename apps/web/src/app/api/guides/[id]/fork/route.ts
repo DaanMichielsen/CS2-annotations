@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
+import { revalidateTag } from 'next/cache'
 import { db } from '@/lib/db'
+import { CACHE_TAG_GUIDES } from '@/lib/queries'
 import { uploadGuideBlob, getGuideBlobUrl } from '@/lib/blob'
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -33,5 +35,6 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
 
   const blobKey = await uploadGuideBlob(forked.id, kv3Content)
   const updated = await db.guide.update({ where: { id: forked.id }, data: { blobKey } })
+  revalidateTag(CACHE_TAG_GUIDES)
   return NextResponse.json({ guide: updated }, { status: 201 })
 }
