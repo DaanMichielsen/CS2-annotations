@@ -15,8 +15,16 @@ As of mid-2026, `msedgedriver.azureedge.net` (the historically documented
 download host) no longer resolves. Use `msedgedriver.microsoft.com`
 instead, e.g.:
 
+Match the driver to the **WebView2 Runtime**, not to `msedge.exe`. A Tauri app
+hosts WebView2; the Edge browser is a separate product with its own version.
+They usually track each other, which is why reading `msedge.exe` appears to work
+— until they drift, at which point every session fails with
+`session not created: DevToolsActivePort file doesn't exist`.
+
 ```powershell
-$ver = (Get-Item "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe").VersionInfo.ProductVersion
+# WebView2 Evergreen Runtime version (falls back to the install directory)
+$guid = '{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'
+$ver = (Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\$guid" -Name pv).pv
 Invoke-WebRequest -Uri "https://msedgedriver.microsoft.com/$ver/edgedriver_win64.zip" -OutFile edgedriver_win64.zip
 Expand-Archive edgedriver_win64.zip -DestinationPath .
 ```

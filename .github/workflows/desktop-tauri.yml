@@ -68,26 +68,102 @@ jobs:
 
       # Deviation from the original brief: msedgedriver.azureedge.net no
       # longer resolves (see apps/desktop-tauri/e2e/README.md). Download
-      # from msedgedriver.microsoft.com instead, and probe both the 64-bit
-      # and x86 Program Files locations for msedge.exe since GitHub's
-      # windows-latest image has moved Edge between them across image
-      # revisions. The harness (e2e/wdio.conf.ts) prepends
-      # e2e/.drivers/ to PATH for the tauri-driver child process only, so
-      # the driver is extracted straight into that gitignored directory
-      # rather than fighting with the runner's global PATH.
+      # from msedgedriver.microsoft.com instead.
+      #
+      # The driver must match the **WebView2 Runtime**, not the Edge browser.
+      # A Tauri app is a WebView2 host; msedge.exe is a separate product with
+      # its own version. They usually track each other, which is why keying
+      # off msedge.exe worked until they drifted apart on the runner image
+      # (E2E last passed 2026-07-03; it then failed every attempt with
+      # "session not created: DevToolsActivePort file doesn't exist"). Both
+      # versions are printed below so the logs show the drift directly.
+      #
+      # The harness (e2e/wdio.conf.ts) prepends e2e/.drivers/ to PATH for the
+      # tauri-driver child process only, so the driver is extracted straight
+      # into that gitignored directory rather than fighting with the runner's
+      # global PATH.
       - name: Install Edge WebDriver
         working-directory: apps/desktop-tauri/e2e
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
+
+          # --- Edge browser version (diagnostic only) ---
           $edgePath = "C:\Program Files\Microsoft\Edge\Application\msedge.exe"
           if (-not (Test-Path $edgePath)) {
             $edgePath = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
           }
-          $edgeVersion = (Get-Item $edgePath).VersionInfo.ProductVersion
-          Write-Host "Detected Edge $edgeVersion at $edgePath"
-          Invoke-WebRequest -Uri "https://msedgedriver.microsoft.com/$edgeVersion/edgedriver_win64.zip" -OutFile edgedriver_win64.zip
+          $edgeVersion = if (Test-Path $edgePath) {
+            (Get-Item $edgePath).VersionInfo.ProductVersion
+          } else { $null }
+          Write-Host "Edge browser      : $edgeVersion"
+
+          # --- WebView2 Runtime version (what actually matters) ---
+          # Canonical source is the EdgeUpdate client key for the Evergreen
+          # Runtime; the install directory is the fallback.
+          $wv2Guid = '{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'
+          $wv2Version = $null
+          foreach ($root in @(
+            "HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\$wv2Guid",
+            "HKLM:\SOFTWARE\Microsoft\EdgeUpdate\Clients\$wv2Guid",
+            "HKCU:\SOFTWARE\Microsoft\EdgeUpdate\Clients\$wv2Guid"
+          )) {
+            try {
+              $pv = (Get-ItemProperty -Path $root -Name pv -ErrorAction Stop).pv
+              if ($pv) { $wv2Version = $pv; break }
+            } catch { }
+          }
+          if (-not $wv2Version) {
+            foreach ($dir in @(
+              "C:\Program Files (x86)\Microsoft\EdgeWebView\Application",
+              "C:\Program Files\Microsoft\EdgeWebView\Application"
+            )) {
+              if (Test-Path $dir) {
+                $newest = Get-ChildItem $dir -Directory |
+                  Where-Object { $_.Name -match '^\d+(\.\d+)+$' } |
+                  Sort-Object { [version]$_.Name } -Descending |
+                  Select-Object -First 1
+                if ($newest) { $wv2Version = $newest.Name; break }
+              }
+            }
+          }
+          Write-Host "WebView2 Runtime  : $wv2Version"
+
+          if (-not $wv2Version -and -not $edgeVersion) {
+            throw "Neither the WebView2 Runtime nor the Edge browser could be located."
+          }
+
+          # Prefer WebView2; fall back to Edge so a detection failure degrades
+          # to the previous behaviour instead of breaking the job outright.
+          $target = if ($wv2Version) { $wv2Version } else { $edgeVersion }
+          if ($wv2Version -and $edgeVersion -and $wv2Version -ne $edgeVersion) {
+            Write-Host "NOTE: WebView2 and Edge versions differ - matching the driver to WebView2."
+          }
+
+          # Exact build first; fall back to the latest driver for that major.
+          $urls = @("https://msedgedriver.microsoft.com/$target/edgedriver_win64.zip")
+          $major = $target.Split('.')[0]
+          $downloaded = $false
+          foreach ($url in $urls) {
+            try {
+              Write-Host "Downloading $url"
+              Invoke-WebRequest -Uri $url -OutFile edgedriver_win64.zip
+              $downloaded = $true
+              break
+            } catch {
+              Write-Host "  failed: $($_.Exception.Message)"
+            }
+          }
+          if (-not $downloaded) {
+            $latest = (Invoke-WebRequest -Uri "https://msedgedriver.microsoft.com/LATEST_RELEASE_${major}_WINDOWS").Content
+            $latest = ($latest -replace '[^\d\.]', '').Trim()
+            Write-Host "Falling back to latest driver for major ${major}: $latest"
+            Invoke-WebRequest -Uri "https://msedgedriver.microsoft.com/$latest/edgedriver_win64.zip" -OutFile edgedriver_win64.zip
+          }
+
           New-Item -ItemType Directory -Force -Path .drivers | Out-Null
           Expand-Archive -Path edgedriver_win64.zip -DestinationPath .drivers -Force
+          Write-Host "msedgedriver      : $(& .\.drivers\msedgedriver.exe --version)"
 
       # Deviation from the original brief: wdio.conf.ts's beforeSession
       # hook only runs `cargo build --release --features
