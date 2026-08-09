@@ -47,6 +47,11 @@ export const config: WebdriverIO.Config = {
   // below) instead of trying to launch/manage a driver itself.
   hostname: '127.0.0.1',
   port: 4444,
+  // A failed session creation means the app never came up; retrying cannot
+  // change that, and each attempt burns msedgedriver's ~4-minute
+  // DevToolsActivePort timeout (3 retries = ~16 wasted minutes per CI run).
+  // Fail on the first attempt instead.
+  connectionRetryCount: 0,
   capabilities: [
     {
       // @ts-expect-error tauri:options is a custom WebDriver capability

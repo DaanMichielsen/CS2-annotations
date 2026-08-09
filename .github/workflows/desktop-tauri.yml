@@ -60,7 +60,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cargo/bin/tauri-driver.exe
-          key: tauri-driver-windows-v1
+          # v2: the v1 binary dated from 2026-07 and was being restored on
+          # every run, pinning a tauri-driver build older than the current
+          # runner image's WebView2. Bumped to force a rebuild.
+          key: tauri-driver-windows-v2
 
       - name: Install tauri-driver
         if: steps.cache-tauri-driver.outputs.cache-hit != 'true'
@@ -187,6 +190,55 @@ jobs:
           taskkill /IM cs2ann-desktop-tauri.exe /F
           taskkill /IM msedgedriver.exe /F
           taskkill /IM tauri-driver.exe /F
+
+      # Diagnostic (2026-08-09): E2E fails every attempt with
+      # "session not created: DevToolsActivePort file doesn't exist", and
+      # matching msedgedriver to the WebView2 Runtime did not fix it.
+      #
+      # This isolates the layers. msedgedriver drives a WebView2 app by
+      # launching it with --remote-debugging-port and waiting for the
+      # DevTools endpoint. Here we do that part by hand, with no
+      # tauri-driver and no msedgedriver involved. If the endpoint answers,
+      # the app and WebView2 are fine and the fault is in the driver layer;
+      # if it doesn't, the app can't expose a debug port on this runner at
+      # all and no driver fix will ever help.
+      #
+      # Built explicitly here rather than relying on wdio.conf.ts's
+      # beforeSession hook so a compile failure is attributable to its own
+      # step instead of surfacing inside the E2E log.
+      - name: Build release binary for E2E
+        working-directory: apps/desktop-tauri/src-tauri
+        run: cargo build --release --features tauri/custom-protocol
+
+      - name: Diagnose WebView2 remote debugging
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $exe = "apps/desktop-tauri/src-tauri/target/release/cs2ann-desktop-tauri.exe"
+          if (-not (Test-Path $exe)) { throw "app binary not found at $exe" }
+          Write-Host "binary: $((Get-Item $exe).Length) bytes"
+
+          $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=9222"
+          $env:WEBVIEW2_USER_DATA_FOLDER = "$env:RUNNER_TEMP\wv2-diag"
+          $p = Start-Process -FilePath $exe -PassThru
+
+          $ok = $false
+          foreach ($i in 1..20) {
+            Start-Sleep -Seconds 2
+            if ($p.HasExited) { Write-Host "app EXITED early, code=$($p.ExitCode)"; break }
+            try {
+              $r = Invoke-WebRequest -Uri "http://127.0.0.1:9222/json/version" -UseBasicParsing -TimeoutSec 3
+              Write-Host "DevTools endpoint responded after $($i*2)s:"
+              Write-Host $r.Content
+              $ok = $true
+              break
+            } catch { }
+          }
+          if (-not $ok -and -not $p.HasExited) {
+            Write-Host "app is RUNNING but never exposed a DevTools endpoint on 9222"
+          }
+          if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }
+          Write-Host "RESULT: remote-debugging-reachable=$ok"
 
       - name: E2E smoke suite
         working-directory: apps/desktop-tauri
