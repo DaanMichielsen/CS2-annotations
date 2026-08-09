@@ -1,5 +1,7 @@
 import { auth } from '@/lib/auth'
+import { revalidateTag } from 'next/cache'
 import { db } from '@/lib/db'
+import { CACHE_TAG_GUIDES } from '@/lib/queries'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
@@ -43,5 +45,7 @@ export async function PATCH(req: Request) {
     select: { id: true, bio: true, socialLinks: true },
   })
 
+  // Author name/avatar are denormalised into cached guide cards.
+  revalidateTag(CACHE_TAG_GUIDES)
   return NextResponse.json(user)
 }

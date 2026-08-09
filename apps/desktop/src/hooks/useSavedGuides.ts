@@ -41,13 +41,20 @@ export function useSavedGuides(): { guides: SavedGuide[]; loading: boolean; refr
 
   useEffect(() => {
     fetchGuides()
-    const interval = setInterval(fetchGuides, 2 * 60 * 1000)
+
+    // Refresh on focus, not on a 2-minute timer: that poll was shorter than
+    // Neon's 5-minute scale-to-zero window, so one open app kept the database
+    // awake around the clock. Mirrors apps/desktop-tauri.
+    const onFocus = () => fetchGuides()
+    window.addEventListener('focus', onFocus)
+    const interval = setInterval(fetchGuides, 30 * 60 * 1000)
     const unsub = window.electronAPI.onAuthStateChanged(() => {
       setGuides([])
       setLoading(true)
       fetchGuides()
     })
     return () => {
+      window.removeEventListener('focus', onFocus)
       clearInterval(interval)
       unsub()
     }

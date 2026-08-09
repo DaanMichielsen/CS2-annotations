@@ -1,6 +1,7 @@
 // apps/web/src/app/(community)/guides/page.tsx
 import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { getBrowseGuides } from '@/lib/queries'
 import GuideCard from '@/components/GuideCard'
 import { getMapLabel } from '@/lib/mapColors'
 import Link from 'next/link'
@@ -23,34 +24,11 @@ export default async function BrowsePage({ searchParams }: { searchParams: Promi
   const page = Math.max(1, parseInt(pageParam ?? '1', 10))
   const skip = (page - 1) * PAGE_SIZE
 
-  const where = {
-    isPublic: true,
-    ...(map ? { map } : {}),
-    ...(q ? { title: { contains: q, mode: 'insensitive' as const } } : {}),
-  }
-
-  const [guides, total] = await Promise.all([
-    db.guide.findMany({
-      where,
-      include: {
-        user: { select: { username: true, avatar: true, name: true } },
-        ratings: { select: { value: true } },
-        _count: { select: { annotationMedia: true } },
-      },
-      orderBy: sort === 'newest' ? { createdAt: 'desc' } : { updatedAt: 'desc' },
-      skip,
-      take: PAGE_SIZE,
-    }),
-    db.guide.count({ where }),
-  ])
+  // Public list comes from the cached layer so repeat/crawler hits don't wake
+  // Postgres; the per-user overlay below is intentionally left uncached.
+  const { guides: withScores, total } = await getBrowseGuides({ map, q, sort, skip, take: PAGE_SIZE })
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
-
-  const withScores = guides.map((g) => ({
-    ...g,
-    score: g.ratings.reduce((acc, r) => acc + r.value, 0),
-  }))
-  if (sort === 'top') withScores.sort((a, b) => b.score - a.score)
 
   const guideIds = withScores.map((g) => g.id)
   const userId = session?.user?.id
@@ -163,12 +141,12 @@ export default async function BrowsePage({ searchParams }: { searchParams: Promi
               title={g.title}
               map={g.map}
               score={g.score}
-              authorName={g.user.username ?? g.user.name}
-              authorAvatar={g.user.avatar}
+              authorName={g.authorName}
+              authorAvatar={g.authorAvatar}
               isSaved={userId ? savedSet.has(g.id) : undefined}
               isAuthenticated={!!userId}
               isFeatured={featuredSet.has(g.id)}
-              mediaCount={g._count.annotationMedia}
+              mediaCount={g.mediaCount}
             />
           ))}
         </div>

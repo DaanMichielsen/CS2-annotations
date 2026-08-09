@@ -1,5 +1,5 @@
 // apps/web/src/app/(community)/library/page.tsx
-import { db } from '@/lib/db'
+import { getLibraryEntries } from '@/lib/queries'
 import { MapFilterBar } from '@/components/MapFilterBar'
 import { ThrowTypeFilterBar } from '@/components/ThrowTypeFilterBar'
 import { GrenadeTypeFilterBar } from '@/components/GrenadeTypeFilterBar'
@@ -24,30 +24,16 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
   const page = Math.max(1, parseInt(pageParam ?? '1', 10))
   const skip = (page - 1) * PAGE_SIZE
 
-  const where = {
-    ...(map ? { map } : {}),
-    ...(type ? { grenadeType: type } : {}),
-    ...(throwParam ? { throwType: throwParam } : {}),
-    ...(q
-      ? {
-          OR: [
-            { posLabel: { contains: q, mode: 'insensitive' as const } },
-            { aimLabel: { contains: q, mode: 'insensitive' as const } },
-          ],
-        }
-      : {}),
-  }
-
-  const [entries, total] = await Promise.all([
-    db.grenadeEntry.findMany({
-      where,
-      include: { guide: { select: { title: true } } },
-      orderBy: { updatedAt: 'desc' },
-      skip,
-      take: PAGE_SIZE,
-    }),
-    db.grenadeEntry.count({ where }),
-  ])
+  // Served from the cached layer — this page is dynamic (it reads searchParams),
+  // so without it every filter permutation a crawler tries hits Postgres.
+  const { entries, total } = await getLibraryEntries({
+    map,
+    type,
+    throwType: throwParam,
+    q,
+    skip,
+    take: PAGE_SIZE,
+  })
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
@@ -147,7 +133,7 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
               throwType={entry.throwType}
               aimLabel={entry.aimLabel}
               posLabel={entry.posLabel}
-              guideTitle={entry.guide.title}
+              guideTitle={entry.guideTitle}
               hasMedia={entry.hasMedia}
               landingThumb={entry.landingThumb}
             />
