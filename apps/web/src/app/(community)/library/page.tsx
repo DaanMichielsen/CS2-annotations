@@ -15,7 +15,8 @@ interface SearchParams {
   page?: string
 }
 
-export const revalidate = 300
+// See src/lib/queries.ts: freshness comes from revalidateTag, not expiry.
+export const revalidate = 3600
 
 const PAGE_SIZE = 24
 

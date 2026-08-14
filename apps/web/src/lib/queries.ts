@@ -22,6 +22,25 @@ import { db } from './db'
 export const CACHE_TAG_GUIDES = 'guides'
 /** Invalidate with `revalidateTag(CACHE_TAG_LIBRARY)` after the grenade re-index. */
 export const CACHE_TAG_LIBRARY = 'library'
+/** Invalidate with `revalidateTag(CACHE_TAG_FEATURED)` after any admin featured change. */
+export const CACHE_TAG_FEATURED = 'featured-guides'
+
+/**
+ * Freshness here comes from `revalidateTag` on every mutation, NOT from expiry,
+ * so this is a safety net rather than the mechanism — which is why it is long.
+ *
+ * It must be longer than the interval between crawler visits. The first version
+ * of this used 300s while bots were arriving every 30-45 minutes, so every
+ * single visit was a cache miss: the entry always expired before the next hit,
+ * and the cache never once helped for the traffic that actually costs money.
+ * Each of those misses then held the Neon compute awake for its 5-minute
+ * scale-to-zero minimum. See docs/dev/database-cost.md.
+ *
+ * The trade: a write that bypasses the API (a manual SQL fix, a seed script)
+ * stays invisible for up to a day. Call `revalidateTag` directly, or redeploy,
+ * after doing that.
+ */
+export const PUBLIC_CACHE_TTL_SECONDS = 86_400
 
 const GUIDE_CARD_SELECT = {
   id: true,
@@ -75,7 +94,7 @@ export const getRecentPublicGuides = unstable_cache(
     return guides.map(toCardData)
   },
   ['recent-public-guides'],
-  { revalidate: 300, tags: [CACHE_TAG_GUIDES] }
+  { revalidate: PUBLIC_CACHE_TTL_SECONDS, tags: [CACHE_TAG_GUIDES] }
 )
 
 export interface BrowseArgs {
@@ -111,7 +130,7 @@ export const getBrowseGuides = unstable_cache(
     return { guides: cards, total }
   },
   ['browse-guides'],
-  { revalidate: 300, tags: [CACHE_TAG_GUIDES] }
+  { revalidate: PUBLIC_CACHE_TTL_SECONDS, tags: [CACHE_TAG_GUIDES] }
 )
 
 export interface LibraryArgs {
@@ -195,5 +214,51 @@ export const getLibraryEntries = unstable_cache(
     }
   },
   ['library-entries'],
-  { revalidate: 300, tags: [CACHE_TAG_LIBRARY] }
+  { revalidate: PUBLIC_CACHE_TTL_SECONDS, tags: [CACHE_TAG_LIBRARY] }
+)
+
+export interface FeaturedGuideData {
+  id: string
+  title: string
+  map: string | null
+  nodeCount: number
+  credits: { handle: string; label: string | null }[]
+}
+
+/**
+ * Featured guides for the desktop apps' /api/featured-guides endpoint.
+ *
+ * Tagged rather than left to route-segment `revalidate` alone: the admin
+ * featured actions call `revalidateTag(CACHE_TAG_FEATURED)`, which is what
+ * makes a long TTL safe here.
+ */
+export const getFeaturedGuides = unstable_cache(
+  async (): Promise<FeaturedGuideData[]> => {
+    const featured = await db.featuredGuide.findMany({
+      orderBy: { position: 'asc' },
+      select: {
+        guideId: true,
+        guide: {
+          select: {
+            title: true,
+            map: true,
+            nodeCount: true,
+            credits: {
+              orderBy: { position: 'asc' },
+              select: { handle: true, label: true },
+            },
+          },
+        },
+      },
+    })
+    return featured.map((fg) => ({
+      id: fg.guideId,
+      title: fg.guide.title,
+      map: fg.guide.map,
+      nodeCount: fg.guide.nodeCount,
+      credits: fg.guide.credits,
+    }))
+  },
+  ['featured-guides'],
+  { revalidate: PUBLIC_CACHE_TTL_SECONDS, tags: [CACHE_TAG_FEATURED, CACHE_TAG_GUIDES] }
 )
