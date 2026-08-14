@@ -1,34 +1,12 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getFeaturedGuides } from '@/lib/queries'
 
-export const revalidate = 60
+// The desktop apps poll this every 30 minutes, so the previous 60s window
+// guaranteed every single poll was a cache miss that woke the database.
+// Safe to make long because getFeaturedGuides is tag-invalidated: the admin
+// featured actions and guide mutations both clear it immediately.
+export const revalidate = 3600
 
 export async function GET() {
-  const featured = await db.featuredGuide.findMany({
-    orderBy: { position: 'asc' },
-    include: {
-      guide: {
-        select: {
-          id: true,
-          title: true,
-          map: true,
-          nodeCount: true,
-          credits: {
-            orderBy: { position: 'asc' },
-            select: { handle: true, label: true },
-          },
-        },
-      },
-    },
-  })
-
-  return NextResponse.json({
-    guides: featured.map((fg) => ({
-      id: fg.guideId,
-      title: fg.guide.title,
-      map: fg.guide.map,
-      nodeCount: fg.guide.nodeCount,
-      credits: fg.guide.credits,
-    })),
-  })
+  return NextResponse.json({ guides: await getFeaturedGuides() })
 }

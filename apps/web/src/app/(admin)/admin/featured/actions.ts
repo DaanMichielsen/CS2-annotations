@@ -3,7 +3,8 @@
 import { auth } from '@/lib/auth'
 import { requireRole } from '@/lib/roles'
 import { db } from '@/lib/db'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
+import { CACHE_TAG_FEATURED } from '@/lib/queries'
 
 export async function addFeaturedGuide(guideId: string) {
   const session = await auth()
@@ -13,6 +14,7 @@ export async function addFeaturedGuide(guideId: string) {
   const position = (agg._max.position ?? 0) + 1
   await db.featuredGuide.create({ data: { guideId, position } })
   revalidatePath('/admin/featured')
+  revalidateTag(CACHE_TAG_FEATURED)
 }
 
 export async function removeFeaturedGuide(guideId: string) {
@@ -27,6 +29,7 @@ export async function removeFeaturedGuide(guideId: string) {
     )
   )
   revalidatePath('/admin/featured')
+  revalidateTag(CACHE_TAG_FEATURED)
 }
 
 export async function reorderFeaturedGuides(orderedIds: string[]) {
@@ -39,6 +42,7 @@ export async function reorderFeaturedGuides(orderedIds: string[]) {
     )
   )
   revalidatePath('/admin/featured')
+  revalidateTag(CACHE_TAG_FEATURED)
 }
 
 export async function updateGuideCredits(
@@ -59,6 +63,7 @@ export async function updateGuideCredits(
       ),
   ])
   revalidatePath('/admin/featured')
+  revalidateTag(CACHE_TAG_FEATURED)
 }
 
 export async function searchPublicGuides(q: string, map: string | null, page: number) {
