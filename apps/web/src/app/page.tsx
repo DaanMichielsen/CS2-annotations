@@ -6,7 +6,9 @@ import MapCarousel from '@/components/MapCarousel'
 import TopNav from '@/components/TopNav'
 import { getRecentPublicGuides } from '@/lib/queries'
 
-export const revalidate = 120
+// Long because the inner query is tag-invalidated on every mutation; a short
+// window just means bots re-trigger regeneration (and a DB read) all day.
+export const revalidate = 3600
 
 // No auth() call — the signed-in/signed-out CTA lives in <HeroCta/>, which
 // resolves the session client-side. That keeps this route statically rendered
